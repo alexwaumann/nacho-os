@@ -1,0 +1,3 @@
+/_serverFn/* /_serverFn/:splat 200
+/api/* /api/:splat 200
+/* /_shell.html 200
