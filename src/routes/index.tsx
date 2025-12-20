@@ -1,18 +1,38 @@
+import { z } from "zod";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Scan, ClipboardList, Package } from "lucide-react";
+import { ClipboardList, Package, Plus, Scan } from "lucide-react";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { AddJobModal } from "@/features/jobs/components/AddJobModal";
+
+const searchSchema = z.object({
+  "new-job": z.string().optional(),
+});
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search) => searchSchema.parse(search),
   component: YouPage,
 });
 
 function YouPage() {
+  const navigate = Route.useNavigate();
+
+  const handleAddJobClick = () => {
+    navigate({
+      search: (prev) => ({ ...prev, "new-job": "true" }),
+    });
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <AddJobModal />
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group">
+      <div className="grid grid-cols-2 gap-6">
+        <Card
+          onClick={handleAddJobClick}
+          className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group"
+        >
           <CardContent className="p-6 flex flex-col items-center justify-center gap-4 text-center">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
               <Plus size={32} strokeWidth={3} />
