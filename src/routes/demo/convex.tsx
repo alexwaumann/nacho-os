@@ -1,10 +1,12 @@
+import { useMutation, useQuery } from "convex/react";
+import { Check, Circle, Plus, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
+
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation } from "convex/react";
-import { Trash2, Plus, Check, Circle } from "lucide-react";
 
 import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+
+import type { Id } from "../../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/demo/convex")({
   ssr: false,
