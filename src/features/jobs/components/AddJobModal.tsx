@@ -4,7 +4,6 @@ import { CheckCircle2, Loader2, Play, XIcon } from "lucide-react";
 import { useAddJob } from "../hooks/useAddJob";
 import { JobFileList } from "./JobFileList";
 import { JobFileUpload } from "./JobFileUpload";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,8 +18,16 @@ export function AddJobModal() {
   const search = useSearch({ from: "/" });
   const isOpen = search["new-job"] === "true";
 
-  const { files, addFiles, removeFile, clearState, isProcessing, isDone, handleProcess } =
-    useAddJob();
+  const {
+    files,
+    addFiles,
+    removeFile,
+    clearState,
+    isProcessing,
+    isDone,
+    processedCount,
+    handleProcess,
+  } = useAddJob();
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -70,7 +77,7 @@ export function AddJobModal() {
             <div className="flex flex-col items-center justify-center gap-2 py-4 animate-in zoom-in-95 duration-300">
               <p className="text-emerald-600 font-bold flex items-center gap-2">
                 <CheckCircle2 size={20} />
-                Added {files.length} jobs to inbox!
+                Added {processedCount} job{processedCount !== 1 ? "s" : ""} to inbox!
               </p>
             </div>
           )}

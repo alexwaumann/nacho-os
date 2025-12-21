@@ -2,7 +2,7 @@ import { Upload } from "lucide-react";
 import { useRef } from "react";
 
 interface JobFileUploadProps {
-  onFilesSelected: (files: File[]) => void;
+  onFilesSelected: (files: Array<File>) => void;
 }
 
 export function JobFileUpload({ onFilesSelected }: JobFileUploadProps) {

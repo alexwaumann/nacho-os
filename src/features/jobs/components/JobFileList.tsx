@@ -1,9 +1,10 @@
-import { FileText, Trash2, CheckCircle2, Loader2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { CheckCircle2, FileText, Loader2, Trash2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface JobFileListProps {
-  files: File[];
+  files: Array<File>;
   onRemove: (index: number) => void;
   isProcessing: boolean;
   isDone: boolean;
