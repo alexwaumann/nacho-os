@@ -16,14 +16,14 @@ export type ExtractedTask = {
   quantity?: number;
   unit?: string;
   requiresOnlineOrder: boolean;
+  materialsNeeded: Array<string>;
+  toolsNeeded: Array<string>;
 };
 
 export type ExtractedJob = {
   propertyAddress: string;
   jobSummary?: string;
   tasks: Array<ExtractedTask>;
-  materialsNeeded: Array<string>;
-  toolsNeeded: Array<string>;
   accessCodes: Array<string>;
   targetCompletionDate?: string;
 };
@@ -120,6 +120,16 @@ export const extractJobFromFile = createServerFn({ method: "POST" })
                     type: SchemaType.BOOLEAN,
                     description: "True if item usually requires lead time/delivery",
                   },
+                  materialsNeeded: {
+                    type: SchemaType.ARRAY,
+                    items: { type: SchemaType.STRING },
+                    description: "Specific materials required for THIS task",
+                  },
+                  toolsNeeded: {
+                    type: SchemaType.ARRAY,
+                    items: { type: SchemaType.STRING },
+                    description: "Specific tools required for THIS task",
+                  },
                 },
                 required: [
                   "category",
@@ -128,11 +138,11 @@ export const extractJobFromFile = createServerFn({ method: "POST" })
                   "quantity",
                   "unit",
                   "requiresOnlineOrder",
+                  "materialsNeeded",
+                  "toolsNeeded",
                 ],
               },
             },
-            materialsNeeded: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-            toolsNeeded: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
             accessCodes: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
             targetCompletionDate: { type: SchemaType.STRING },
           },
@@ -189,7 +199,9 @@ export const extractJobFromFile = createServerFn({ method: "POST" })
       * **Access Codes:** Scan the document headers, footers, and "Property Details" sections for "Lockbox", "Gate Code", "Key", "Combo", or "Access". Extract the code values into the \`accessCodes\` array.
       * **Property Address:** Extract from the top header (Street, City, State, Zip).
       * **Online Orders:** Set \`requiresOnlineOrder: true\` for items requiring lead time (Windows, Appliances, Custom Blinds, Cabinets) vs local pickup (Paint, Caulk, Lumber, Cleaning).
-      * **Tools/Materials:** Infer strictly based on the task description (e.g., "Install LVP" -> Needs Flooring + Cutter/Mallet).
+      * **Tools/Materials (PER TASK):** Infer strictly based on the specific task description. List them under the corresponding task's \`materialsNeeded\` and \`toolsNeeded\` arrays.
+          * *Example:* "Install LVP" -> materials: ["LVP Flooring", "Transition Strips"], tools: ["Flooring Cutter", "Rubber Mallet", "Spacers"].
+          * *Example:* "Paint Bathroom" -> materials: ["Paint (Semi-gloss)", "Painter's Tape", "Caulk"], tools: ["Brush", "Roller", "Drop Cloth"].
 
       ---
       ### 3. OUTPUT REQUIREMENT

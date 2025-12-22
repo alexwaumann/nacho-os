@@ -14,6 +14,8 @@ const taskValidator = v.object({
   specificInstructions: v.optional(v.string()),
   quantity: v.optional(v.number()),
   unit: v.optional(v.string()),
+  materials: v.optional(v.array(v.string())),
+  tools: v.optional(v.array(v.string())),
   requiresOnlineOrder: v.boolean(),
   completed: v.boolean(),
 });
@@ -55,8 +57,6 @@ export default defineSchema({
     address: v.string(),
     summary: v.optional(v.string()),
     tasks: v.optional(v.array(taskValidator)),
-    tools: v.optional(v.array(v.string())),
-    materials: v.optional(v.array(v.string())),
     accessCodes: v.optional(v.array(v.string())),
     dueDate: v.optional(v.string()),
     coordinates: v.optional(coordinatesValidator),

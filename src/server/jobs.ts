@@ -53,6 +53,8 @@ export const prepareJobForStorage = createServerFn({ method: "POST" })
       specificInstructions: task.specificInstructions || undefined,
       quantity: task.quantity || undefined,
       unit: task.unit || undefined,
+      materials: task.materialsNeeded,
+      tools: task.toolsNeeded,
       requiresOnlineOrder: task.requiresOnlineOrder,
       completed: false,
     }));
@@ -61,8 +63,6 @@ export const prepareJobForStorage = createServerFn({ method: "POST" })
       address: job.propertyAddress,
       summary: job.jobSummary,
       tasks,
-      tools: job.toolsNeeded,
-      materials: job.materialsNeeded,
       accessCodes: job.accessCodes,
       dueDate: job.targetCompletionDate,
       coordinates: job.coordinates,

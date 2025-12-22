@@ -34,11 +34,15 @@ export function PackingListModal({ open, onOpenChange }: PackingListModalProps) 
     const toolSet = new Set<string>();
 
     for (const job of selectedJobs) {
-      for (const material of job.materials ?? []) {
-        materialSet.set(material, (materialSet.get(material) ?? 0) + 1);
-      }
-      for (const tool of job.tools ?? []) {
-        toolSet.add(tool);
+      for (const task of job.tasks ?? []) {
+        if (!task.completed) {
+          for (const material of task.materials ?? []) {
+            materialSet.set(material, (materialSet.get(material) ?? 0) + 1);
+          }
+          for (const tool of task.tools ?? []) {
+            toolSet.add(tool);
+          }
+        }
       }
     }
 

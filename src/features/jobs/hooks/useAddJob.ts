@@ -107,6 +107,8 @@ export function useAddJob() {
             specificInstructions: task.specificInstructions || undefined,
             quantity: task.quantity || undefined,
             unit: task.unit || undefined,
+            materials: task.materialsNeeded,
+            tools: task.toolsNeeded,
             requiresOnlineOrder: task.requiresOnlineOrder,
             completed: false,
           }));
@@ -115,8 +117,6 @@ export function useAddJob() {
             address: processedJob.propertyAddress,
             summary: processedJob.jobSummary,
             tasks,
-            tools: processedJob.toolsNeeded,
-            materials: processedJob.materialsNeeded,
             accessCodes: processedJob.accessCodes,
             dueDate: processedJob.targetCompletionDate,
             coordinates: processedJob.coordinates ?? undefined,

@@ -7,11 +7,10 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../convex/_generated/api";
 
-import type { Doc, Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 import { PackingListModal } from "@/components/PackingListModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { AddJobModal } from "@/features/jobs/components/AddJobModal";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
@@ -23,8 +22,6 @@ export const Route = createFileRoute("/")({
   validateSearch: (search) => searchSchema.parse(search),
   component: YouPage,
 });
-
-type Job = Doc<"jobs">;
 
 function YouPage() {
   const navigate = Route.useNavigate();
@@ -39,7 +36,6 @@ function YouPage() {
   }, [getOrCreateUser]);
 
   const selectedJobs = useQuery(api.jobs.getSelectedForRoute) ?? [];
-  const pendingJobs = useQuery(api.jobs.list, { status: "pending" }) ?? [];
   const stats = useQuery(api.jobs.getStats);
 
   const handleAddJobClick = () => {
@@ -67,11 +63,15 @@ function YouPage() {
     }
   };
 
-  // Calculate packing list progress
+  // Calculate packing list progress from incomplete tasks in selected jobs
   const { materials, tools } = selectedJobs.reduce(
     (acc, job) => {
-      for (const m of job.materials ?? []) acc.materials.add(m);
-      for (const t of job.tools ?? []) acc.tools.add(t);
+      job.tasks?.forEach((task) => {
+        if (!task.completed) {
+          task.materials?.forEach((m) => acc.materials.add(m));
+          task.tools?.forEach((t) => acc.tools.add(t));
+        }
+      });
       return acc;
     },
     { materials: new Set<string>(), tools: new Set<string>() },

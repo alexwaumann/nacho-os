@@ -87,6 +87,16 @@ export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps)
 
   const totalExpenses = receipts?.reduce((sum, r) => sum + r.total, 0) ?? 0;
 
+  // Synthesize materials and tools from all tasks
+  const { allMaterials, allTools } = (job.tasks ?? []).reduce(
+    (acc, task) => {
+      task.materials?.forEach((m) => acc.allMaterials.add(m));
+      task.tools?.forEach((t) => acc.allTools.add(t));
+      return acc;
+    },
+    { allMaterials: new Set<string>(), allTools: new Set<string>() },
+  );
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -209,6 +219,28 @@ export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps)
                           {task.specificInstructions}
                         </p>
                       )}
+                      {((task.materials?.length ?? 0) > 0 || (task.tools?.length ?? 0) > 0) && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {task.materials?.map((m, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="text-[9px] px-1 py-0 h-3.5 bg-orange-500/10 text-orange-600 border-orange-500/20"
+                            >
+                              {m}
+                            </Badge>
+                          ))}
+                          {task.tools?.map((t, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="text-[9px] px-1 py-0 h-3.5 bg-blue-500/10 text-blue-600 border-blue-500/20"
+                            >
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     {task.requiresOnlineOrder && !task.completed && (
                       <Badge
@@ -225,18 +257,18 @@ export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps)
           )}
 
           {/* Materials & Tools */}
-          {(job.materials?.length ?? 0) > 0 || (job.tools?.length ?? 0) > 0 ?
+          {allMaterials.size > 0 || allTools.size > 0 ?
             <>
               <Separator />
               <div className="grid grid-cols-2 gap-4">
-                {job.materials && job.materials.length > 0 && (
+                {allMaterials.size > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1">
                       <Package className="w-3 h-3" />
                       Materials
                     </h4>
                     <ul className="space-y-1">
-                      {job.materials.map((m, i) => (
+                      {Array.from(allMaterials).map((m, i) => (
                         <li key={i} className="text-sm text-foreground">
                           • {m}
                         </li>
@@ -244,14 +276,14 @@ export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps)
                     </ul>
                   </div>
                 )}
-                {job.tools && job.tools.length > 0 && (
+                {allTools.size > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1">
                       <Wrench className="w-3 h-3" />
                       Tools
                     </h4>
                     <ul className="space-y-1">
-                      {job.tools.map((t, i) => (
+                      {Array.from(allTools).map((t, i) => (
                         <li key={i} className="text-sm text-foreground">
                           • {t}
                         </li>
