@@ -48,10 +48,11 @@ export const prepareJobForStorage = createServerFn({ method: "POST" })
     // Convert extracted tasks to our task format
     const tasks = job.tasks.map((task, index) => ({
       id: `task-${index}-${Date.now()}`,
-      text:
-        task.specificInstructions ?
-          `${task.taskName} - ${task.specificInstructions}`
-        : task.taskName,
+      category: task.category ?? "General",
+      taskName: task.taskName,
+      specificInstructions: task.specificInstructions || undefined,
+      quantity: task.quantity || undefined,
+      unit: task.unit || undefined,
       requiresOnlineOrder: task.requiresOnlineOrder,
       completed: false,
     }));

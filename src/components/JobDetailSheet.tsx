@@ -183,11 +183,33 @@ export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps)
                     >
                       {task.completed && <CheckCircle2 className="w-3 h-3" />}
                     </div>
-                    <span
-                      className={`text-sm font-medium flex-1 ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
-                    >
-                      {task.text}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-wider">
+                          {task.category}
+                        </span>
+                        {task.quantity && task.unit && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 h-4 border-muted-foreground/30 text-muted-foreground font-bold"
+                          >
+                            {task.quantity} {task.unit}
+                          </Badge>
+                        )}
+                      </div>
+                      <div
+                        className={`text-sm font-bold ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
+                      >
+                        {task.taskName}
+                      </div>
+                      {task.specificInstructions && (
+                        <p
+                          className={`text-xs mt-1 ${task.completed ? "text-muted-foreground/70" : "text-muted-foreground font-medium"}`}
+                        >
+                          {task.specificInstructions}
+                        </p>
+                      )}
+                    </div>
                     {task.requiresOnlineOrder && !task.completed && (
                       <Badge
                         variant="destructive"

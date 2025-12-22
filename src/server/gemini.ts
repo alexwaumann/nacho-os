@@ -52,7 +52,11 @@ export type WeatherData = {
 
 export type TaskInput = {
   id: string;
-  text: string;
+  category: string;
+  taskName: string;
+  specificInstructions?: string;
+  quantity?: number;
+  unit?: string;
   completed: boolean;
 };
 
@@ -326,7 +330,7 @@ export const analyzeWeatherRisk = createServerFn({ method: "POST" })
       },
     });
 
-    const taskList = tasks.map((t) => t.text).join("; ");
+    const taskList = tasks.map((t) => t.taskName).join("; ");
     const weatherDesc = `${weather.condition}, ${weather.tempMax}°F, ${weather.precipProb}% chance of precipitation`;
 
     const result = await model.generateContent([

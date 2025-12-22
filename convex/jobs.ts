@@ -5,7 +5,11 @@ import { mutation, query } from "./_generated/server";
 // Reusable validators
 const taskValidator = v.object({
   id: v.string(),
-  text: v.string(),
+  category: v.string(),
+  taskName: v.string(),
+  specificInstructions: v.optional(v.string()),
+  quantity: v.optional(v.number()),
+  unit: v.optional(v.string()),
   requiresOnlineOrder: v.boolean(),
   completed: v.boolean(),
 });

@@ -102,7 +102,11 @@ export function useAddJob() {
           // Step 4: Create job in Convex
           const tasks = processedJob.tasks.map((task, idx) => ({
             id: `task-${idx}-${Date.now()}`,
-            text: `${task.category ? `[${task.category}] ` : ""}${task.taskName} ${task.specificInstructions ? `: ${task.specificInstructions}` : ""} ${task.quantity && task.unit ? ` (${task.quantity} ${task.unit})` : ""}`,
+            category: task.category ?? "General",
+            taskName: task.taskName,
+            specificInstructions: task.specificInstructions || undefined,
+            quantity: task.quantity || undefined,
+            unit: task.unit || undefined,
             requiresOnlineOrder: task.requiresOnlineOrder,
             completed: false,
           }));
