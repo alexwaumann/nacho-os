@@ -37,6 +37,7 @@ export const env = createEnv({
     VITE_CLERK_JWT_ISSUER_DOMAIN: import.meta.env.VITE_CLERK_JWT_ISSUER_DOMAIN,
     VITE_CLERK_PUBLISHABLE_KEY: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
     VITE_CONVEX_URL: import.meta.env.VITE_CONVEX_URL,
+    VITE_GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   },
 
   /**
