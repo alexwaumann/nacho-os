@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
-import { ClipboardList, GripVertical, MapPin, Navigation, Package, Plus, Scan } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ClipboardList, GripVertical, MapPin, Navigation, Plus, Scan } from "lucide-react";
+import { useEffect } from "react";
 import { z } from "zod";
 
 import { createFileRoute } from "@tanstack/react-router";
@@ -8,9 +8,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../../convex/_generated/api";
 
 import type { Id } from "../../convex/_generated/dataModel";
-import { PackingListModal } from "@/components/PackingListModal";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { AddJobModal } from "@/features/jobs/components/AddJobModal";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
@@ -25,7 +23,6 @@ export const Route = createFileRoute("/")({
 
 function YouPage() {
   const navigate = Route.useNavigate();
-  const [packingListOpen, setPackingListOpen] = useState(false);
 
   // Sync user on first load
   const getOrCreateUser = useMutation(api.users.getOrCreateUser);
@@ -63,27 +60,9 @@ function YouPage() {
     }
   };
 
-  // Calculate packing list progress from incomplete tasks in selected jobs
-  const { materials, tools } = selectedJobs.reduce(
-    (acc, job) => {
-      job.tasks?.forEach((task) => {
-        if (!task.completed) {
-          task.materials?.forEach((m) => acc.materials.add(m));
-          task.tools?.forEach((t) => acc.tools.add(t));
-        }
-      });
-      return acc;
-    },
-    { materials: new Set<string>(), tools: new Set<string>() },
-  );
-
-  const materialProgress = 0; // Will be calculated based on checked state
-  const toolProgress = 0;
-
   return (
     <div className="space-y-6">
       <AddJobModal />
-      <PackingListModal open={packingListOpen} onOpenChange={setPackingListOpen} />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-6">
@@ -108,39 +87,6 @@ function YouPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Packing Summary */}
-      <Card
-        className="border border-border shadow-sm bg-card cursor-pointer hover:border-primary/50 transition-colors"
-        onClick={() => setPackingListOpen(true)}
-      >
-        <CardContent className="p-5 space-y-4">
-          <div className="flex justify-between items-center mb-1">
-            <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-              <Package size={16} className="text-primary" /> Packing List
-            </h3>
-            <span className="text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-lg uppercase tracking-wider">
-              {selectedJobs.length} stops
-            </span>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
-                <span>Materials ({materials.size})</span>
-                <span>{materialProgress}%</span>
-              </div>
-              <Progress value={materialProgress} className="h-2 bg-muted" />
-            </div>
-            <div>
-              <div className="flex justify-between text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">
-                <span>Tools ({tools.size})</span>
-                <span>{toolProgress}%</span>
-              </div>
-              <Progress value={toolProgress} className="h-2 bg-muted" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Today's Plan */}
       <div className="space-y-4">
