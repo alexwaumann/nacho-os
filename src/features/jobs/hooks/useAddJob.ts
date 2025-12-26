@@ -6,7 +6,6 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 import { processFileToImages } from "@/lib/pdf";
-import { processJobFiles } from "@/server/jobs";
 
 type ProcessedFile = {
   file: File;
@@ -20,7 +19,7 @@ export function useAddJob() {
   const [isDone, setIsDone] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
 
-  const createJob = useMutation(api.jobs.create);
+  const enqueueJob = useMutation(api.jobs.enqueueJob);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 
   const addFiles = (newFiles: Array<File>) => {
@@ -62,14 +61,7 @@ export function useAddJob() {
           // Step 1: Convert file to images (PDF pages or compressed image)
           const images = await processFileToImages(file);
 
-          // Step 2: Process with server function (Gemini + geocoding)
-          const processedJob = await processJobFiles({
-            data: { images },
-          });
-
-          console.log(processedJob);
-
-          // Step 3: Upload images to Convex storage
+          // Step 2: Upload images to Convex storage
           const storageIds: Array<Id<"_storage">> = [];
 
           for (const image of images) {
@@ -99,28 +91,10 @@ export function useAddJob() {
             storageIds.push(storageId as Id<"_storage">);
           }
 
-          // Step 4: Create job in Convex
-          const tasks = processedJob.tasks.map((task, idx) => ({
-            id: `task-${idx}-${Date.now()}`,
-            category: task.category ?? "General",
-            taskName: task.taskName,
-            specificInstructions: task.specificInstructions || undefined,
-            quantity: task.quantity || undefined,
-            unit: task.unit || undefined,
-            materials: task.materialsNeeded,
-            tools: task.toolsNeeded,
-            requiresOnlineOrder: task.requiresOnlineOrder,
-            completed: false,
-          }));
-
-          await createJob({
-            address: processedJob.propertyAddress,
-            summary: processedJob.jobSummary,
-            tasks,
-            accessCodes: processedJob.accessCodes,
-            dueDate: processedJob.targetCompletionDate,
-            coordinates: processedJob.coordinates ?? undefined,
-            sourceImageIds: storageIds,
+          // Step 3: Enqueue job in Convex for background processing
+          await enqueueJob({
+            fileStorageIds: storageIds,
+            fileName: file.name,
           });
 
           // Update status to done
@@ -128,7 +102,6 @@ export function useAddJob() {
             prev.map((f, idx) => (idx === i ? { ...f, status: "done" as const } : f)),
           );
           setProcessedCount((prev) => prev + 1);
-          toast.success(`Job added: ${processedJob.propertyAddress}`);
         } catch (error) {
           console.error(`Error processing file ${file.name}:`, error);
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -147,6 +120,7 @@ export function useAddJob() {
         }
       }
 
+      toast.success(`Queued ${processedCount + 1} job(s) for background processing`);
       setIsDone(true);
     } catch (error) {
       console.error("Error processing files:", error);

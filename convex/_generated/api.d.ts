@@ -9,7 +9,10 @@
  */
 
 import type * as files from "../files.js";
+import type * as jobActions from "../jobActions.js";
 import type * as jobs from "../jobs.js";
+import type * as lib_ai from "../lib/ai.js";
+import type * as lib_geo from "../lib/geo.js";
 import type * as payments from "../payments.js";
 import type * as receipts from "../receipts.js";
 import type * as todos from "../todos.js";
@@ -23,7 +26,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   files: typeof files;
+  jobActions: typeof jobActions;
   jobs: typeof jobs;
+  "lib/ai": typeof lib_ai;
+  "lib/geo": typeof lib_geo;
   payments: typeof payments;
   receipts: typeof receipts;
   todos: typeof todos;

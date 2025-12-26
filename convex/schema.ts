@@ -113,4 +113,15 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_job", ["jobId"]),
+
+  // Job processing queue for background extraction
+  jobProcessingQueue: defineTable({
+    userId: v.id("users"),
+    fileStorageIds: v.array(v.id("_storage")),
+    fileName: v.string(),
+    status: v.union(v.literal("queued"), v.literal("processing"), v.literal("failed")),
+    error: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_status", ["userId", "status"]),
 });

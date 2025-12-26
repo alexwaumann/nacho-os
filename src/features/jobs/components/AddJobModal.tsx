@@ -75,9 +75,12 @@ export function AddJobModal() {
 
           {isDone && (
             <div className="flex flex-col items-center justify-center gap-2 py-4 animate-in zoom-in-95 duration-300">
-              <p className="text-emerald-600 font-bold flex items-center gap-2">
-                <CheckCircle2 size={20} />
-                Added {processedCount} job{processedCount !== 1 ? "s" : ""} to inbox!
+              <p className="text-emerald-600 font-bold flex items-center gap-2 text-center">
+                <CheckCircle2 size={20} className="shrink-0" />
+                Submitted {processedCount} job{processedCount !== 1 ? "s" : ""}!
+              </p>
+              <p className="text-sm text-muted-foreground text-center">
+                Processing in background. They will appear in your inbox once finished.
               </p>
             </div>
           )}

@@ -1,5 +1,15 @@
 import { useMutation, useQuery } from "convex/react";
-import { ClipboardList, GripVertical, MapPin, Navigation, Plus, Scan } from "lucide-react";
+import {
+  AlertCircle,
+  ClipboardList,
+  GripVertical,
+  Loader2,
+  MapPin,
+  Navigation,
+  Plus,
+  Scan,
+  X,
+} from "lucide-react";
 import { useEffect } from "react";
 import { z } from "zod";
 
@@ -27,6 +37,7 @@ function YouPage() {
   // Sync user on first load
   const getOrCreateUser = useMutation(api.users.getOrCreateUser);
   const toggleSelectedForRoute = useMutation(api.jobs.toggleSelectedForRoute);
+  const removeQueueItem = useMutation(api.jobs.removeQueueItem);
 
   useEffect(() => {
     getOrCreateUser().catch(console.error);
@@ -34,6 +45,7 @@ function YouPage() {
 
   const selectedJobs = useQuery(api.jobs.getSelectedForRoute) ?? [];
   const stats = useQuery(api.jobs.getStats);
+  const processingQueue = useQuery(api.jobs.listQueue) ?? [];
 
   const handleAddJobClick = () => {
     navigate({
@@ -63,6 +75,45 @@ function YouPage() {
   return (
     <div className="space-y-6">
       <AddJobModal />
+
+      {/* Processing Queue */}
+      {processingQueue.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-1">
+            Processing Jobs
+          </h3>
+          <div className="space-y-2">
+            {processingQueue.map((item) => (
+              <Card
+                key={item._id}
+                className={`border shadow-sm overflow-hidden ${
+                  item.status === "failed" ? "border-destructive/50 bg-destructive/5" : "bg-card"
+                }`}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  {item.status === "failed" ?
+                    <AlertCircle className="text-destructive shrink-0" size={20} />
+                  : <Loader2 className="text-primary animate-spin shrink-0" size={20} />}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{item.fileName}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {item.status === "failed" ? item.error : "Extracting details..."}
+                    </p>
+                  </div>
+                  {item.status === "failed" && (
+                    <button
+                      onClick={() => removeQueueItem({ queueId: item._id })}
+                      className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-6">

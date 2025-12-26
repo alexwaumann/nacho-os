@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 // Reusable validators
 const taskValidator = v.object({
@@ -324,6 +325,128 @@ export const updateRouteMetrics = mutation({
   },
 });
 
+// --- QUEUE MUTATIONS ---
+
+/**
+ * Enqueue a job for background processing
+ */
+export const enqueueJob = mutation({
+  args: {
+    fileStorageIds: v.array(v.id("_storage")),
+    fileName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
+
+    const queueId = await ctx.db.insert("jobProcessingQueue", {
+      userId,
+      fileStorageIds: args.fileStorageIds,
+      fileName: args.fileName,
+      status: "queued",
+    });
+
+    // Schedule the background action
+    await ctx.scheduler.runAfter(0, internal.jobActions.processJobAction, { queueId });
+
+    return queueId;
+  },
+});
+
+/**
+ * Update queue item status (internal)
+ */
+export const updateQueueStatus = internalMutation({
+  args: {
+    queueId: v.id("jobProcessingQueue"),
+    status: v.union(v.literal("processing"), v.literal("failed")),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.queueId, {
+      status: args.status,
+      error: args.error,
+    });
+  },
+});
+
+/**
+ * Finalize a processed job and remove from queue (internal)
+ */
+export const finalizeJob = internalMutation({
+  args: {
+    queueId: v.id("jobProcessingQueue"),
+    address: v.string(),
+    summary: v.optional(v.string()),
+    tasks: v.array(taskValidator),
+    accessCodes: v.array(v.string()),
+    dueDate: v.optional(v.string()),
+    coordinates: v.optional(coordinatesValidator),
+    sourceImageIds: v.array(v.id("_storage")),
+  },
+  handler: async (ctx, args) => {
+    const queueItem = await ctx.db.get(args.queueId);
+    if (!queueItem) throw new Error("Queue item not found");
+
+    const { queueId, ...jobData } = args;
+
+    // Create the job
+    await ctx.db.insert("jobs", {
+      userId: queueItem.userId,
+      type: "stop",
+      ...jobData,
+      selectedForRoute: false,
+      status: "pending",
+    });
+
+    // Remove from queue
+    await ctx.db.delete(queueId);
+  },
+});
+
+/**
+ * Clean up a failed job and delete its files (internal)
+ */
+export const cleanupFailedJob = internalMutation({
+  args: {
+    queueId: v.id("jobProcessingQueue"),
+    error: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const queueItem = await ctx.db.get(args.queueId);
+    if (!queueItem) return;
+
+    // Delete files from storage
+    for (const fileId of queueItem.fileStorageIds) {
+      await ctx.storage.delete(fileId);
+    }
+
+    // Update status to failed
+    await ctx.db.patch(args.queueId, {
+      status: "failed",
+      error: args.error,
+    });
+  },
+});
+
+/**
+ * Remove a queue item (manual dismissal of failed jobs)
+ */
+export const removeQueueItem = mutation({
+  args: {
+    queueId: v.id("jobProcessingQueue"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
+    const item = await ctx.db.get(args.queueId);
+
+    if (!item || item.userId !== userId) {
+      throw new Error("Item not found or unauthorized");
+    }
+
+    await ctx.db.delete(args.queueId);
+  },
+});
+
 // --- QUERIES ---
 
 /**
@@ -479,5 +602,38 @@ export const getSourceImageUrls = query({
     }
 
     return urls.filter((url): url is string => url !== null);
+  },
+});
+
+/**
+ * List jobs in the processing queue for the current user
+ */
+export const listQueue = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) return [];
+
+    return await ctx.db
+      .query("jobProcessingQueue")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+  },
+});
+
+/**
+ * Get a queue item (internal)
+ */
+export const getQueueItemInternal = internalQuery({
+  args: { queueId: v.id("jobProcessingQueue") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.queueId);
   },
 });
