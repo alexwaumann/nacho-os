@@ -48,23 +48,18 @@ export function useAddJob() {
     setProcessedCount(0);
 
     try {
-      // Process each file sequentially
-      for (let i = 0; i < files.length; i++) {
-        const { file } = files[i];
-
+      const processSingleFile = async (file: File, index: number) => {
         // Update status to processing
         setFiles((prev) =>
-          prev.map((f, idx) => (idx === i ? { ...f, status: "processing" as const } : f)),
+          prev.map((f, idx) => (idx === index ? { ...f, status: "processing" as const } : f)),
         );
 
         try {
           // Step 1: Convert file to images (PDF pages or compressed image)
           const images = await processFileToImages(file);
 
-          // Step 2: Upload images to Convex storage
-          const storageIds: Array<Id<"_storage">> = [];
-
-          for (const image of images) {
+          // Step 2: Upload images to Convex storage in parallel
+          const uploadPromises = images.map(async (image) => {
             // Get upload URL
             const uploadUrl = await generateUploadUrl();
 
@@ -88,8 +83,10 @@ export function useAddJob() {
             }
 
             const { storageId } = await response.json();
-            storageIds.push(storageId as Id<"_storage">);
-          }
+            return storageId as Id<"_storage">;
+          });
+
+          const storageIds = await Promise.all(uploadPromises);
 
           // Step 3: Enqueue job in Convex for background processing
           await enqueueJob({
@@ -99,16 +96,17 @@ export function useAddJob() {
 
           // Update status to done
           setFiles((prev) =>
-            prev.map((f, idx) => (idx === i ? { ...f, status: "done" as const } : f)),
+            prev.map((f, idx) => (idx === index ? { ...f, status: "done" as const } : f)),
           );
           setProcessedCount((prev) => prev + 1);
+          return true;
         } catch (error) {
           console.error(`Error processing file ${file.name}:`, error);
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
           toast.error(`Failed to process ${file.name}: ${errorMessage}`);
           setFiles((prev) =>
             prev.map((f, idx) =>
-              idx === i ?
+              idx === index ?
                 {
                   ...f,
                   status: "error" as const,
@@ -117,10 +115,16 @@ export function useAddJob() {
               : f,
             ),
           );
+          return false;
         }
-      }
+      };
 
-      toast.success(`Queued ${processedCount + 1} job(s) for background processing`);
+      const results = await Promise.all(files.map((f, i) => processSingleFile(f.file, i)));
+      const successCount = results.filter(Boolean).length;
+
+      if (successCount > 0) {
+        toast.success(`Queued ${successCount} job(s) for background processing`);
+      }
       setIsDone(true);
     } catch (error) {
       console.error("Error processing files:", error);

@@ -19,10 +19,9 @@ export async function convertPdfToImages(file: File): Promise<Array<ImageData>> 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
 
-  const images: Array<ImageData> = [];
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
+  const pagePromises = Array.from({ length: pdf.numPages }, async (_, i) => {
+    const pageNumber = i + 1;
+    const page = await pdf.getPage(pageNumber);
 
     // Scale 2.0 provides better clarity for OCR/Vision tasks
     const viewport = page.getViewport({ scale: 2.0 });
@@ -30,7 +29,7 @@ export async function convertPdfToImages(file: File): Promise<Array<ImageData>> 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
-    if (!context) continue;
+    if (!context) return null;
 
     canvas.height = viewport.height;
     canvas.width = viewport.width;
@@ -38,38 +37,21 @@ export async function convertPdfToImages(file: File): Promise<Array<ImageData>> 
     await page.render({
       canvasContext: context,
       viewport: viewport,
+      canvas: canvas,
     }).promise;
 
     // Convert to JPEG (0.8 quality for good text reading)
     const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-    const base64 = dataUrl.split(",")[1]; // Remove the data:image/jpeg;base64, prefix
+    const base64 = dataUrl.split(",")[1];
 
-    images.push({
+    return {
       base64,
       mimeType: "image/jpeg",
-    });
-  }
-
-  return images;
-}
-
-/**
- * Convert an image file to base64
- */
-export function fileToBase64(file: File): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      const base64 = result.split(",")[1];
-      resolve({
-        base64,
-        mimeType: file.type,
-      });
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
   });
+
+  const results = await Promise.all(pagePromises);
+  return results.filter((img) => img !== null);
 }
 
 /**
