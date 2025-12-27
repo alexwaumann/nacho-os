@@ -1,3 +1,5 @@
+import { env } from "@/env";
+
 export type Coordinates = {
   lat: number;
   lng: number;
@@ -7,13 +9,8 @@ export type Coordinates = {
  * Geocode an address to coordinates using Google Geocoding API
  */
 export async function geocodeAddress(address: string): Promise<Coordinates | null> {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) {
-    throw new Error("GOOGLE_MAPS_API_KEY not configured");
-  }
-
   const encodedAddress = encodeURIComponent(address);
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${env.GOOGLE_MAPS_API_KEY}`;
 
   const response = await fetch(url);
   const result = await response.json();
@@ -34,7 +31,7 @@ export async function geocodeAddress(address: string): Promise<Coordinates | nul
     .trim();
 
   if (cleanedAddress !== address && cleanedAddress.length > 5) {
-    const cleanedUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanedAddress)}&key=${apiKey}`;
+    const cleanedUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanedAddress)}&key=${env.GOOGLE_MAPS_API_KEY}`;
     const cleanedResponse = await fetch(cleanedUrl);
     const cleanedResult = await cleanedResponse.json();
 

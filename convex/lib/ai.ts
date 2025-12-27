@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 // Type definitions
@@ -25,19 +26,11 @@ export type ExtractedJob = {
   targetCompletionDate?: string;
 };
 
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY not configured");
-  }
-  return new GoogleGenerativeAI(apiKey);
-}
-
 /**
  * Extract job data from images (supports multi-page PDFs converted to images)
  */
 export async function extractJobFromImages(images: Array<ImageInput>): Promise<ExtractedJob> {
-  const genAI = getGeminiClient();
+  const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
     generationConfig: {
