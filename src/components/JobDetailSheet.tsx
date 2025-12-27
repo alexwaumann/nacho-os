@@ -1,4 +1,6 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation as useConvexMutationHook, useQuery as useConvexQuery } from "convex/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import {
   AlertCircle,
   Calendar,
@@ -17,9 +19,10 @@ import {
   Wrench,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../convex/_generated/dataModel";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,9 +49,23 @@ interface JobDetailSheetProps {
 }
 
 export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProps) {
-  const job = useQuery(api.jobs.get, jobId ? { jobId } : "skip");
+  const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
   const [newAccessCode, setNewAccessCode] = useState("");
+
+  // Query key for the job - used for optimistic updates
+  const jobQueryKey = jobId ? convexQuery(api.jobs.get, { jobId }).queryKey : null;
+
+  // Main job query using TanStack Query with Convex
+  const { data: job } = useQuery({
+    ...convexQuery(api.jobs.get, { jobId: jobId! }),
+    enabled: !!jobId,
+  });
+
+  // Other queries still use Convex directly (no mutations on these)
+  const sourceImages = useConvexQuery(api.jobs.getSourceImageUrls, jobId ? { jobId } : "skip");
+  const receipts = useConvexQuery(api.receipts.listByJob, jobId ? { jobId } : "skip");
+  const payment = useConvexQuery(api.payments.getByJob, jobId ? { jobId } : "skip");
 
   useEffect(() => {
     if (job?.notes) {
@@ -58,15 +75,146 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
     }
   }, [jobId, job?.notes]);
 
-  const updateTask = useMutation(api.jobs.updateTask);
-  const updateJob = useMutation(api.jobs.update);
-  const updateStatus = useMutation(api.jobs.updateStatus);
-  const removeJob = useMutation(api.jobs.remove);
-  const toggleRouteSelection = useMutation(api.jobs.toggleSelectedForRoute);
+  // Helper to get today's date in YYYY-MM-DD format
+  const getTodayDate = () => new Date().toISOString().split("T")[0];
 
-  const sourceImages = useQuery(api.jobs.getSourceImageUrls, jobId ? { jobId } : "skip");
-  const receipts = useQuery(api.receipts.listByJob, jobId ? { jobId } : "skip");
-  const payment = useQuery(api.payments.getByJob, jobId ? { jobId } : "skip");
+  // Get Convex mutation functions
+  const updateTaskConvex = useConvexMutationHook(api.jobs.updateTask);
+  const updateJobConvex = useConvexMutationHook(api.jobs.update);
+  const updateStatusConvex = useConvexMutationHook(api.jobs.updateStatus);
+  const removeJobConvex = useConvexMutationHook(api.jobs.remove);
+  const toggleRouteConvex = useConvexMutationHook(api.jobs.toggleSelectedForRoute);
+
+  // Optimistic mutation: Update task completion
+  const updateTaskMutation = useMutation({
+    mutationFn: (variables: { jobId: Id<"jobs">; taskId: string; completed: boolean }) =>
+      updateTaskConvex(variables),
+    onMutate: async (variables) => {
+      if (!jobQueryKey) return;
+      await queryClient.cancelQueries({ queryKey: jobQueryKey });
+      const previousJob = queryClient.getQueryData<Doc<"jobs">>(jobQueryKey);
+      queryClient.setQueryData<Doc<"jobs">>(jobQueryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          tasks: old.tasks?.map((t) =>
+            t.id === variables.taskId ? { ...t, completed: variables.completed } : t,
+          ),
+        };
+      });
+      return { previousJob };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousJob && jobQueryKey) {
+        queryClient.setQueryData(jobQueryKey, context.previousJob);
+      }
+      toast.error("Failed to update task", { description: String(err) });
+    },
+  });
+
+  // Optimistic mutation: Update notes
+  const updateNotesMutation = useMutation({
+    mutationFn: (variables: { jobId: Id<"jobs">; notes: string }) => updateJobConvex(variables),
+    onMutate: async (variables) => {
+      if (!jobQueryKey) return;
+      await queryClient.cancelQueries({ queryKey: jobQueryKey });
+      const previousJob = queryClient.getQueryData<Doc<"jobs">>(jobQueryKey);
+      queryClient.setQueryData<Doc<"jobs">>(jobQueryKey, (old) => {
+        if (!old) return old;
+        return { ...old, notes: variables.notes };
+      });
+      return { previousJob };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousJob && jobQueryKey) {
+        queryClient.setQueryData(jobQueryKey, context.previousJob);
+      }
+      toast.error("Failed to save notes", { description: String(err) });
+    },
+  });
+
+  // Optimistic mutation: Add access code
+  const addAccessCodeMutation = useMutation({
+    mutationFn: (variables: { jobId: Id<"jobs">; accessCodes: Array<string> }) =>
+      updateJobConvex(variables),
+    onMutate: async (variables) => {
+      if (!jobQueryKey) return;
+      await queryClient.cancelQueries({ queryKey: jobQueryKey });
+      const previousJob = queryClient.getQueryData<Doc<"jobs">>(jobQueryKey);
+      queryClient.setQueryData<Doc<"jobs">>(jobQueryKey, (old) => {
+        if (!old) return old;
+        return { ...old, accessCodes: variables.accessCodes };
+      });
+      return { previousJob };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousJob && jobQueryKey) {
+        queryClient.setQueryData(jobQueryKey, context.previousJob);
+      }
+      toast.error("Failed to add access code", { description: String(err) });
+    },
+  });
+
+  // Optimistic mutation: Update status
+  const updateStatusMutation = useMutation({
+    mutationFn: (variables: { jobId: Id<"jobs">; status: "pending" | "completed" | "paid" }) =>
+      updateStatusConvex(variables),
+    onMutate: async (variables) => {
+      if (!jobQueryKey) return;
+      await queryClient.cancelQueries({ queryKey: jobQueryKey });
+      const previousJob = queryClient.getQueryData<Doc<"jobs">>(jobQueryKey);
+      queryClient.setQueryData<Doc<"jobs">>(jobQueryKey, (old) => {
+        if (!old) return old;
+        const today = getTodayDate();
+        return {
+          ...old,
+          status: variables.status,
+          ...(variables.status === "completed" && !old.completedOn ? { completedOn: today } : {}),
+          ...(variables.status === "paid" && !old.paidOn ? { paidOn: today } : {}),
+        };
+      });
+      return { previousJob };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousJob && jobQueryKey) {
+        queryClient.setQueryData(jobQueryKey, context.previousJob);
+      }
+      toast.error("Failed to update status", { description: String(err) });
+    },
+  });
+
+  // Optimistic mutation: Toggle route selection
+  const toggleRouteMutation = useMutation({
+    mutationFn: (variables: { jobId: Id<"jobs">; selected: boolean }) =>
+      toggleRouteConvex(variables),
+    onMutate: async (variables) => {
+      if (!jobQueryKey) return;
+      await queryClient.cancelQueries({ queryKey: jobQueryKey });
+      const previousJob = queryClient.getQueryData<Doc<"jobs">>(jobQueryKey);
+      queryClient.setQueryData<Doc<"jobs">>(jobQueryKey, (old) => {
+        if (!old) return old;
+        return { ...old, selectedForRoute: variables.selected };
+      });
+      return { previousJob };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousJob && jobQueryKey) {
+        queryClient.setQueryData(jobQueryKey, context.previousJob);
+      }
+      toast.error("Failed to update route selection", { description: String(err) });
+    },
+  });
+
+  // Mutation: Remove job (no optimistic update needed, just close sheet)
+  const removeJobMutation = useMutation({
+    mutationFn: (variables: { jobId: Id<"jobs"> }) => removeJobConvex(variables),
+    onSuccess: () => {
+      onOpenChange(false);
+    },
+    onError: (err) => {
+      toast.error("Failed to delete job", { description: String(err) });
+    },
+  });
 
   if (!job) return null;
 
@@ -74,38 +222,37 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
   const totalTasks = job.tasks?.length ?? 0;
   const progressValue = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-  const handleTaskToggle = async (taskId: string, completed: boolean) => {
-    await updateTask({ jobId: job._id, taskId, completed });
+  const handleTaskToggle = (taskId: string, completed: boolean) => {
+    updateTaskMutation.mutate({ jobId: job._id, taskId, completed });
   };
 
-  const handleNotesBlur = async () => {
+  const handleNotesBlur = () => {
     if (notes !== (job.notes ?? "")) {
-      await updateJob({ jobId: job._id, notes });
+      updateNotesMutation.mutate({ jobId: job._id, notes });
     }
   };
 
-  const handleStatusChange = async (newStatus: "pending" | "completed") => {
+  const handleStatusChange = (newStatus: "pending" | "completed") => {
     const confirmMsg =
       newStatus === "completed" ?
         "Are you sure you want to mark this job as complete?"
       : "Are you sure you want to mark this job as pending?";
 
     if (confirm(confirmMsg)) {
-      await updateStatus({ jobId: job._id, status: newStatus });
+      updateStatusMutation.mutate({ jobId: job._id, status: newStatus });
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (confirm("Are you sure you want to delete this job?")) {
-      await removeJob({ jobId: job._id });
-      onOpenChange(false);
+      removeJobMutation.mutate({ jobId: job._id });
     }
   };
 
-  const handleAddAccessCode = async () => {
+  const handleAddAccessCode = () => {
     if (!newAccessCode.trim()) return;
     const currentCodes = job.accessCodes ?? [];
-    await updateJob({
+    addAccessCodeMutation.mutate({
       jobId: job._id,
       accessCodes: [...currentCodes, newAccessCode.trim()],
     });
@@ -213,7 +360,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                 <Switch
                   checked={job.selectedForRoute}
                   onCheckedChange={(checked) =>
-                    toggleRouteSelection({ jobId: job._id, selected: checked })
+                    toggleRouteMutation.mutate({ jobId: job._id, selected: checked })
                   }
                 />
               </div>

@@ -47,7 +47,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const { queryClient } = Route.useRouteContext();
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -69,7 +68,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body className="antialiased">
-        <TanStackQueryProvider queryClient={queryClient}>
+        <TanStackQueryProvider>
           <ThemeProvider>
             <Toaster position="top-center" richColors closeButton />
             <ClerkProvider>
