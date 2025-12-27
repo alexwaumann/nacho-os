@@ -1,5 +1,5 @@
-import { env } from "@/env";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { env } from "@/env";
 
 // Type definitions
 export type ImageInput = {

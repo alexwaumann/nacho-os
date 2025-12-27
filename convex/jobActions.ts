@@ -51,7 +51,7 @@ export const processJobAction = internalAction({
       const coordinates = await geocodeAddress(extractedJob.propertyAddress);
 
       // 6. Finalize Job
-      const tasks = (extractedJob.tasks || []).map((task, idx) => ({
+      const tasks = extractedJob.tasks.map((task, idx) => ({
         id: `task-${idx}-${Date.now()}`,
         category: task.category || "General",
         taskName: task.taskName,
