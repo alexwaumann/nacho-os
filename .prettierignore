@@ -1,4 +1,5 @@
 convex/_generated
 package-lock.json
 pnpm-lock.yaml
+src/routeTree.gen.ts
 yarn.lock
