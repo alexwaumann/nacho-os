@@ -19,7 +19,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { api } from "../../convex/_generated/api";
-import type { Doc } from "../../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,15 +39,14 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
-type Job = Doc<"jobs">;
-
 interface JobDetailSheetProps {
-  job: Job | null;
+  jobId: Id<"jobs"> | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps) {
+export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProps) {
+  const job = useQuery(api.jobs.get, jobId ? { jobId } : "skip");
   const [notes, setNotes] = useState("");
   const [newAccessCode, setNewAccessCode] = useState("");
 
@@ -57,7 +56,7 @@ export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps)
     } else {
       setNotes("");
     }
-  }, [job?._id, job?.notes]);
+  }, [jobId, job?.notes]);
 
   const updateTask = useMutation(api.jobs.updateTask);
   const updateJob = useMutation(api.jobs.update);
@@ -65,9 +64,9 @@ export function JobDetailSheet({ job, open, onOpenChange }: JobDetailSheetProps)
   const removeJob = useMutation(api.jobs.remove);
   const toggleRouteSelection = useMutation(api.jobs.toggleSelectedForRoute);
 
-  const sourceImages = useQuery(api.jobs.getSourceImageUrls, job ? { jobId: job._id } : "skip");
-  const receipts = useQuery(api.receipts.listByJob, job ? { jobId: job._id } : "skip");
-  const payment = useQuery(api.payments.getByJob, job ? { jobId: job._id } : "skip");
+  const sourceImages = useQuery(api.jobs.getSourceImageUrls, jobId ? { jobId } : "skip");
+  const receipts = useQuery(api.receipts.listByJob, jobId ? { jobId } : "skip");
+  const payment = useQuery(api.payments.getByJob, jobId ? { jobId } : "skip");
 
   if (!job) return null;
 

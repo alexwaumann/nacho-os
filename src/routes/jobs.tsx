@@ -7,7 +7,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../convex/_generated/api";
 
-import type { Doc, Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 import JobCard from "@/components/JobCard";
 import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,12 +23,10 @@ export const Route = createFileRoute("/jobs")({
   component: JobsPage,
 });
 
-type Job = Doc<"jobs">;
-
 function JobsPage() {
   const { filter = "pending" } = Route.useSearch();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<Id<"jobs"> | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const jobs = useQuery(api.jobs.list, { status: filter });
@@ -46,8 +44,8 @@ function JobsPage() {
     job.address.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleJobClick = (job: Job) => {
-    setSelectedJob(job);
+  const handleJobClick = (jobId: Id<"jobs">) => {
+    setSelectedJobId(jobId);
     setSheetOpen(true);
   };
 
@@ -57,7 +55,7 @@ function JobsPage() {
 
   return (
     <div className="space-y-6">
-      <JobDetailSheet job={selectedJob} open={sheetOpen} onOpenChange={setSheetOpen} />
+      <JobDetailSheet jobId={selectedJobId} open={sheetOpen} onOpenChange={setSheetOpen} />
 
       {/* Tab Navigation */}
       <div className="bg-muted p-1.5 rounded-2xl flex items-center justify-between">
@@ -136,7 +134,7 @@ function JobsPage() {
         : filteredJobs && filteredJobs.length > 0 ?
           filteredJobs.map((job) => (
             <div key={job._id} className="relative">
-              <JobCard job={job} onClick={() => handleJobClick(job)} />
+              <JobCard job={job} onClick={() => handleJobClick(job._id)} />
               {filter === "pending" && (
                 <button
                   onClick={(e) => {
