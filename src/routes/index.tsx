@@ -76,6 +76,30 @@ function YouPage() {
     <div className="space-y-6">
       <AddJobModal />
 
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-6">
+        <Card
+          onClick={handleAddJobClick}
+          className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group"
+        >
+          <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <Plus size={32} strokeWidth={3} />
+            </div>
+            <span className="font-bold text-foreground">Add Job</span>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group">
+          <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+              <Scan size={32} strokeWidth={3} />
+            </div>
+            <span className="font-bold text-foreground">Add Check</span>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Processing Queue */}
       {processingQueue.length > 0 && (
         <div className="space-y-3">
@@ -114,30 +138,6 @@ function YouPage() {
           </div>
         </div>
       )}
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-6">
-        <Card
-          onClick={handleAddJobClick}
-          className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group"
-        >
-          <CardContent className="p-6 flex flex-col items-center justify-center gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-              <Plus size={32} strokeWidth={3} />
-            </div>
-            <span className="font-bold text-foreground">Add Job</span>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group">
-          <CardContent className="p-6 flex flex-col items-center justify-center gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-              <Scan size={32} strokeWidth={3} />
-            </div>
-            <span className="font-bold text-foreground">Add Check</span>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Today's Plan */}
       <div className="space-y-4">
