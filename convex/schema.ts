@@ -126,6 +126,18 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_status", ["userId", "status"]),
 
+  // Receipt processing queue for background extraction
+  receiptProcessingQueue: defineTable({
+    userId: v.id("users"),
+    jobId: v.id("jobs"),
+    imageStorageId: v.id("_storage"),
+    status: v.union(v.literal("queued"), v.literal("processing"), v.literal("failed")),
+    error: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_job", ["jobId"])
+    .index("by_user_status", ["userId", "status"]),
+
   // Route totals - stores aggregated route metrics per user
   routeTotals: defineTable({
     userId: v.id("users"),

@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Key,
+  Loader2,
   MapPin,
   MoreHorizontal,
   Package,
@@ -18,7 +19,7 @@ import {
   Trash2,
   Wrench,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
@@ -41,6 +42,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
 
 interface JobDetailSheetProps {
   jobId: Id<"jobs"> | null;
@@ -52,6 +54,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
   const [newAccessCode, setNewAccessCode] = useState("");
+  const receiptInputRef = useRef<HTMLInputElement>(null);
 
   // Query key for the job - used for optimistic updates
   const jobQueryKey = jobId ? convexQuery(api.jobs.get, { jobId }).queryKey : null;
@@ -74,6 +77,22 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
     ...convexQuery(api.payments.getByJob, { jobId: jobId! }),
     enabled: !!jobId,
   });
+  const { data: receiptQueue } = useQuery({
+    ...convexQuery(api.receipts.listQueueByJob, { jobId: jobId! }),
+    enabled: !!jobId,
+  });
+
+  // Receipt upload hook
+  const { handleAddReceipt, isUploading } = useAddReceipt(jobId);
+  const dismissQueueItemMutation = useConvexMutationHook(api.receipts.dismissQueueItem);
+
+  const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleAddReceipt(file);
+      e.target.value = ""; // Reset input for next selection
+    }
+  };
 
   useEffect(() => {
     if (job?.notes) {
@@ -500,11 +519,67 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                     variant="ghost"
                     size="sm"
                     className="text-[10px] font-black uppercase h-8 px-3 hover:bg-primary/5 text-primary rounded-xl"
+                    onClick={() => receiptInputRef.current?.click()}
+                    disabled={isUploading}
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Add Receipt
+                    {isUploading ?
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    : <Plus className="w-3.5 h-3.5 mr-1.5" />}
+                    {isUploading ? "Uploading..." : "Add Receipt"}
                   </Button>
                 </div>
+
+                {/* Hidden file input for receipt capture */}
+                <input
+                  type="file"
+                  ref={receiptInputRef}
+                  accept="image/*,application/pdf"
+                  capture="environment"
+                  onChange={handleReceiptFileChange}
+                  className="hidden"
+                />
+
+                {/* Processing queue items */}
+                {receiptQueue && receiptQueue.length > 0 && (
+                  <div className="space-y-3">
+                    {receiptQueue.map((item) => (
+                      <Card
+                        key={item._id}
+                        className="overflow-hidden border-border/50 bg-muted/20 shadow-none rounded-[1.5rem]"
+                      >
+                        <div className="p-4 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {item.status === "failed" ?
+                              <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+                            : <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-bold">
+                                {item.status === "failed" ?
+                                  "Processing failed"
+                                : "Processing receipt..."}
+                              </div>
+                              {item.status === "failed" && item.error && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {item.error}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {item.status === "failed" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs shrink-0"
+                              onClick={() => dismissQueueItemMutation({ queueId: item._id })}
+                            >
+                              Dismiss
+                            </Button>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
 
                 {receipts && receipts.length > 0 ?
                   <div className="space-y-3">
@@ -513,7 +588,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                         key={r._id}
                         className="overflow-hidden border-border/50 bg-muted/20 shadow-none rounded-[1.5rem]"
                       >
-                        <div className="p-4 flex items-center justify-between gap-4">
+                        <div className="px-6 flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-black truncate">{r.storeName}</div>
                             <div className="text-[10px] font-medium text-muted-foreground truncate">
@@ -523,7 +598,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                           </div>
                           <div className="text-right shrink-0">
                             <div className="text-sm font-black text-destructive">
-                              -${r.total.toFixed(2)}
+                              ${r.total.toFixed(2)}
                             </div>
                             {r.imageUrl && (
                               <Button
@@ -548,9 +623,11 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                       </span>
                     </div>
                   </div>
-                : <p className="text-xs text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
-                    No receipts added yet.
-                  </p>
+                : (!receiptQueue || receiptQueue.length === 0) && (
+                    <p className="text-xs text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
+                      No receipts added yet.
+                    </p>
+                  )
                 }
               </div>
 

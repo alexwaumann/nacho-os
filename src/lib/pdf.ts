@@ -122,3 +122,22 @@ export async function processFileToImages(file: File): Promise<Array<ImageData>>
   const compressed = await compressImage(file);
   return [compressed];
 }
+
+/**
+ * Process a receipt file (PDF or image) - returns single image with higher resolution
+ * PDFs: only first page is extracted
+ * Images: compressed at higher quality for text clarity
+ */
+export async function processReceiptFile(file: File): Promise<ImageData> {
+  if (file.type === "application/pdf") {
+    // Convert PDF and take only the first page
+    const images = await convertPdfToImages(file);
+    if (images.length === 0) {
+      throw new Error("PDF has no pages");
+    }
+    return images[0];
+  }
+
+  // For images, use higher resolution settings (1536px, 0.85 quality) for text-heavy receipts
+  return compressImage(file, 1536, 1536, 0.85);
+}
