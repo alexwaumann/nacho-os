@@ -472,15 +472,22 @@ export function isLocationNearby(
 
 /**
  * Generate a Google Maps navigation URL
+ *
+ * @param waypoints - Array of job waypoints to visit
+ * @param useCurrentLocation - If true, uses device's current location as origin
+ * @param homeCoordinates - Optional home address to use as final destination
  */
 export function generateGoogleMapsUrl(
   waypoints: Array<{ coordinates?: Coordinates }>,
   useCurrentLocation: boolean = true,
+  homeCoordinates?: Coordinates,
 ): string | null {
   const validPoints = waypoints.filter(
     (p): p is { coordinates: Coordinates } => p.coordinates !== undefined,
   );
-  if (validPoints.length < 2) return null;
+
+  // Need at least 1 waypoint (will navigate from current location to that point)
+  if (validPoints.length === 0) return null;
 
   let origin = "";
   let destination = "";
@@ -489,15 +496,31 @@ export function generateGoogleMapsUrl(
   if (useCurrentLocation) {
     // Leave origin blank for "My Location"
     origin = "";
-    waypointsList = validPoints.slice(1, -1);
-    const end = validPoints[validPoints.length - 1];
-    destination = `${end.coordinates.lat},${end.coordinates.lng}`;
+
+    if (homeCoordinates) {
+      // Home address is set - all jobs are waypoints, home is final destination
+      waypointsList = validPoints;
+      destination = `${homeCoordinates.lat},${homeCoordinates.lng}`;
+    } else {
+      // No home address - all jobs except last are waypoints, last job is destination
+      waypointsList = validPoints.slice(0, -1);
+      const end = validPoints[validPoints.length - 1];
+      destination = `${end.coordinates.lat},${end.coordinates.lng}`;
+    }
   } else {
     const start = validPoints[0];
-    const end = validPoints[validPoints.length - 1];
-    origin = `${start.coordinates.lat},${start.coordinates.lng}`;
-    destination = `${end.coordinates.lat},${end.coordinates.lng}`;
-    waypointsList = validPoints.slice(1, -1);
+    if (homeCoordinates) {
+      // First point is origin, all others are waypoints, home is destination
+      origin = `${start.coordinates.lat},${start.coordinates.lng}`;
+      waypointsList = validPoints.slice(1);
+      destination = `${homeCoordinates.lat},${homeCoordinates.lng}`;
+    } else {
+      // First point is origin, middle points are waypoints, last is destination
+      origin = `${start.coordinates.lat},${start.coordinates.lng}`;
+      const end = validPoints[validPoints.length - 1];
+      destination = `${end.coordinates.lat},${end.coordinates.lng}`;
+      waypointsList = validPoints.slice(1, -1);
+    }
   }
 
   let url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;

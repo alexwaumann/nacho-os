@@ -20,6 +20,7 @@ type Job = Doc<"jobs">;
 function MapPage() {
   const apiKey = env.VITE_GOOGLE_MAPS_API_KEY;
   const selectedJobs = useQuery(api.jobs.getSelectedForRoute) ?? [];
+  const currentUser = useQuery(api.users.getCurrentUser);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Get user location
@@ -45,7 +46,11 @@ function MapPage() {
         coordinates: j.coordinates!,
       }));
 
-    const url = generateGoogleMapsUrl(waypoints, !!userLocation);
+    const url = generateGoogleMapsUrl(
+      waypoints,
+      !!userLocation,
+      currentUser?.homeCoordinates ?? undefined,
+    );
     if (url) {
       window.open(url, "_blank");
     }

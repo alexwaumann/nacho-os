@@ -56,6 +56,7 @@ function YouPage() {
   const routeTotals = useQuery(api.jobs.getRouteTotals);
   const stats = useQuery(api.jobs.getStats);
   const processingQueue = useQuery(api.jobs.listQueue) ?? [];
+  const currentUser = useQuery(api.users.getCurrentUser);
 
   // Edit Route Modal state
   const [editRouteOpen, setEditRouteOpen] = useState(false);
@@ -104,7 +105,7 @@ function YouPage() {
         coordinates: j.coordinates!,
       }));
 
-    const url = generateGoogleMapsUrl(waypoints, true);
+    const url = generateGoogleMapsUrl(waypoints, true, currentUser?.homeCoordinates ?? undefined);
     if (url) {
       window.open(url, "_blank");
     }
