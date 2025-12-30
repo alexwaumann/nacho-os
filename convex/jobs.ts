@@ -247,6 +247,197 @@ export const toggleSelectedForRoute = mutation({
 });
 
 /**
+ * Batch update route selection for multiple jobs
+ */
+export const batchUpdateRouteSelection = mutation({
+  args: {
+    selections: v.array(
+      v.object({
+        jobId: v.id("jobs"),
+        selected: v.boolean(),
+        routeOrder: v.optional(v.number()),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
+
+    for (const selection of args.selections) {
+      const job = await ctx.db.get(selection.jobId);
+      if (!job || job.userId !== userId) {
+        throw new Error("Job not found or unauthorized");
+      }
+
+      await ctx.db.patch(selection.jobId, {
+        selectedForRoute: selection.selected,
+        routeOrder: selection.selected ? selection.routeOrder : undefined,
+      });
+    }
+
+    return true;
+  },
+});
+
+/**
+ * Update route order for multiple jobs (for drag-and-drop reordering)
+ */
+export const updateRouteOrder = mutation({
+  args: {
+    orderedJobIds: v.array(v.id("jobs")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
+
+    for (let i = 0; i < args.orderedJobIds.length; i++) {
+      const jobId = args.orderedJobIds[i];
+      const job = await ctx.db.get(jobId);
+      if (!job || job.userId !== userId) {
+        throw new Error("Job not found or unauthorized");
+      }
+
+      await ctx.db.patch(jobId, { routeOrder: i });
+    }
+
+    return true;
+  },
+});
+
+/**
+ * Clear all jobs from route and reset route totals
+ */
+export const clearRoute = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getUserId(ctx);
+
+    // Get all jobs selected for route
+    const selectedJobs = await ctx.db
+      .query("jobs")
+      .withIndex("by_user_selected", (q: any) =>
+        q.eq("userId", userId).eq("selectedForRoute", true),
+      )
+      .collect();
+
+    // Clear selection and route order for all
+    for (const job of selectedJobs) {
+      await ctx.db.patch(job._id, {
+        selectedForRoute: false,
+        routeOrder: undefined,
+        travelTime: undefined,
+        distance: undefined,
+        travelTimeValue: undefined,
+        distanceValue: undefined,
+      });
+    }
+
+    // Clear route totals
+    const existingTotals = await ctx.db
+      .query("routeTotals")
+      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .unique();
+
+    if (existingTotals) {
+      await ctx.db.delete(existingTotals._id);
+    }
+
+    return true;
+  },
+});
+
+/**
+ * Update route totals for the user
+ */
+export const updateRouteTotals = mutation({
+  args: {
+    totalDistance: v.string(),
+    totalDuration: v.string(),
+    totalDistanceValue: v.number(),
+    totalDurationValue: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
+
+    const existingTotals = await ctx.db
+      .query("routeTotals")
+      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .unique();
+
+    if (existingTotals) {
+      await ctx.db.patch(existingTotals._id, {
+        totalDistance: args.totalDistance,
+        totalDuration: args.totalDuration,
+        totalDistanceValue: args.totalDistanceValue,
+        totalDurationValue: args.totalDurationValue,
+      });
+    } else {
+      await ctx.db.insert("routeTotals", {
+        userId,
+        totalDistance: args.totalDistance,
+        totalDuration: args.totalDuration,
+        totalDistanceValue: args.totalDistanceValue,
+        totalDurationValue: args.totalDurationValue,
+      });
+    }
+
+    return true;
+  },
+});
+
+/**
+ * Delete route totals for the user (without affecting job selections)
+ */
+export const deleteRouteTotals = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getUserId(ctx);
+
+    const existingTotals = await ctx.db
+      .query("routeTotals")
+      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .unique();
+
+    if (existingTotals) {
+      await ctx.db.delete(existingTotals._id);
+    }
+
+    return true;
+  },
+});
+
+/**
+ * Batch update route metrics for multiple jobs
+ */
+export const batchUpdateRouteMetrics = mutation({
+  args: {
+    updates: v.array(
+      v.object({
+        jobId: v.id("jobs"),
+        travelTime: v.optional(v.string()),
+        distance: v.optional(v.string()),
+        travelTimeValue: v.optional(v.number()),
+        distanceValue: v.optional(v.number()),
+        routeOrder: v.optional(v.number()),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
+
+    for (const metricsUpdate of args.updates) {
+      const job = await ctx.db.get(metricsUpdate.jobId);
+      if (!job || job.userId !== userId) {
+        throw new Error("Job not found or unauthorized");
+      }
+
+      const { jobId, ...metrics } = metricsUpdate;
+      await ctx.db.patch(jobId, metrics);
+    }
+
+    return true;
+  },
+});
+
+/**
  * Update job status
  */
 export const updateStatus = mutation({
@@ -509,7 +700,7 @@ export const get = query({
 });
 
 /**
- * Get jobs selected for route planning
+ * Get jobs selected for route planning (sorted by routeOrder)
  */
 export const getSelectedForRoute = query({
   args: {},
@@ -529,7 +720,36 @@ export const getSelectedForRoute = query({
       .withIndex("by_user_selected", (q) => q.eq("userId", user._id).eq("selectedForRoute", true))
       .collect();
 
-    return jobs;
+    // Sort by routeOrder (ascending), put undefined at end
+    return jobs.sort((a, b) => {
+      if (a.routeOrder === undefined && b.routeOrder === undefined) return 0;
+      if (a.routeOrder === undefined) return 1;
+      if (b.routeOrder === undefined) return -1;
+      return a.routeOrder - b.routeOrder;
+    });
+  },
+});
+
+/**
+ * Get route totals for the current user
+ */
+export const getRouteTotals = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) return null;
+
+    return await ctx.db
+      .query("routeTotals")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
   },
 });
 

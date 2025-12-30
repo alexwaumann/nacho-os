@@ -78,6 +78,7 @@ export default defineSchema({
     distance: v.optional(v.string()),
     travelTimeValue: v.optional(v.number()),
     distanceValue: v.optional(v.number()),
+    routeOrder: v.optional(v.number()),
 
     // Weather
     weather: v.optional(weatherDataValidator),
@@ -124,4 +125,13 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_status", ["userId", "status"]),
+
+  // Route totals - stores aggregated route metrics per user
+  routeTotals: defineTable({
+    userId: v.id("users"),
+    totalDistance: v.string(),
+    totalDuration: v.string(),
+    totalDistanceValue: v.number(),
+    totalDurationValue: v.number(),
+  }).index("by_user", ["userId"]),
 });

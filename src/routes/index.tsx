@@ -1,29 +1,36 @@
 import { useMutation, useQuery } from "convex/react";
+import { Reorder, useDragControls } from "framer-motion";
 import {
   AlertCircle,
   ClipboardList,
   GripVertical,
   Loader2,
-  MapPin,
   Navigation,
   Plus,
   Scan,
   X,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../convex/_generated/api";
 
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../convex/_generated/dataModel";
+import { JobDetailSheet } from "@/components/JobDetailSheet";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
+import { RouteJobCard } from "@/features/jobs/components/RouteJobCard";
+import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
+import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
 import { AddJobModal } from "@/features/jobs/components/AddJobModal";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
 const searchSchema = z.object({
   "new-job": z.string().optional(),
+  job: z.string().optional(),
 });
 
 export const Route = createFileRoute("/")({
@@ -31,12 +38,14 @@ export const Route = createFileRoute("/")({
   component: YouPage,
 });
 
+type Job = Doc<"jobs">;
+
 function YouPage() {
   const navigate = Route.useNavigate();
+  const { job: jobIdParam } = Route.useSearch();
 
   // Sync user on first load
   const getOrCreateUser = useMutation(api.users.getOrCreateUser);
-  const toggleSelectedForRoute = useMutation(api.jobs.toggleSelectedForRoute);
   const removeQueueItem = useMutation(api.jobs.removeQueueItem);
 
   useEffect(() => {
@@ -44,17 +53,46 @@ function YouPage() {
   }, [getOrCreateUser]);
 
   const selectedJobs = useQuery(api.jobs.getSelectedForRoute) ?? [];
+  const routeTotals = useQuery(api.jobs.getRouteTotals);
   const stats = useQuery(api.jobs.getStats);
   const processingQueue = useQuery(api.jobs.listQueue) ?? [];
+
+  // Edit Route Modal state
+  const [editRouteOpen, setEditRouteOpen] = useState(false);
+
+  // Job Detail Sheet state
+  const [selectedJobId, setSelectedJobId] = useState<Id<"jobs"> | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Route optimization hook
+  const { isOptimizing, optimizeAndSaveRoute, recalculateRouteMetrics, clearRoute } =
+    useRouteOptimization();
+
+  // Local state for drag reordering
+  const [localJobOrder, setLocalJobOrder] = useState<Array<Job>>(selectedJobs);
+  const prevJobIdsRef = useRef<string>("");
+
+  // Sync local order with server data (only when job IDs actually change)
+  useEffect(() => {
+    const currentIds = selectedJobs.map((j) => j._id).join(",");
+    if (currentIds !== prevJobIdsRef.current) {
+      prevJobIdsRef.current = currentIds;
+      setLocalJobOrder(selectedJobs);
+    }
+  }, [selectedJobs]);
+
+  // Handle URL-based job detail sheet
+  useEffect(() => {
+    if (jobIdParam) {
+      setSelectedJobId(jobIdParam as Id<"jobs">);
+      setSheetOpen(true);
+    }
+  }, [jobIdParam]);
 
   const handleAddJobClick = () => {
     navigate({
       search: (prev) => ({ ...prev, "new-job": "true" }),
     });
-  };
-
-  const handleRemoveFromRoute = async (jobId: Id<"jobs">) => {
-    await toggleSelectedForRoute({ jobId, selected: false });
   };
 
   const handleNavigate = () => {
@@ -72,9 +110,59 @@ function YouPage() {
     }
   };
 
+  const handleJobClick = (jobId: Id<"jobs">) => {
+    setSelectedJobId(jobId);
+    setSheetOpen(true);
+    navigate({
+      search: (prev) => ({ ...prev, job: jobId }),
+    });
+  };
+
+  const handleSheetClose = (open: boolean) => {
+    setSheetOpen(open);
+    if (!open) {
+      navigate({
+        search: (prev) => {
+          const { job: _, ...rest } = prev;
+          return rest;
+        },
+      });
+    }
+  };
+
+  const handleEditRouteDone = async (selectedJobIds: Array<Id<"jobs">>) => {
+    try {
+      await optimizeAndSaveRoute(selectedJobIds);
+    } catch (error) {
+      console.error("Route optimization error:", error);
+    } finally {
+      // Always close the modal - errors are shown via toast
+      setEditRouteOpen(false);
+    }
+  };
+
+  const handleReorderEnd = () => {
+    // Only recalculate if order actually changed
+    const newOrderIds = localJobOrder.map((j) => j._id);
+    const originalOrderIds = selectedJobs.map((j) => j._id);
+
+    const orderChanged = newOrderIds.some((id, index) => id !== originalOrderIds[index]);
+
+    if (orderChanged && newOrderIds.length >= 2) {
+      recalculateRouteMetrics(newOrderIds);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AddJobModal />
+      <JobDetailSheet jobId={selectedJobId} open={sheetOpen} onOpenChange={handleSheetClose} />
+      <EditRouteModal
+        open={editRouteOpen}
+        onOpenChange={setEditRouteOpen}
+        onDone={handleEditRouteDone}
+        isOptimizing={isOptimizing}
+      />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-6">
@@ -141,68 +229,81 @@ function YouPage() {
 
       {/* Today's Plan */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-foreground">
             <ClipboardList size={24} className="text-muted-foreground" />
             <h2 className="text-xl font-bold tracking-tight">Today's Plan</h2>
           </div>
-          {selectedJobs.length > 0 && (
-            <button
-              onClick={handleNavigate}
-              className="flex items-center gap-2 text-sm font-bold text-primary hover:underline"
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditRouteOpen(true)}
+              className="text-xs font-bold rounded-full px-4"
             >
-              <Navigation size={16} />
-              Navigate
-            </button>
-          )}
+              Edit Route
+            </Button>
+            {selectedJobs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearRoute}
+                className="text-xs font-bold rounded-full px-4 text-destructive border-destructive/30 hover:bg-destructive/10"
+              >
+                Clear Route
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Route Summary */}
+        {routeTotals && selectedJobs.length >= 2 && (
+          <RouteSummaryCard
+            totalDistance={routeTotals.totalDistance}
+            totalDuration={routeTotals.totalDuration}
+          />
+        )}
+
+        {/* Navigate Button */}
+        {selectedJobs.length > 0 && (
+          <Button
+            onClick={handleNavigate}
+            variant="secondary"
+            className="w-full h-12 font-bold rounded-xl gap-2"
+          >
+            <Navigation size={18} />
+            Navigate in Google Maps
+          </Button>
+        )}
 
         {selectedJobs.length === 0 ?
           <Card className="border-2 border-dashed border-border bg-card/50 shadow-none rounded-2xl">
             <CardContent className="py-12 flex flex-col items-center justify-center text-center gap-2">
               <p className="text-muted-foreground font-medium">No stops planned.</p>
               <button
-                onClick={() => navigate({ to: "/jobs" })}
+                onClick={() => setEditRouteOpen(true)}
                 className="text-primary font-bold hover:underline text-sm"
               >
                 Tap to add stops +
               </button>
             </CardContent>
           </Card>
-        : <div className="space-y-3">
-            {selectedJobs.map((job, index) => (
-              <Card
+        : <Reorder.Group
+            axis="y"
+            values={localJobOrder}
+            onReorder={setLocalJobOrder}
+            className="space-y-3"
+          >
+            {localJobOrder.map((job, index) => (
+              <DraggableRouteCard
                 key={job._id}
-                className="border border-border shadow-sm bg-card overflow-hidden"
-              >
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="cursor-grab text-muted-foreground">
-                    <GripVertical size={20} />
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shrink-0">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-foreground text-sm uppercase truncate">
-                      <MapPin className="inline-block w-3 h-3 mr-1 -mt-0.5" />
-                      {job.address}
-                    </h4>
-                    {job.travelTime && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {job.travelTime} • {job.distance}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleRemoveFromRoute(job._id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-2"
-                  >
-                    ✕
-                  </button>
-                </CardContent>
-              </Card>
+                job={job}
+                index={index}
+                onClick={() => handleJobClick(job._id)}
+                onDragEnd={handleReorderEnd}
+              />
             ))}
-          </div>
+          </Reorder.Group>
         }
       </div>
 
@@ -236,5 +337,47 @@ function YouPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Draggable route card component using framer-motion Reorder
+interface DraggableRouteCardProps {
+  job: Job;
+  index: number;
+  onClick: () => void;
+  onDragEnd: () => void;
+}
+
+function DraggableRouteCard({ job, index, onClick, onDragEnd }: DraggableRouteCardProps) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={job}
+      dragListener={false}
+      dragControls={dragControls}
+      onDragEnd={onDragEnd}
+      className="flex items-stretch gap-0 bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
+      whileDrag={{ scale: 1.02, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
+    >
+      {/* Drag Handle - Touch-friendly area */}
+      <div
+        onPointerDown={(e) => dragControls.start(e)}
+        className="flex flex-col items-center justify-center px-3 bg-muted/30 cursor-grab active:cursor-grabbing touch-none select-none"
+      >
+        <GripVertical size={20} className="text-muted-foreground" />
+        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm mt-2">
+          {index + 1}
+        </div>
+      </div>
+
+      {/* Card Content - Clickable area */}
+      <div
+        className="flex-1 cursor-pointer active:scale-[0.99] transition-transform"
+        onClick={onClick}
+      >
+        <RouteJobCard job={job} className="border-0 shadow-none rounded-none" />
+      </div>
+    </Reorder.Item>
   );
 }
