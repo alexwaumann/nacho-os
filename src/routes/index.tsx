@@ -1,4 +1,6 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { Reorder, useDragControls } from "framer-motion";
 import {
   AlertCircle,
@@ -52,11 +54,11 @@ function YouPage() {
     getOrCreateUser().catch(console.error);
   }, [getOrCreateUser]);
 
-  const selectedJobs = useQuery(api.jobs.getSelectedForRoute) ?? [];
-  const routeTotals = useQuery(api.jobs.getRouteTotals);
-  const stats = useQuery(api.jobs.getStats);
-  const processingQueue = useQuery(api.jobs.listQueue) ?? [];
-  const currentUser = useQuery(api.users.getCurrentUser);
+  const { data: selectedJobs = [] } = useQuery(convexQuery(api.jobs.getSelectedForRoute, {}));
+  const { data: routeTotals } = useQuery(convexQuery(api.jobs.getRouteTotals, {}));
+  const { data: stats } = useQuery(convexQuery(api.jobs.getStats, {}));
+  const { data: processingQueue = [] } = useQuery(convexQuery(api.jobs.listQueue, {}));
+  const { data: currentUser } = useQuery(convexQuery(api.users.getCurrentUser, {}));
 
   // Edit Route Modal state
   const [editRouteOpen, setEditRouteOpen] = useState(false);

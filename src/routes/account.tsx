@@ -1,4 +1,6 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { LogOut, MapPin, Monitor, Moon, Navigation, Pencil, Sun, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -19,7 +21,7 @@ export const Route = createFileRoute("/account")({
 
 function AccountPage() {
   const { user } = useUser();
-  const convexUser = useQuery(api.users.getCurrentUser);
+  const { data: convexUser } = useQuery(convexQuery(api.users.getCurrentUser, {}));
   const updateHomeAddress = useMutation(api.users.updateHomeAddress);
 
   const { theme, setTheme } = useTheme();

@@ -1,12 +1,12 @@
 import { APIProvider, AdvancedMarker, Map } from "@vis.gl/react-google-maps";
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { LocateFixed, Map as MapIcon, Navigation, Route as RouteIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../convex/_generated/api";
-import type { Doc } from "../../convex/_generated/dataModel";
 import { Card, CardContent } from "@/components/ui/card";
 import { env } from "@/env";
 import { generateGoogleMapsUrl } from "@/server/geo";
@@ -15,12 +15,10 @@ export const Route = createFileRoute("/map")({
   component: MapPage,
 });
 
-type Job = Doc<"jobs">;
-
 function MapPage() {
   const apiKey = env.VITE_GOOGLE_MAPS_API_KEY;
-  const selectedJobs = useQuery(api.jobs.getSelectedForRoute) ?? [];
-  const currentUser = useQuery(api.users.getCurrentUser);
+  const { data: selectedJobs = [] } = useQuery(convexQuery(api.jobs.getSelectedForRoute, {}));
+  const { data: currentUser } = useQuery(convexQuery(api.users.getCurrentUser, {}));
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Get user location

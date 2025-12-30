@@ -1,28 +1,63 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { ConvexQueryClient } from "@convex-dev/react-query";
 
 import { env } from "@/env";
 
-// Create QueryClient singleton
-export const queryClient = new QueryClient();
+// 7 days in milliseconds
+const SEVEN_DAYS = 1000 * 60 * 60 * 24 * 7;
 
-// Create ConvexQueryClient with queryClient passed in constructor
-// This connects them immediately without needing a separate connect() call
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: SEVEN_DAYS,
+      staleTime: Infinity,
+    },
+  },
+});
+
 export const convexQueryClient = new ConvexQueryClient(env.VITE_CONVEX_URL, {
   queryClient,
 });
 
-// Set Convex-specific defaults:
 // - hashFn: Custom hash for Convex queries, falls back to default for others
 // - queryFn: Required for convexQuery() to work; non-Convex queries must provide their own
-// Note: staleTime is not set globally - convexQuery() already includes staleTime: Infinity per-query
 queryClient.setDefaultOptions({
   queries: {
     queryKeyHashFn: convexQueryClient.hashFn(),
     queryFn: convexQueryClient.queryFn(),
+    gcTime: SEVEN_DAYS,
+    staleTime: Infinity,
   },
 });
 
+const persister =
+  typeof window !== "undefined" ?
+    createSyncStoragePersister({
+      storage: window.localStorage,
+      key: "nacho-query-cache",
+    })
+  : undefined;
+
 export function Provider({ children }: { children: React.ReactNode }) {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  // SSR fallback - no persistence available
+  if (!persister) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  }
+
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: SEVEN_DAYS,
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => query.state.status === "success",
+        },
+      }}
+    >
+      {children}
+    </PersistQueryClientProvider>
+  );
 }

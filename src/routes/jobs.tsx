@@ -1,4 +1,6 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { Plus, Route as RouteIcon, Search } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
@@ -12,7 +14,6 @@ import JobCard from "@/components/JobCard";
 import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const jobsSearchSchema = z.object({
   filter: z.enum(["pending", "completed", "paid"]).optional().catch("pending"),
@@ -29,8 +30,8 @@ function JobsPage() {
   const [selectedJobId, setSelectedJobId] = useState<Id<"jobs"> | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const jobs = useQuery(api.jobs.list, { status: filter });
-  const stats = useQuery(api.jobs.getStats);
+  const { data: jobs } = useQuery(convexQuery(api.jobs.list, { status: filter }));
+  const { data: stats } = useQuery(convexQuery(api.jobs.getStats, {}));
   const toggleSelectedForRoute = useMutation(api.jobs.toggleSelectedForRoute);
 
   const tabs = [
@@ -124,14 +125,7 @@ function JobsPage() {
 
       {/* Jobs List */}
       <div className="space-y-4">
-        {jobs === undefined ?
-          // Loading state
-          <>
-            <Skeleton className="h-40 rounded-2xl" />
-            <Skeleton className="h-40 rounded-2xl" />
-            <Skeleton className="h-40 rounded-2xl" />
-          </>
-        : filteredJobs && filteredJobs.length > 0 ?
+        {filteredJobs && filteredJobs.length > 0 ?
           filteredJobs.map((job) => (
             <div key={job._id} className="relative">
               <JobCard job={job} onClick={() => handleJobClick(job._id)} />

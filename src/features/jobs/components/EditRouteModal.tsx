@@ -1,4 +1,5 @@
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { Check, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -19,7 +20,7 @@ interface EditRouteModalProps {
 }
 
 export function EditRouteModal({ open, onOpenChange, onDone, isOptimizing }: EditRouteModalProps) {
-  const allPendingJobs = useQuery(api.jobs.list, { status: "pending" }) ?? [];
+  const { data: allPendingJobs = [] } = useQuery(convexQuery(api.jobs.list, { status: "pending" }));
   const [selectedIds, setSelectedIds] = useState<Set<Id<"jobs">>>(new Set());
 
   // Initialize selection from jobs that are already selected for route

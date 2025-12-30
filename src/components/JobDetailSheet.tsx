@@ -1,4 +1,4 @@
-import { useMutation as useConvexMutationHook, useQuery as useConvexQuery } from "convex/react";
+import { useMutation as useConvexMutationHook } from "convex/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import {
@@ -62,10 +62,18 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
     enabled: !!jobId,
   });
 
-  // Other queries still use Convex directly (no mutations on these)
-  const sourceImages = useConvexQuery(api.jobs.getSourceImageUrls, jobId ? { jobId } : "skip");
-  const receipts = useConvexQuery(api.receipts.listByJob, jobId ? { jobId } : "skip");
-  const payment = useConvexQuery(api.payments.getByJob, jobId ? { jobId } : "skip");
+  const { data: sourceImages } = useQuery({
+    ...convexQuery(api.jobs.getSourceImageUrls, { jobId: jobId! }),
+    enabled: !!jobId,
+  });
+  const { data: receipts } = useQuery({
+    ...convexQuery(api.receipts.listByJob, { jobId: jobId! }),
+    enabled: !!jobId,
+  });
+  const { data: payment } = useQuery({
+    ...convexQuery(api.payments.getByJob, { jobId: jobId! }),
+    enabled: !!jobId,
+  });
 
   useEffect(() => {
     if (job?.notes) {
