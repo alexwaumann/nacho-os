@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import type { Coordinates, RouteWaypoint } from "@/server/geo";
-import { optimizeRoute } from "@/server/geo";
+import { calculateRouteMetrics, geocodeAddress, optimizeRoute } from "@/server/geo";
 
 type Job = Doc<"jobs">;
 
@@ -18,8 +18,10 @@ export function useRouteOptimization() {
   const deleteRouteTotals = useMutation(api.jobs.deleteRouteTotals);
   const updateRouteOrder = useMutation(api.jobs.updateRouteOrder);
   const clearRoute = useMutation(api.jobs.clearRoute);
+  const updateJob = useMutation(api.jobs.update);
 
   const allPendingJobs = useQuery(api.jobs.list, { status: "pending" }) ?? [];
+  const currentUser = useQuery(api.users.getCurrentUser);
 
   const getCurrentLocation = useCallback((): Promise<Coordinates> => {
     return new Promise((resolve, reject) => {
@@ -64,6 +66,7 @@ export function useRouteOptimization() {
   const optimizeAndSaveRoute = useCallback(
     async (selectedJobIds: Array<Id<"jobs">>) => {
       setIsOptimizing(true);
+      console.log("optimizing...");
 
       try {
         // Check if we have pending jobs data loaded
@@ -88,17 +91,74 @@ export function useRouteOptimization() {
           return true; // Return true to close modal anyway
         }
 
-        // Get the selected jobs with coordinates
+        console.log("found location");
+
+        // Get the selected jobs
         const selectedJobs = allPendingJobs.filter((job) => selectedJobIds.includes(job._id));
+
+        // Identify jobs missing coordinates and geocode them
+        const jobsWithoutCoords = selectedJobs.filter((job) => !job.coordinates);
+
+        if (jobsWithoutCoords.length > 0) {
+          // Geocode all missing addresses in parallel
+          const geocodeResults = await Promise.all(
+            jobsWithoutCoords.map(async (job) => {
+              try {
+                const coordinates = await geocodeAddress({ data: { address: job.address } });
+                return { job, coordinates, error: null };
+              } catch (error) {
+                return { job, coordinates: null, error };
+              }
+            }),
+          );
+
+          // Check for any failures
+          const failedGeocode = geocodeResults.filter((r) => !r.coordinates);
+
+          if (failedGeocode.length > 0) {
+            const failedAddresses = failedGeocode.map((r) => r.job.address);
+            toast.error("Failed to find coordinates", {
+              description: `Could not geocode the following address${failedAddresses.length > 1 ? "es" : ""}: ${failedAddresses.join(", ")}. Please edit the job site address for ${failedAddresses.length > 1 ? "these jobs" : "this job"}.`,
+              duration: 10000,
+            });
+            setIsOptimizing(false);
+            return false;
+          }
+
+          // Update jobs in Convex with new coordinates
+          await Promise.all(
+            geocodeResults
+              .filter((r) => r.coordinates)
+              .map((r) =>
+                updateJob({
+                  jobId: r.job._id,
+                  coordinates: r.coordinates!,
+                }),
+              ),
+          );
+
+          // Update local job references with new coordinates for route calculation
+          for (const result of geocodeResults) {
+            if (result.coordinates) {
+              const job = selectedJobs.find((j) => j._id === result.job._id);
+              if (job) {
+                (job as { coordinates?: Coordinates }).coordinates = result.coordinates;
+              }
+            }
+          }
+        }
+
+        // Now all selected jobs should have coordinates
         const jobsWithCoords = selectedJobs.filter((job) => job.coordinates);
+        console.log("jobsWithCoords", jobsWithCoords);
 
         // Build deselection updates for jobs no longer selected
         const deselectedJobIds = allPendingJobs
           .filter((job) => job.selectedForRoute && !selectedJobIds.includes(job._id))
           .map((job) => job._id);
 
-        // If less than 2 jobs with coordinates, just update selection without route optimization
-        if (jobsWithCoords.length < 2) {
+        // If less than 1 job with coordinates, just update selection without route optimization
+        if (jobsWithCoords.length < 1) {
           // Update selections
           const selections = [
             ...selectedJobIds.map((jobId, index) => ({
@@ -115,7 +175,7 @@ export function useRouteOptimization() {
 
           await batchUpdateRouteSelection({ selections });
 
-          // Delete route totals since we can't calculate without 2+ stops with coordinates
+          // Delete route totals since we can't calculate without 1+ stops with coordinates
           // Note: We only delete totals, not clear all selections (that's already done above)
           await deleteRouteTotals();
 
@@ -135,16 +195,20 @@ export function useRouteOptimization() {
           address: job.address,
         }));
 
+        // Determine destination: use home address if set, otherwise use current location (round trip)
+        const destination = currentUser?.homeCoordinates ?? currentLocation;
+
         // Call Google Routes API to optimize
-        // Origin: current location, Destination: current location (round trip)
         const routeResult = await optimizeRoute({
           data: {
             origin: currentLocation,
-            destination: currentLocation,
+            destination,
             waypoints,
             optimize: true,
           },
         });
+
+        console.log("routeResult", routeResult);
 
         if (!routeResult) {
           toast.error("Route optimization failed", {
@@ -219,11 +283,13 @@ export function useRouteOptimization() {
     },
     [
       allPendingJobs,
+      currentUser?.homeCoordinates,
       getCurrentLocation,
       batchUpdateRouteSelection,
       batchUpdateRouteMetrics,
       updateRouteTotals,
       deleteRouteTotals,
+      updateJob,
     ],
   );
 
@@ -249,29 +315,88 @@ export function useRouteOptimization() {
           return;
         }
 
-        // Get jobs with coordinates in the new order
+        // Get jobs in the new order
         const orderedJobs = orderedJobIds
           .map((id) => allPendingJobs.find((job) => job._id === id))
-          .filter((job): job is Job => job !== undefined && job.coordinates !== undefined);
+          .filter((job): job is Job => job !== undefined);
 
         if (orderedJobs.length < 2) {
           setIsOptimizing(false);
           return;
         }
 
+        // Identify jobs missing coordinates and geocode them
+        const jobsWithoutCoords = orderedJobs.filter((job) => !job.coordinates);
+
+        if (jobsWithoutCoords.length > 0) {
+          // Geocode all missing addresses in parallel
+          const geocodeResults = await Promise.all(
+            jobsWithoutCoords.map(async (job) => {
+              try {
+                const coordinates = await geocodeAddress({ data: { address: job.address } });
+                return { job, coordinates, error: null };
+              } catch (error) {
+                return { job, coordinates: null, error };
+              }
+            }),
+          );
+
+          // Check for any failures
+          const failedGeocode = geocodeResults.filter((r) => !r.coordinates);
+
+          if (failedGeocode.length > 0) {
+            const failedAddresses = failedGeocode.map((r) => r.job.address);
+            toast.error("Failed to find coordinates", {
+              description: `Could not geocode the following address${failedAddresses.length > 1 ? "es" : ""}: ${failedAddresses.join(", ")}. Please edit the job site address for ${failedAddresses.length > 1 ? "these jobs" : "this job"}.`,
+              duration: 10000,
+            });
+            setIsOptimizing(false);
+            return;
+          }
+
+          // Update jobs in Convex with new coordinates
+          await Promise.all(
+            geocodeResults
+              .filter((r) => r.coordinates)
+              .map((r) =>
+                updateJob({
+                  jobId: r.job._id,
+                  coordinates: r.coordinates!,
+                }),
+              ),
+          );
+
+          // Update local job references with new coordinates for route calculation
+          for (const result of geocodeResults) {
+            if (result.coordinates) {
+              const job = orderedJobs.find((j) => j._id === result.job._id);
+              if (job) {
+                (job as { coordinates?: Coordinates }).coordinates = result.coordinates;
+              }
+            }
+          }
+        }
+
+        // Now all jobs should have coordinates
+        const jobsWithCoords = orderedJobs.filter((job) => job.coordinates);
+
+        if (jobsWithCoords.length < 2) {
+          setIsOptimizing(false);
+          return;
+        }
+
         // Build waypoints in the manual order (no optimization)
-        const waypoints: Array<RouteWaypoint> = orderedJobs.map((job) => ({
+        const waypoints: Array<RouteWaypoint> = jobsWithCoords.map((job) => ({
           coordinates: job.coordinates!,
           address: job.address,
         }));
 
-        // Call Google Routes API WITHOUT optimization to get metrics for manual order
-        const routeResult = await optimizeRoute({
+        // Call route metrics calculation with home address as destination (if set)
+        const routeResult = await calculateRouteMetrics({
           data: {
             origin: currentLocation,
-            destination: currentLocation,
             waypoints,
-            optimize: false, // Don't reorder, just calculate metrics
+            destination: currentUser?.homeCoordinates,
           },
         });
 
@@ -300,14 +425,8 @@ export function useRouteOptimization() {
         await updateRouteTotals({
           totalDistance: routeResult.totalDistance,
           totalDuration: routeResult.totalDuration,
-          totalDistanceValue: routeResult.metrics.reduce(
-            (sum: number, m: { distanceValue: number }) => sum + m.distanceValue,
-            0,
-          ),
-          totalDurationValue: routeResult.metrics.reduce(
-            (sum: number, m: { durationValue: number }) => sum + m.durationValue,
-            0,
-          ),
+          totalDistanceValue: routeResult.totalDistanceValue,
+          totalDurationValue: routeResult.totalDurationValue,
         });
 
         toast.success("Route updated");
@@ -320,10 +439,12 @@ export function useRouteOptimization() {
     },
     [
       allPendingJobs,
+      currentUser?.homeCoordinates,
       getCurrentLocation,
       updateRouteOrder,
       batchUpdateRouteMetrics,
       updateRouteTotals,
+      updateJob,
     ],
   );
 
