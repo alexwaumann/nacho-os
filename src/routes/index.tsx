@@ -23,12 +23,15 @@ import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CheckDetectedModal } from "@/features/checks/components/CheckDetectedModal";
+import { useAddCheck } from "@/features/checks/hooks/useAddCheck";
 import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
 import { RouteJobCard } from "@/features/jobs/components/RouteJobCard";
 import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
 import { AddJobModal } from "@/features/jobs/components/AddJobModal";
 import { generateGoogleMapsUrl } from "@/server/geo";
+import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
   "new-job": z.string().optional(),
@@ -70,6 +73,24 @@ function YouPage() {
   // Route optimization hook
   const { isOptimizing, optimizeAndSaveRoute, recalculateRouteMetrics, clearRoute } =
     useRouteOptimization();
+
+  // Check flow
+  const checkFileInputRef = useRef<HTMLInputElement>(null);
+  const [checkModalOpen, setCheckModalOpen] = useState(false);
+  const {
+    isProcessing: isCheckProcessing,
+    checkData,
+    imageData,
+    handleFileSelect: handleCheckFileSelect,
+    reset: resetCheck,
+  } = useAddCheck();
+
+  // Open modal when check data is ready
+  useEffect(() => {
+    if (checkData && imageData) {
+      setCheckModalOpen(true);
+    }
+  }, [checkData, imageData]);
 
   // Local state for drag reordering
   const [localJobOrder, setLocalJobOrder] = useState<Array<Job>>(selectedJobs);
@@ -181,15 +202,56 @@ function YouPage() {
           </CardContent>
         </Card>
 
-        <Card className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group">
+        <Card
+          onClick={() => {
+            if (!isCheckProcessing) {
+              checkFileInputRef.current?.click();
+            }
+          }}
+          className={cn(
+            "border border-border shadow-sm bg-card transition-transform cursor-pointer group",
+            isCheckProcessing ? "opacity-75" : "active:scale-95",
+          )}
+        >
           <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
             <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-              <Scan size={32} strokeWidth={3} />
+              {isCheckProcessing ?
+                <Loader2 size={32} className="animate-spin" />
+              : <Scan size={32} strokeWidth={3} />}
             </div>
-            <span className="font-bold text-foreground">Add Check</span>
+            <span className="font-bold text-foreground">
+              {isCheckProcessing ? "Processing..." : "Add Check"}
+            </span>
           </CardContent>
         </Card>
+
+        {/* Hidden file input for check upload */}
+        <input
+          type="file"
+          ref={checkFileInputRef}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleCheckFileSelect(file);
+            e.target.value = "";
+          }}
+          className="hidden"
+          accept=".pdf,image/*"
+        />
       </div>
+
+      {/* Check Detected Modal */}
+      {checkData && imageData && (
+        <CheckDetectedModal
+          open={checkModalOpen}
+          onOpenChange={setCheckModalOpen}
+          checkData={checkData}
+          imageData={imageData}
+          onCancel={() => {
+            setCheckModalOpen(false);
+            resetCheck();
+          }}
+        />
+      )}
 
       {/* Processing Queue */}
       {processingQueue.length > 0 && (

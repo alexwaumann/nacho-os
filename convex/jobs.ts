@@ -857,3 +857,31 @@ export const getQueueItemInternal = internalQuery({
     return await ctx.db.get(args.queueId);
   },
 });
+
+/**
+ * List unpaid jobs (pending or completed, not yet paid)
+ */
+export const listUnpaid = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) return [];
+
+    const jobs = await ctx.db
+      .query("jobs")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Filter for unpaid jobs (pending or completed) and sort by creation time (newest first)
+    return jobs
+      .filter((j) => j.status === "pending" || j.status === "completed")
+      .sort((a, b) => b._creationTime - a._creationTime);
+  },
+});

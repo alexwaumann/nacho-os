@@ -55,10 +55,12 @@ export const create = mutation({
       date: args.date,
     });
 
-    // Mark job as paid
+    // Mark job as paid (also set completedOn if not already set)
+    const today = new Date().toISOString().split("T")[0];
     await ctx.db.patch(args.jobId, {
       status: "paid",
-      paidOn: new Date().toISOString().split("T")[0],
+      completedOn: job.completedOn ?? today,
+      paidOn: today,
     });
 
     return paymentId;
