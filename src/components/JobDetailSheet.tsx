@@ -15,6 +15,7 @@ import {
   Receipt,
   Trash2,
   Wrench,
+  ZoomIn,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -23,6 +24,7 @@ import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 
 import type { JobSheetTab } from "@/features/jobs/hooks/useJobSheet";
+import { ImageViewer } from "@/components/ImageViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +44,7 @@ import { AccessCodesEditor } from "@/features/jobs/components/AccessCodesEditor"
 import { DueDateEditor } from "@/features/jobs/components/DueDateEditor";
 import { JobNotesEditor } from "@/features/jobs/components/JobNotesEditor";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
+import { useImageViewer } from "@/hooks/useImageViewer";
 
 interface JobDetailSheetProps {
   jobId: Id<"jobs"> | null;
@@ -91,6 +94,7 @@ export function JobDetailSheet({
 
   // Receipt upload hook
   const { handleAddReceipt, isUploading } = useAddReceipt(jobId);
+  const { openViewer, viewerProps } = useImageViewer();
   const dismissQueueItemMutation = useConvexMutationHook(api.receipts.dismissQueueItem);
 
   const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,6 +307,14 @@ export function JobDetailSheet({
 
   const totalExpenses = receipts?.reduce((sum, r) => sum + r.total, 0) ?? 0;
 
+  const sourceViewerImages = (sourceImages ?? []).map((src) => ({ src, caption: "Work order" }));
+  // Only receipts with an image can be paged through in the viewer
+  const receiptsWithImages = (receipts ?? []).filter((r) => r.imageUrl);
+  const receiptViewerImages = receiptsWithImages.map((r) => ({
+    src: r.imageUrl!,
+    caption: `${r.storeName} · $${r.total.toFixed(2)}`,
+  }));
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent
@@ -487,11 +499,11 @@ export function JobDetailSheet({
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     {sourceImages.map((url, i) => (
-                      <a
+                      <button
                         key={i}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        type="button"
+                        aria-label={`View page ${i + 1}`}
+                        onClick={() => openViewer(sourceViewerImages, i)}
                         className="aspect-[3/4] rounded-[1.5rem] bg-muted overflow-hidden border border-border hover:border-primary/30 transition-all group relative"
                       >
                         <img
@@ -500,9 +512,9 @@ export function JobDetailSheet({
                           className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <ExternalLink className="w-5 h-5 text-white" />
+                          <ZoomIn className="w-6 h-6 text-white" />
                         </div>
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -605,7 +617,12 @@ export function JobDetailSheet({
                                 variant="link"
                                 size="sm"
                                 className="h-6 p-0 text-xs font-black uppercase text-primary"
-                                onClick={() => window.open(r.imageUrl!, "_blank")}
+                                onClick={() =>
+                                  openViewer(
+                                    receiptViewerImages,
+                                    receiptsWithImages.findIndex((x) => x._id === r._id),
+                                  )
+                                }
                               >
                                 View Receipt
                               </Button>
@@ -660,7 +677,14 @@ export function JobDetailSheet({
                             variant="link"
                             size="sm"
                             className="h-6 p-0 text-xs font-black uppercase text-emerald-600"
-                            onClick={() => window.open(payment.imageUrl!, "_blank")}
+                            onClick={() =>
+                              openViewer([
+                                {
+                                  src: payment.imageUrl!,
+                                  caption: `Check from ${payment.payerName || "Unknown"}`,
+                                },
+                              ])
+                            }
                           >
                             View Check
                           </Button>
@@ -802,6 +826,7 @@ export function JobDetailSheet({
             </TabsContent>
           </div>
         </Tabs>
+        <ImageViewer {...viewerProps} />
       </DrawerContent>
     </Drawer>
   );
