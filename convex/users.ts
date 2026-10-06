@@ -106,12 +106,13 @@ export const updateHomeAddress = mutation({
 });
 
 /**
- * Update user settings.
+ * Update user settings. Only the settings passed are changed; the rest are kept.
  */
 export const updateSettings = mutation({
   args: {
     settings: v.object({
       theme: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
+      readRepliesAloud: v.optional(v.boolean()),
     }),
   },
   handler: async (ctx, args) => {
@@ -130,7 +131,7 @@ export const updateSettings = mutation({
     }
 
     await ctx.db.patch(user._id, {
-      settings: args.settings,
+      settings: { ...user.settings, ...args.settings },
     });
 
     return user._id;
