@@ -24,11 +24,15 @@ function normalizeAddress(address: string): string {
 }
 
 /**
- * Calculate similarity score (0-1) between two addresses using Jaccard similarity on words
+ * Calculate similarity score (0-1) between two addresses using Jaccard similarity on words.
+ * A short street address ("928 Burgan St", as written in a check memo) inside a full one
+ * ("928 Burgan St, Waco, TX 76704") also scores 1, as long as the house numbers match.
  */
 export function addressSimilarity(addr1: string, addr2: string): number {
-  const words1 = new Set(normalizeAddress(addr1).split(" ").filter(Boolean));
-  const words2 = new Set(normalizeAddress(addr2).split(" ").filter(Boolean));
+  const tokens1 = normalizeAddress(addr1).split(" ").filter(Boolean);
+  const tokens2 = normalizeAddress(addr2).split(" ").filter(Boolean);
+  const words1 = new Set(tokens1);
+  const words2 = new Set(tokens2);
 
   if (words1.size === 0 || words2.size === 0) {
     return 0;
@@ -36,8 +40,17 @@ export function addressSimilarity(addr1: string, addr2: string): number {
 
   const intersection = new Set([...words1].filter((w) => words2.has(w)));
   const union = new Set([...words1, ...words2]);
+  const jaccard = intersection.size / union.size;
 
-  return intersection.size / union.size;
+  // Only trust containment when both start with the same house number and share a street word,
+  // so "Waco TX" doesn't match every job in Waco
+  const isSameHouseNumber = /^\d+$/.test(tokens1[0]) && tokens1[0] === tokens2[0];
+  if (!isSameHouseNumber || intersection.size < 2) {
+    return jaccard;
+  }
+
+  const containment = intersection.size / Math.min(words1.size, words2.size);
+  return Math.max(jaccard, containment);
 }
 
 /**
