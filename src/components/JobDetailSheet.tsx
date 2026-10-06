@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 
+import type { JobSheetTab } from "@/features/jobs/hooks/useJobSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -46,9 +47,17 @@ interface JobDetailSheetProps {
   jobId: Id<"jobs"> | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tab: JobSheetTab;
+  onTabChange: (tab: JobSheetTab) => void;
 }
 
-export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProps) {
+export function JobDetailSheet({
+  jobId,
+  open,
+  onOpenChange,
+  tab,
+  onTabChange,
+}: JobDetailSheetProps) {
   const queryClient = useQueryClient();
   const receiptInputRef = useRef<HTMLInputElement>(null);
   // The drawer is a modal that blocks pointer events outside itself, so menus must portal into it
@@ -300,7 +309,11 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
         ref={setDrawerContentEl}
         className="h-[90vh] data-[vaul-drawer-direction=bottom]:max-h-[90vh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-hidden shadow-2xl border-t border-border/50"
       >
-        <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 gap-0">
+        <Tabs
+          value={tab}
+          onValueChange={(value: JobSheetTab) => onTabChange(value)}
+          className="flex-1 flex flex-col min-h-0 gap-0"
+        >
           {/* Sticky Header */}
           <div className="bg-background shrink-0 z-20">
             <DrawerHeader className="text-left px-6 pt-10 pb-4 space-y-6">

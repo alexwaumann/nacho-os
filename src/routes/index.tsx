@@ -28,6 +28,7 @@ import { useAddCheck } from "@/features/checks/hooks/useAddCheck";
 import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
 import { RouteJobCard } from "@/features/jobs/components/RouteJobCard";
 import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
+import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobSheet";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
 import { AddJobModal } from "@/features/jobs/components/AddJobModal";
 import { generateGoogleMapsUrl } from "@/server/geo";
@@ -35,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
   "new-job": z.string().optional(),
-  job: z.string().optional(),
+  ...jobSheetSearchSchema,
 });
 
 export const Route = createFileRoute("/")({
@@ -47,7 +48,6 @@ type Job = Doc<"jobs">;
 
 function YouPage() {
   const navigate = Route.useNavigate();
-  const { job: jobIdParam } = Route.useSearch();
 
   // Sync user on first load
   const getOrCreateUser = useMutation(api.users.getOrCreateUser);
@@ -66,9 +66,7 @@ function YouPage() {
   // Edit Route Modal state
   const [editRouteOpen, setEditRouteOpen] = useState(false);
 
-  // Job Detail Sheet state
-  const [selectedJobId, setSelectedJobId] = useState<Id<"jobs"> | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const jobSheet = useJobSheet();
 
   // Route optimization hook
   const { isOptimizing, optimizeAndSaveRoute, recalculateRouteMetrics, clearRoute } =
@@ -105,14 +103,6 @@ function YouPage() {
     }
   }, [selectedJobs]);
 
-  // Handle URL-based job detail sheet
-  useEffect(() => {
-    if (jobIdParam) {
-      setSelectedJobId(jobIdParam as Id<"jobs">);
-      setSheetOpen(true);
-    }
-  }, [jobIdParam]);
-
   const handleAddJobClick = () => {
     navigate({
       search: (prev) => ({ ...prev, "new-job": "true" }),
@@ -131,26 +121,6 @@ function YouPage() {
     const url = generateGoogleMapsUrl(waypoints, true, currentUser?.homeCoordinates ?? undefined);
     if (url) {
       window.open(url, "_blank");
-    }
-  };
-
-  const handleJobClick = (jobId: Id<"jobs">) => {
-    setSelectedJobId(jobId);
-    setSheetOpen(true);
-    navigate({
-      search: (prev) => ({ ...prev, job: jobId }),
-    });
-  };
-
-  const handleSheetClose = (open: boolean) => {
-    setSheetOpen(open);
-    if (!open) {
-      navigate({
-        search: (prev) => {
-          const { job: _, ...rest } = prev;
-          return rest;
-        },
-      });
     }
   };
 
@@ -180,7 +150,13 @@ function YouPage() {
   return (
     <div className="space-y-6">
       <AddJobModal />
-      <JobDetailSheet jobId={selectedJobId} open={sheetOpen} onOpenChange={handleSheetClose} />
+      <JobDetailSheet
+        jobId={jobSheet.jobId}
+        open={jobSheet.isOpen}
+        onOpenChange={jobSheet.handleOpenChange}
+        tab={jobSheet.tab}
+        onTabChange={jobSheet.setTab}
+      />
       <EditRouteModal
         open={editRouteOpen}
         onOpenChange={setEditRouteOpen}
@@ -364,7 +340,7 @@ function YouPage() {
                 key={job._id}
                 job={job}
                 index={index}
-                onClick={() => handleJobClick(job._id)}
+                onClick={() => jobSheet.openJob(job._id)}
                 onDragEnd={handleReorderEnd}
               />
             ))}

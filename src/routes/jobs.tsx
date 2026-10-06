@@ -14,9 +14,11 @@ import JobCard from "@/components/JobCard";
 import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobSheet";
 
 const jobsSearchSchema = z.object({
   filter: z.enum(["pending", "completed", "paid"]).optional().catch("pending"),
+  ...jobSheetSearchSchema,
 });
 
 export const Route = createFileRoute("/jobs")({
@@ -27,8 +29,7 @@ export const Route = createFileRoute("/jobs")({
 function JobsPage() {
   const { filter = "pending" } = Route.useSearch();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedJobId, setSelectedJobId] = useState<Id<"jobs"> | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const jobSheet = useJobSheet();
 
   const { data: jobs } = useQuery(convexQuery(api.jobs.list, { status: filter }));
   const { data: stats } = useQuery(convexQuery(api.jobs.getStats, {}));
@@ -45,18 +46,19 @@ function JobsPage() {
     job.address.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleJobClick = (jobId: Id<"jobs">) => {
-    setSelectedJobId(jobId);
-    setSheetOpen(true);
-  };
-
   const handleToggleRoute = async (jobId: Id<"jobs">, selected: boolean) => {
     await toggleSelectedForRoute({ jobId, selected: !selected });
   };
 
   return (
     <div className="space-y-6">
-      <JobDetailSheet jobId={selectedJobId} open={sheetOpen} onOpenChange={setSheetOpen} />
+      <JobDetailSheet
+        jobId={jobSheet.jobId}
+        open={jobSheet.isOpen}
+        onOpenChange={jobSheet.handleOpenChange}
+        tab={jobSheet.tab}
+        onTabChange={jobSheet.setTab}
+      />
 
       {/* Tab Navigation */}
       <div className="bg-muted p-1.5 rounded-2xl flex items-center justify-between">
@@ -130,7 +132,7 @@ function JobsPage() {
             <JobCard
               key={job._id}
               job={job}
-              onClick={() => handleJobClick(job._id)}
+              onClick={() => jobSheet.openJob(job._id)}
               onToggleRoute={
                 filter === "pending" ?
                   () => handleToggleRoute(job._id, job.selectedForRoute)
