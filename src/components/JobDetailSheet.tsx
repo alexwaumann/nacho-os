@@ -419,12 +419,15 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                     Paid: {job.paidOn}
                   </Badge>
                 )}
+                {job.status === "pending" && (
+                  <DueDateEditor
+                    dueDate={job.dueDate}
+                    onChange={(dueDate) =>
+                      updateDueDateMutation.mutate({ jobId: job._id, dueDate })
+                    }
+                  />
+                )}
               </div>
-
-              <DueDateEditor
-                dueDate={job.dueDate}
-                onChange={(dueDate) => updateDueDateMutation.mutate({ jobId: job._id, dueDate })}
-              />
 
               {/* Scope Summary */}
               {job.summary && (
