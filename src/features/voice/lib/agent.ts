@@ -1,5 +1,5 @@
 import { ThinkingLevel } from "@google/genai";
-import { z } from "zod";
+import * as z from "zod";
 import { voiceResponseSchema } from "./ops";
 import type { GoogleGenAI } from "@google/genai";
 

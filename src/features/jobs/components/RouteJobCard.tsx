@@ -1,3 +1,4 @@
+import { CloudAlert } from "lucide-react";
 import { HourlyForecast } from "./HourlyForecast";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
@@ -12,9 +13,20 @@ interface RouteJobCardProps {
   className?: string;
   // Hourly weather at the job site, for jobs that are in today's route
   showForecast?: boolean;
+  // Estimated arrival (ms), highlighted in the hourly forecast
+  arrivalTime?: number;
+  // One line from today's weather brief about this stop
+  weatherNote?: string;
 }
 
-export function RouteJobCard({ job, onClick, className, showForecast }: RouteJobCardProps) {
+export function RouteJobCard({
+  job,
+  onClick,
+  className,
+  showForecast,
+  arrivalTime,
+  weatherNote,
+}: RouteJobCardProps) {
   const completedTasks = job.tasks?.filter((t) => t.completed).length ?? 0;
   const totalTasks = job.tasks?.length ?? 0;
   const progressValue = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
@@ -33,7 +45,20 @@ export function RouteJobCard({ job, onClick, className, showForecast }: RouteJob
         {/* Summary (2 lines max) */}
         {job.summary && <p className="text-sm text-muted-foreground line-clamp-2">{job.summary}</p>}
 
-        {showForecast && <HourlyForecast coordinates={job.coordinates} className="my-3" />}
+        {showForecast && (
+          <HourlyForecast
+            coordinates={job.coordinates}
+            arrivalTime={arrivalTime}
+            className="my-3"
+          />
+        )}
+
+        {weatherNote && (
+          <p className="flex items-start gap-2 text-base font-medium leading-snug text-amber-700 dark:text-amber-400">
+            <CloudAlert size={20} className="mt-0.5 shrink-0" />
+            {weatherNote}
+          </p>
+        )}
 
         {/* Progress bar + count inline */}
         {totalTasks > 0 && (

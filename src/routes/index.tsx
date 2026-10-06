@@ -15,9 +15,11 @@ import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
+import { RouteBriefCard } from "@/features/jobs/components/RouteBriefCard";
 import { RouteJobCard } from "@/features/jobs/components/RouteJobCard";
 import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
 import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobSheet";
+import { useRouteBrief } from "@/features/jobs/hooks/useRouteBrief";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
 import { ScanActions } from "@/features/scan/components/ScanActions";
 import { generateGoogleMapsUrl } from "@/server/geo";
@@ -57,6 +59,13 @@ function YouPage() {
   // Route optimization hook
   const { isOptimizing, optimizeAndSaveRoute, recalculateRouteMetrics, clearRoute } =
     useRouteOptimization();
+
+  // Daily weather brief for the route, with an optional suggested order
+  const routeBrief = useRouteBrief({
+    jobs: selectedJobs,
+    homeCoordinates: currentUser?.homeCoordinates,
+    recalculateRouteMetrics,
+  });
 
   // Local state for drag reordering
   const [localJobOrder, setLocalJobOrder] = useState<Array<Job>>(selectedJobs);
@@ -215,6 +224,8 @@ function YouPage() {
           </Button>
         )}
 
+        <RouteBriefCard routeBrief={routeBrief} />
+
         {selectedJobs.length === 0 ?
           <Card className="border-2 border-dashed border-border bg-card/50 shadow-none rounded-2xl py-0">
             <CardContent className="py-12 flex flex-col items-center justify-center text-center gap-2">
@@ -240,6 +251,8 @@ function YouPage() {
                 index={index}
                 onClick={() => jobSheet.openJob(job._id)}
                 onDragEnd={handleReorderEnd}
+                arrivalTime={routeBrief.arrivalTimes[job._id]}
+                weatherNote={routeBrief.siteNotes[job._id]}
               />
             ))}
           </Reorder.Group>
@@ -285,9 +298,18 @@ interface DraggableRouteCardProps {
   index: number;
   onClick: () => void;
   onDragEnd: () => void;
+  arrivalTime?: number;
+  weatherNote?: string;
 }
 
-function DraggableRouteCard({ job, index, onClick, onDragEnd }: DraggableRouteCardProps) {
+function DraggableRouteCard({
+  job,
+  index,
+  onClick,
+  onDragEnd,
+  arrivalTime,
+  weatherNote,
+}: DraggableRouteCardProps) {
   const dragControls = useDragControls();
 
   return (
@@ -315,7 +337,13 @@ function DraggableRouteCard({ job, index, onClick, onDragEnd }: DraggableRouteCa
         className="flex-1 cursor-pointer active:scale-[0.99] transition-transform"
         onClick={onClick}
       >
-        <RouteJobCard job={job} className="border-0 shadow-none rounded-none" showForecast />
+        <RouteJobCard
+          job={job}
+          className="border-0 shadow-none rounded-none"
+          showForecast
+          arrivalTime={arrivalTime}
+          weatherNote={weatherNote}
+        />
       </div>
     </Reorder.Item>
   );

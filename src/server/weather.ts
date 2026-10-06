@@ -142,6 +142,23 @@ export type HourlyForecast = {
 
 const HOURLY_FIELDS = "temperature_2m,weather_code,is_day,precipitation_probability";
 
+function toSlot(
+  time: number,
+  temp: number,
+  code: number,
+  isDay: number,
+  precipProb: number | null,
+): HourlyForecastSlot {
+  return {
+    time: time * 1000,
+    temp: Math.round(temp),
+    precipProb: precipProb ?? 0,
+    code,
+    condition: mapWmoCodeToCondition(code),
+    isDay: isDay === 1,
+  };
+}
+
 /**
  * Fetch current conditions plus the hourly forecast starting at the current hour
  */
@@ -164,21 +181,6 @@ export const fetchHourlyForecast = createServerFn({ method: "POST" })
       throw new Error("Weather API returned no forecast");
     }
 
-    const toSlot = (
-      time: number,
-      temp: number,
-      code: number,
-      isDay: number,
-      precipProb: number | null,
-    ): HourlyForecastSlot => ({
-      time: time * 1000,
-      temp: Math.round(temp),
-      precipProb: precipProb ?? 0,
-      code,
-      condition: mapWmoCodeToCondition(code),
-      isDay: isDay === 1,
-    });
-
     const { current, hourly } = result;
 
     return {
@@ -200,3 +202,45 @@ export const fetchHourlyForecast = createServerFn({ method: "POST" })
       ),
     } as HourlyForecast;
   });
+
+export type WorkdayForecastSlot = HourlyForecastSlot & {
+  windMph: number;
+  gustMph: number;
+};
+
+const WORKDAY_FIELDS = `${HOURLY_FIELDS},wind_speed_10m,wind_gusts_10m`;
+
+/**
+ * Today's hourly forecast at a site (midnight to midnight, the site's local time), with wind.
+ * Plain async function for use inside other server functions.
+ */
+export async function getTodayHourlyForecast(
+  coordinates: Coordinates,
+): Promise<Array<WorkdayForecastSlot>> {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${coordinates.lat}&longitude=${coordinates.lng}&hourly=${WORKDAY_FIELDS}&temperature_unit=fahrenheit&wind_speed_unit=mph&timeformat=unixtime&timezone=auto&forecast_days=1`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Weather API Error: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  const hourly = result?.hourly;
+
+  if (!hourly?.time) {
+    throw new Error("Weather API returned no forecast");
+  }
+
+  return hourly.time.map((time: number, i: number) => ({
+    ...toSlot(
+      time,
+      hourly.temperature_2m[i],
+      hourly.weather_code[i],
+      hourly.is_day[i],
+      hourly.precipitation_probability[i],
+    ),
+    windMph: Math.round(hourly.wind_speed_10m[i] ?? 0),
+    gustMph: Math.round(hourly.wind_gusts_10m[i] ?? 0),
+  }));
+}
