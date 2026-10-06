@@ -33,6 +33,8 @@ export function RouteJobCard({ job, onClick, className, showForecast }: RouteJob
         {/* Summary (2 lines max) */}
         {job.summary && <p className="text-sm text-muted-foreground line-clamp-2">{job.summary}</p>}
 
+        {showForecast && <HourlyForecast coordinates={job.coordinates} className="my-3" />}
+
         {/* Progress bar + count inline */}
         {totalTasks > 0 && (
           <div className="flex items-center gap-2">
@@ -42,8 +44,6 @@ export function RouteJobCard({ job, onClick, className, showForecast }: RouteJob
             </span>
           </div>
         )}
-
-        {showForecast && <HourlyForecast coordinates={job.coordinates} className="mt-3" />}
       </CardContent>
     </Card>
   );
