@@ -91,7 +91,7 @@ export default function JobCard({ job, onClick, onToggleRoute }: JobCardProps) {
 
   return (
     <Card
-      className="border border-border shadow-sm bg-card overflow-hidden active:scale-[0.98] transition-all cursor-pointer hover:border-primary/30"
+      className="border border-border shadow-sm bg-card py-0 overflow-hidden active:scale-[0.98] transition-all cursor-pointer hover:border-primary/30"
       onClick={onClick}
     >
       <CardContent className="p-5 space-y-4">

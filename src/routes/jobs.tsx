@@ -89,7 +89,7 @@ function JobsPage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="border border-border shadow-sm bg-card">
+        <Card className="border border-border shadow-sm bg-card py-0">
           <CardContent className="p-5 space-y-1">
             <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">
               Total Jobs
@@ -100,7 +100,7 @@ function JobsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border border-border shadow-sm bg-card">
+        <Card className="border border-border shadow-sm bg-card py-0">
           <CardContent className="p-5 space-y-1">
             <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">
               Total Expenses

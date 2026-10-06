@@ -130,7 +130,7 @@ function MapPage() {
         {/* Job List Overlay */}
         {selectedJobs.length > 0 && (
           <div className="absolute top-4 left-4 right-4">
-            <Card className="bg-card/95 backdrop-blur-sm border-border shadow-lg">
+            <Card className="bg-card/95 backdrop-blur-sm border-border shadow-lg py-0">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 text-sm font-bold text-foreground">
                   <RouteIcon size={16} className="text-primary" />

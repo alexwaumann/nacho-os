@@ -527,7 +527,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                     {receiptQueue.map((item) => (
                       <Card
                         key={item._id}
-                        className="overflow-hidden border-border/50 bg-muted/20 shadow-none rounded-[1.5rem]"
+                        className="overflow-hidden border-border/50 bg-muted/20 shadow-none rounded-[1.5rem] py-0"
                       >
                         <div className="p-4 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -620,7 +620,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                   Payment Info
                 </h4>
                 {payment ?
-                  <Card className="overflow-hidden border-border/50 bg-emerald-500/5 border-emerald-500/10 shadow-none rounded-[1.5rem]">
+                  <Card className="overflow-hidden border-border/50 bg-emerald-500/5 border-emerald-500/10 shadow-none rounded-[1.5rem] py-0">
                     <div className="p-5 flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-black text-emerald-600/70 uppercase tracking-widest mb-1.5">

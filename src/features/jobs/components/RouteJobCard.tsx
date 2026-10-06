@@ -20,10 +20,10 @@ export function RouteJobCard({ job, onClick, className }: RouteJobCardProps) {
 
   return (
     <Card
-      className={`border border-border shadow-sm bg-card overflow-hidden transition-all ${className ?? ""}`}
+      className={`border border-border shadow-sm bg-card py-0 overflow-hidden transition-all ${className ?? ""}`}
       onClick={onClick}
     >
-      <CardContent className="px-4 space-y-2">
+      <CardContent className="p-4 space-y-2">
         {/* Address + Weather */}
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-base font-bold leading-tight text-foreground flex-1 line-clamp-2 uppercase">

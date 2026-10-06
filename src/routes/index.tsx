@@ -263,7 +263,7 @@ function YouPage() {
             {processingQueue.map((item) => (
               <Card
                 key={item._id}
-                className={`border shadow-sm overflow-hidden ${
+                className={`border shadow-sm py-0 overflow-hidden ${
                   item.status === "failed" ? "border-destructive/50 bg-destructive/5" : "bg-card"
                 }`}
               >
@@ -342,7 +342,7 @@ function YouPage() {
         )}
 
         {selectedJobs.length === 0 ?
-          <Card className="border-2 border-dashed border-border bg-card/50 shadow-none rounded-2xl">
+          <Card className="border-2 border-dashed border-border bg-card/50 shadow-none rounded-2xl py-0">
             <CardContent className="py-12 flex flex-col items-center justify-center text-center gap-2">
               <p className="text-muted-foreground font-medium">No stops planned.</p>
               <button
@@ -375,7 +375,7 @@ function YouPage() {
       {/* Quick Stats */}
       {stats && (
         <div className="grid grid-cols-3 gap-3">
-          <Card className="border border-border shadow-sm bg-card">
+          <Card className="border border-border shadow-sm bg-card py-0">
             <CardContent className="p-4 text-center">
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
                 Pending
@@ -383,7 +383,7 @@ function YouPage() {
               <p className="text-2xl font-black text-foreground">{stats.pending}</p>
             </CardContent>
           </Card>
-          <Card className="border border-border shadow-sm bg-card">
+          <Card className="border border-border shadow-sm bg-card py-0">
             <CardContent className="p-4 text-center">
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
                 Done
@@ -391,7 +391,7 @@ function YouPage() {
               <p className="text-2xl font-black text-foreground">{stats.completed}</p>
             </CardContent>
           </Card>
-          <Card className="border border-border shadow-sm bg-card">
+          <Card className="border border-border shadow-sm bg-card py-0">
             <CardContent className="p-4 text-center">
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
                 Paid
