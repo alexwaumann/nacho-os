@@ -1,8 +1,20 @@
 import { useMutation } from "convex/react";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
-import { LogOut, MapPin, Monitor, Moon, Navigation, Pencil, Sun, User, X } from "lucide-react";
+import {
+  LogOut,
+  MapPin,
+  Monitor,
+  Moon,
+  Navigation,
+  Pencil,
+  Sun,
+  User,
+  Volume2,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { SignOutButton, useUser } from "@clerk/clerk-react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -13,6 +25,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { geocodeAddress } from "@/server/geo";
 
 export const Route = createFileRoute("/account")({
@@ -23,6 +36,17 @@ function AccountPage() {
   const { user } = useUser();
   const { data: convexUser } = useQuery(convexQuery(api.users.getCurrentUser, {}));
   const updateHomeAddress = useMutation(api.users.updateHomeAddress);
+  const updateSettings = useMutation(api.users.updateSettings).withOptimisticUpdate(
+    (localStore, { settings }) => {
+      const current = localStore.getQuery(api.users.getCurrentUser, {});
+      if (!current) return;
+      localStore.setQuery(
+        api.users.getCurrentUser,
+        {},
+        { ...current, settings: { ...current.settings, ...settings } },
+      );
+    },
+  );
 
   const { theme, setTheme } = useTheme();
   const [homeAddress, setHomeAddress] = useState("");
@@ -67,6 +91,20 @@ function AccountPage() {
       console.error("Failed to save address:", error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // On unless he turned it off
+  const isReadingRepliesAloud = convexUser?.settings?.readRepliesAloud !== false;
+
+  const handleToggleReadAloud = async () => {
+    try {
+      await updateSettings({ settings: { readRepliesAloud: !isReadingRepliesAloud } });
+    } catch (error) {
+      console.error("Saving the read-aloud setting failed:", error);
+      toast.error("Couldn't save the setting", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   };
 
@@ -126,6 +164,43 @@ function AccountPage() {
             {t.label}
           </button>
         ))}
+      </div>
+
+      {/* Voice */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-2">
+          Voice
+        </h3>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isReadingRepliesAloud}
+          onClick={handleToggleReadAloud}
+          disabled={!convexUser}
+          className="w-full min-h-18 flex items-center gap-4 rounded-2xl border border-border bg-card px-4 py-3 text-left shadow-sm active:scale-[0.99] transition-transform disabled:opacity-60"
+        >
+          <Volume2 size={26} className="shrink-0 text-primary" />
+          <span className="flex-1">
+            <span className="block text-lg font-bold text-foreground">Read replies out loud</span>
+            <span className="block text-base text-muted-foreground">
+              The mic answers you with a voice, not just on screen.
+            </span>
+          </span>
+          <span
+            aria-hidden
+            className={cn(
+              "relative h-9 w-16 shrink-0 rounded-full transition-colors",
+              isReadingRepliesAloud ? "bg-primary" : "bg-input",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-1 left-1 h-7 w-7 rounded-full bg-background shadow transition-transform",
+                isReadingRepliesAloud && "translate-x-7",
+              )}
+            />
+          </span>
+        </button>
       </div>
 
       {/* Home Settings */}

@@ -41,6 +41,12 @@ export function useVoiceRecorder({
   maxMs = 60_000,
 }: UseVoiceRecorderOptions) {
   const [state, setState] = useState<RecorderState>("idle");
+  // Always call the latest callbacks: the recording may end several renders after it started
+  // (the page or the open job can change while he talks)
+  const handleRecorded = useEffectEvent((audio: Blob) => onRecorded(audio));
+  const handleTooShort = useEffectEvent(() => onTooShort());
+  const handleError = useEffectEvent((error: unknown) => onError(error));
+  const handleInterrupted = useEffectEvent(() => onInterrupted());
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const sessionRef = useRef<RecordingSession | null>(null);
 
@@ -69,7 +75,7 @@ export function useVoiceRecorder({
   };
 
   const interrupt = useEffectEvent(() => {
-    if (cancel()) onInterrupted();
+    if (cancel()) handleInterrupted();
   });
 
   const start = async () => {
@@ -89,7 +95,7 @@ export function useVoiceRecorder({
       });
     } catch (error) {
       finish(session);
-      onError(error);
+      handleError(error);
       return;
     }
 
@@ -112,14 +118,14 @@ export function useVoiceRecorder({
       finish(session);
       if (session.isCancelled) return;
       if (Date.now() - session.startedAt < minMs) {
-        onTooShort();
+        handleTooShort();
         return;
       }
-      onRecorded(new Blob(chunks, { type: recorder.mimeType || mimeType }));
+      handleRecorded(new Blob(chunks, { type: recorder.mimeType || mimeType }));
     };
     // iOS ends the track when a phone call or another app takes the mic
     session.stream.getAudioTracks()[0]?.addEventListener("ended", () => {
-      if (cancel()) onInterrupted();
+      if (cancel()) handleInterrupted();
     });
 
     session.recorder = recorder;
@@ -141,7 +147,7 @@ export function useVoiceRecorder({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
-      // Release the mic if the job sheet goes away mid-recording
+      // Release the mic if the button goes away mid-recording
       cancel();
     };
   }, []);
