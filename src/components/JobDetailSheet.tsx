@@ -9,7 +9,6 @@ import {
   DollarSign,
   ExternalLink,
   Image as ImageIcon,
-  Key,
   Loader2,
   MapPin,
   MoreHorizontal,
@@ -19,7 +18,7 @@ import {
   Trash2,
   Wrench,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
@@ -35,13 +34,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { AccessCodesEditor } from "@/features/jobs/components/AccessCodesEditor";
+import { JobNotesEditor } from "@/features/jobs/components/JobNotesEditor";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
 import { formatDueDate } from "@/lib/utils";
 
@@ -53,8 +52,6 @@ interface JobDetailSheetProps {
 
 export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProps) {
   const queryClient = useQueryClient();
-  const [notes, setNotes] = useState("");
-  const [newAccessCode, setNewAccessCode] = useState("");
   const receiptInputRef = useRef<HTMLInputElement>(null);
   // The drawer is a modal that blocks pointer events outside itself, so menus must portal into it
   const [drawerContentEl, setDrawerContentEl] = useState<HTMLDivElement | null>(null);
@@ -96,14 +93,6 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
       e.target.value = ""; // Reset input for next selection
     }
   };
-
-  useEffect(() => {
-    if (job?.notes) {
-      setNotes(job.notes);
-    } else {
-      setNotes("");
-    }
-  }, [jobId, job?.notes]);
 
   // Helper to get today's date in YYYY-MM-DD format
   const getTodayDate = () => new Date().toISOString().split("T")[0];
@@ -163,8 +152,8 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
     },
   });
 
-  // Optimistic mutation: Add access code
-  const addAccessCodeMutation = useMutation({
+  // Optimistic mutation: Update access codes
+  const updateAccessCodesMutation = useMutation({
     mutationFn: (variables: { jobId: Id<"jobs">; accessCodes: Array<string> }) =>
       updateJobConvex(variables),
     onMutate: async (variables) => {
@@ -181,7 +170,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
       if (context?.previousJob && jobQueryKey) {
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
-      toast.error("Failed to add access code", { description: String(err) });
+      toast.error("Failed to update access codes", { description: String(err) });
     },
   });
 
@@ -256,12 +245,6 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
     updateTaskMutation.mutate({ jobId: job._id, taskId, completed });
   };
 
-  const handleNotesBlur = () => {
-    if (notes !== (job.notes ?? "")) {
-      updateNotesMutation.mutate({ jobId: job._id, notes });
-    }
-  };
-
   const handleStatusChange = (newStatus: "pending" | "completed") => {
     const confirmMsg =
       newStatus === "completed" ?
@@ -277,16 +260,6 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
     if (confirm("Are you sure you want to delete this job?")) {
       removeJobMutation.mutate({ jobId: job._id });
     }
-  };
-
-  const handleAddAccessCode = () => {
-    if (!newAccessCode.trim()) return;
-    const currentCodes = job.accessCodes ?? [];
-    addAccessCodeMutation.mutate({
-      jobId: job._id,
-      accessCodes: [...currentCodes, newAccessCode.trim()],
-    });
-    setNewAccessCode("");
   };
 
   const openInGoogleMaps = () => {
@@ -460,41 +433,12 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                 </div>
               )}
 
-              {/* Access Codes */}
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Key className="w-3.5 h-3.5" />
-                  Access Codes
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {job.accessCodes?.map((code, i) => (
-                    <Badge
-                      key={i}
-                      variant="secondary"
-                      className="font-mono text-sm px-3 py-1.5 bg-muted/50 rounded-xl"
-                    >
-                      {code}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="New code..."
-                    value={newAccessCode}
-                    onChange={(e) => setNewAccessCode(e.target.value)}
-                    className="h-12 rounded-2xl"
-                    onKeyDown={(e) => e.key === "Enter" && handleAddAccessCode()}
-                  />
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    onClick={handleAddAccessCode}
-                    className="shrink-0 h-12 w-12 rounded-2xl"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
+              <AccessCodesEditor
+                codes={job.accessCodes ?? []}
+                onChange={(accessCodes) =>
+                  updateAccessCodesMutation.mutate({ jobId: job._id, accessCodes })
+                }
+              />
 
               {/* Source Document */}
               {sourceImages && sourceImages.length > 0 && (
@@ -692,19 +636,11 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                 }
               </div>
 
-              {/* Notes Section */}
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
-                  Job Notes
-                </h4>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  onBlur={handleNotesBlur}
-                  placeholder="Add private notes about this job..."
-                  className="min-h-[140px] rounded-[1.5rem] p-4 resize-none bg-muted/20 border-border/50 focus:bg-background transition-colors"
-                />
-              </div>
+              <JobNotesEditor
+                key={job._id}
+                notes={job.notes ?? ""}
+                onSave={(notes) => updateNotesMutation.mutate({ jobId: job._id, notes })}
+              />
             </TabsContent>
 
             <TabsContent value="tasks" className="m-0 p-6 outline-none space-y-6">
