@@ -12,7 +12,8 @@ import type { Doc } from "../../convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { formatDueDate } from "@/lib/utils";
+import { getDueBadge } from "@/features/jobs/lib/dueDate";
+import { cn, formatDueDate } from "@/lib/utils";
 
 type Job = Doc<"jobs">;
 
@@ -89,6 +90,9 @@ export default function JobCard({ job, onClick, onToggleRoute }: JobCardProps) {
   // Check if job is new (created within last 24 hours)
   const isNew = Date.now() - job._creationTime < 24 * 60 * 60 * 1000;
 
+  // Only open work can be late
+  const dueBadge = job.status === "pending" ? getDueBadge(job.dueDate, new Date()) : null;
+
   return (
     <Card
       className="border border-border shadow-sm bg-card py-0 overflow-hidden active:scale-[0.98] transition-all cursor-pointer hover:border-primary/30"
@@ -105,19 +109,32 @@ export default function JobCard({ job, onClick, onToggleRoute }: JobCardProps) {
                 e.stopPropagation();
                 onToggleRoute();
               }}
-              className={`shrink-0 -mt-1 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              className={`shrink-0 -mt-2 -mr-2 w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
                 job.selectedForRoute ?
                   "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
               }`}
               title={job.selectedForRoute ? "Remove from route" : "Add to route"}
+              aria-label={job.selectedForRoute ? "Remove from route" : "Add to route"}
+              aria-pressed={job.selectedForRoute}
             >
-              <RouteIcon size={16} />
+              <RouteIcon size={22} />
             </button>
           )}
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {dueBadge === "overdue" && (
+            <Badge className="h-auto px-2.5 py-1 rounded-lg bg-destructive text-white text-sm font-black uppercase tracking-wider">
+              Overdue
+            </Badge>
+          )}
+          {dueBadge === "today" && (
+            <Badge className="h-auto px-2.5 py-1 rounded-lg bg-amber-500 text-white text-sm font-black uppercase tracking-wider">
+              Due today
+            </Badge>
+          )}
+
           {isNew && (
             <Badge className="h-auto px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-sm font-black uppercase tracking-wider">
               New
@@ -138,7 +155,13 @@ export default function JobCard({ job, onClick, onToggleRoute }: JobCardProps) {
           </Badge>
 
           {job.dueDate && (
-            <div className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg text-sm font-bold border border-border">
+            <div
+              className={cn(
+                "flex items-center gap-1.5 bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg text-sm font-bold border border-border",
+                dueBadge === "overdue" &&
+                  "bg-destructive/10 text-destructive border-destructive/20",
+              )}
+            >
               <Clock size={14} />
               Due: {formatDueDate(job.dueDate)}
             </div>
