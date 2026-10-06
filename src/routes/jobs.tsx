@@ -1,7 +1,7 @@
 import { useMutation } from "convex/react";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
-import { Plus, Route as RouteIcon, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 
@@ -127,25 +127,16 @@ function JobsPage() {
       <div className="space-y-4">
         {filteredJobs && filteredJobs.length > 0 ?
           filteredJobs.map((job) => (
-            <div key={job._id} className="relative">
-              <JobCard job={job} onClick={() => handleJobClick(job._id)} />
-              {filter === "pending" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleRoute(job._id, job.selectedForRoute);
-                  }}
-                  className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                    job.selectedForRoute ?
-                      "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                  }`}
-                  title={job.selectedForRoute ? "Remove from route" : "Add to route"}
-                >
-                  <RouteIcon size={16} />
-                </button>
-              )}
-            </div>
+            <JobCard
+              key={job._id}
+              job={job}
+              onClick={() => handleJobClick(job._id)}
+              onToggleRoute={
+                filter === "pending" ?
+                  () => handleToggleRoute(job._id, job.selectedForRoute)
+                : undefined
+              }
+            />
           ))
         : <div className="py-12 text-center">
             <p className="text-muted-foreground font-bold">No {filter} jobs found.</p>

@@ -1,4 +1,11 @@
-import { AlertCircle, Calendar, CheckCircle2, Clock, DollarSign, MapPin } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Route as RouteIcon,
+} from "lucide-react";
 
 import type { Doc } from "../../convex/_generated/dataModel";
 
@@ -12,6 +19,8 @@ type Job = Doc<"jobs">;
 interface JobCardProps {
   job: Job;
   onClick?: () => void;
+  // Shows the add-to-route toggle next to the address when provided
+  onToggleRoute?: () => void;
 }
 
 function getStatusBadge(job: Job) {
@@ -63,7 +72,7 @@ function getStatusBadge(job: Job) {
   };
 }
 
-export default function JobCard({ job, onClick }: JobCardProps) {
+export default function JobCard({ job, onClick, onToggleRoute }: JobCardProps) {
   const completedTasks = job.tasks?.filter((t) => t.completed).length ?? 0;
   const totalTasks = job.tasks?.length ?? 0;
   const progressValue = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
@@ -86,11 +95,27 @@ export default function JobCard({ job, onClick }: JobCardProps) {
       onClick={onClick}
     >
       <CardContent className="p-5 space-y-4">
-        {/* pr-10 leaves room for the route toggle the jobs page overlays in the top-right corner */}
-        <h3 className="pr-10 text-lg font-black leading-tight text-foreground uppercase tracking-tight">
-          <MapPin className="inline-block w-4 h-4 mr-1 -mt-0.5 text-muted-foreground" />
-          {job.address}
-        </h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-lg font-black leading-tight text-foreground uppercase tracking-tight">
+            {job.address}
+          </h3>
+          {onToggleRoute && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleRoute();
+              }}
+              className={`shrink-0 -mt-1 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                job.selectedForRoute ?
+                  "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              }`}
+              title={job.selectedForRoute ? "Remove from route" : "Add to route"}
+            >
+              <RouteIcon size={16} />
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2">
           {isNew && (
