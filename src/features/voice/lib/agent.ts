@@ -24,6 +24,10 @@ const responseJsonSchema = (() => {
   return schema;
 })();
 
+// Compact JSON without empty fields: fewer tokens, so cheaper and a little faster
+const omitEmpty = (_key: string, value: unknown) =>
+  value === "" || (Array.isArray(value) && value.length === 0) ? undefined : value;
+
 function buildFollowUp({ transcript, reply, applied }: VoiceFollowUp) {
   return `
 Recent context: a moment ago, about this same job, they recorded:
@@ -92,7 +96,7 @@ that."
 
 ${previous ? buildFollowUp(previous) : ""}
 The job:
-${JSON.stringify(job, null, 2)}`;
+${JSON.stringify(job, omitEmpty)}`;
 }
 
 export interface VoiceCommandResult extends VoiceResponse {
