@@ -55,6 +55,8 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
   const [notes, setNotes] = useState("");
   const [newAccessCode, setNewAccessCode] = useState("");
   const receiptInputRef = useRef<HTMLInputElement>(null);
+  // The drawer is a modal that blocks pointer events outside itself, so menus must portal into it
+  const [drawerContentEl, setDrawerContentEl] = useState<HTMLDivElement | null>(null);
 
   // Query key for the job - used for optimistic updates
   const jobQueryKey = jobId ? convexQuery(api.jobs.get, { jobId }).queryKey : null;
@@ -300,7 +302,10 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[90vh] data-[vaul-drawer-direction=bottom]:max-h-[90vh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-hidden shadow-2xl border-t border-border/50">
+      <DrawerContent
+        ref={setDrawerContentEl}
+        className="h-[90vh] data-[vaul-drawer-direction=bottom]:max-h-[90vh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-hidden shadow-2xl border-t border-border/50"
+      >
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0 gap-0">
           {/* Sticky Header */}
           <div className="bg-background shrink-0 z-20">
@@ -318,7 +323,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                   >
                     <MoreHorizontal className="h-6 w-6" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-56" container={drawerContentEl}>
                     <DropdownMenuItem onClick={openInGoogleMaps}>
                       <ExternalLink className="mr-2 h-4 w-4" />
                       Open in Google Maps
