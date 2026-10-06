@@ -1,5 +1,12 @@
 {
-  "include": ["src/**/*.ts", "src/**/*.tsx", "convex/**/*.ts", "*.config.js", "*.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "convex/**/*.ts",
+    "evals/**/*.ts",
+    "*.config.js",
+    "*.config.ts"
+  ],
   "exclude": ["old_src/**", "convex/_generated/**", "node_modules/**", "dist/**"],
 
   "compilerOptions": {
