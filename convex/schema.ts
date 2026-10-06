@@ -11,6 +11,12 @@ const taskValidator = v.object({
   id: v.string(),
   category: v.string(),
   taskName: v.string(),
+  // Line item text as printed on the source document
+  sourceItem: v.optional(v.string()),
+  // Room or location of the work, when the document states it
+  area: v.optional(v.string()),
+  // Source document page the task came from
+  page: v.optional(v.number()),
   specificInstructions: v.optional(v.string()),
   quantity: v.optional(v.number()),
   unit: v.optional(v.string()),
@@ -119,6 +125,8 @@ export default defineSchema({
   jobProcessingQueue: defineTable({
     userId: v.id("users"),
     fileStorageIds: v.array(v.id("_storage")),
+    // Original upload (PDF or photo), used for extraction and deleted afterwards
+    sourceFileId: v.optional(v.id("_storage")),
     fileName: v.string(),
     status: v.union(v.literal("queued"), v.literal("processing"), v.literal("failed")),
     error: v.optional(v.string()),

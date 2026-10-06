@@ -30,6 +30,22 @@ export function useAddJob() {
     setFiles((prev) => [...prev, ...processedFiles]);
   };
 
+  const uploadBlob = async (blob: Blob): Promise<Id<"_storage">> => {
+    const uploadUrl = await generateUploadUrl();
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      headers: { "Content-Type": blob.type },
+      body: blob,
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload file");
+    }
+
+    const { storageId } = await response.json();
+    return storageId as Id<"_storage">;
+  };
+
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
@@ -58,39 +74,27 @@ export function useAddJob() {
           // Step 1: Convert file to images (PDF pages or compressed image)
           const images = await processFileToImages(file);
 
-          // Step 2: Upload images to Convex storage in parallel
-          const uploadPromises = images.map(async (image) => {
-            // Get upload URL
-            const uploadUrl = await generateUploadUrl();
-
-            // Convert base64 to blob
-            const binaryStr = atob(image.base64);
-            const bytes = new Uint8Array(binaryStr.length);
-            for (let j = 0; j < binaryStr.length; j++) {
-              bytes[j] = binaryStr.charCodeAt(j);
-            }
-            const blob = new Blob([bytes], { type: image.mimeType });
-
-            // Upload to Convex
-            const response = await fetch(uploadUrl, {
-              method: "POST",
-              headers: { "Content-Type": image.mimeType },
-              body: blob,
-            });
-
-            if (!response.ok) {
-              throw new Error("Failed to upload image");
-            }
-
-            const { storageId } = await response.json();
-            return storageId as Id<"_storage">;
-          });
-
-          const storageIds = await Promise.all(uploadPromises);
+          // Step 2: Upload the reference images and the original file in parallel.
+          // The images stay with the job; the original is only used for extraction.
+          const [storageIds, sourceFileId] = await Promise.all([
+            Promise.all(
+              images.map((image) => {
+                // Convert base64 to blob
+                const binaryStr = atob(image.base64);
+                const bytes = new Uint8Array(binaryStr.length);
+                for (let j = 0; j < binaryStr.length; j++) {
+                  bytes[j] = binaryStr.charCodeAt(j);
+                }
+                return uploadBlob(new Blob([bytes], { type: image.mimeType }));
+              }),
+            ),
+            uploadBlob(file),
+          ]);
 
           // Step 3: Enqueue job in Convex for background processing
           await enqueueJob({
             fileStorageIds: storageIds,
+            sourceFileId,
             fileName: file.name,
           });
 

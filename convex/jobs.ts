@@ -8,6 +8,12 @@ const taskValidator = v.object({
   id: v.string(),
   category: v.string(),
   taskName: v.string(),
+  // Line item text as printed on the source document
+  sourceItem: v.optional(v.string()),
+  // Room or location of the work, when the document states it
+  area: v.optional(v.string()),
+  // Source document page the task came from
+  page: v.optional(v.number()),
   specificInstructions: v.optional(v.string()),
   quantity: v.optional(v.number()),
   unit: v.optional(v.string()),
@@ -524,6 +530,7 @@ export const updateRouteMetrics = mutation({
 export const enqueueJob = mutation({
   args: {
     fileStorageIds: v.array(v.id("_storage")),
+    sourceFileId: v.optional(v.id("_storage")),
     fileName: v.string(),
   },
   handler: async (ctx, args) => {
@@ -532,6 +539,7 @@ export const enqueueJob = mutation({
     const queueId = await ctx.db.insert("jobProcessingQueue", {
       userId,
       fileStorageIds: args.fileStorageIds,
+      sourceFileId: args.sourceFileId,
       fileName: args.fileName,
       status: "queued",
     });
@@ -571,6 +579,7 @@ export const finalizeJob = internalMutation({
     tasks: v.array(taskValidator),
     accessCodes: v.array(v.string()),
     dueDate: v.optional(v.string()),
+    notes: v.optional(v.string()),
     coordinates: v.optional(coordinatesValidator),
     sourceImageIds: v.array(v.id("_storage")),
   },
@@ -579,6 +588,11 @@ export const finalizeJob = internalMutation({
     if (!queueItem) throw new Error("Queue item not found");
 
     const { queueId, ...jobData } = args;
+
+    // The original upload is only needed for extraction
+    if (queueItem.sourceFileId) {
+      await ctx.storage.delete(queueItem.sourceFileId);
+    }
 
     // Create the job
     await ctx.db.insert("jobs", {
@@ -609,6 +623,9 @@ export const cleanupFailedJob = internalMutation({
     // Delete files from storage
     for (const fileId of queueItem.fileStorageIds) {
       await ctx.storage.delete(fileId);
+    }
+    if (queueItem.sourceFileId) {
+      await ctx.storage.delete(queueItem.sourceFileId);
     }
 
     // Update status to failed

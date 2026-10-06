@@ -14,6 +14,7 @@ import type * as jobActions from "../jobActions.js";
 import type * as jobs from "../jobs.js";
 import type * as lib_ai from "../lib/ai.js";
 import type * as lib_geo from "../lib/geo.js";
+import type * as lib_jobExtraction from "../lib/jobExtraction.js";
 import type * as payments from "../payments.js";
 import type * as receiptActions from "../receiptActions.js";
 import type * as receipts from "../receipts.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   jobs: typeof jobs;
   "lib/ai": typeof lib_ai;
   "lib/geo": typeof lib_geo;
+  "lib/jobExtraction": typeof lib_jobExtraction;
   payments: typeof payments;
   receiptActions: typeof receiptActions;
   receipts: typeof receipts;

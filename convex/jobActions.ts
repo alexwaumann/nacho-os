@@ -1,10 +1,55 @@
 "use node";
 
+import { GoogleGenAI } from "@google/genai";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { extractJobFromImages } from "./lib/ai";
+import { extractJob } from "./lib/jobExtraction";
 import { geocodeAddress } from "./lib/geo";
+import type { Id } from "./_generated/dataModel";
+import type { ActionCtx } from "./_generated/server";
+import type { AccessCode, SourceFile } from "./lib/jobExtraction";
+import { env } from "@/env";
+
+// Keep inline Gemini requests well under the 20MB request limit
+const MAX_SOURCE_FILE_BYTES = 15 * 1024 * 1024;
+
+async function loadFile(
+  ctx: ActionCtx,
+  storageId: Id<"_storage">,
+  maxBytes = Infinity,
+): Promise<SourceFile | null> {
+  const blob = await ctx.storage.get(storageId);
+  if (!blob || blob.size > maxBytes) return null;
+  const base64 = Buffer.from(await blob.arrayBuffer()).toString("base64");
+  return { base64, mimeType: blob.type };
+}
+
+/**
+ * Prefer the original upload (native PDF or full-res photo); fall back to the stored page images.
+ */
+async function loadExtractionFiles(
+  ctx: ActionCtx,
+  sourceFileId: Id<"_storage"> | undefined,
+  pageImageIds: Array<Id<"_storage">>,
+): Promise<Array<SourceFile>> {
+  if (sourceFileId) {
+    const source = await loadFile(ctx, sourceFileId, MAX_SOURCE_FILE_BYTES);
+    if (source) return [source];
+  }
+
+  const images: Array<SourceFile> = [];
+  for (const storageId of pageImageIds) {
+    const image = await loadFile(ctx, storageId);
+    if (image) images.push(image);
+  }
+  return images;
+}
+
+function formatAccessCode({ code, kind, note }: AccessCode): string {
+  const label = kind === "other" ? null : kind[0].toUpperCase() + kind.slice(1);
+  return [label ? `${label}: ${code}` : code, note].filter(Boolean).join(" — ");
+}
 
 /**
  * Background action to process a job document using Gemini and Google Maps
@@ -27,20 +72,19 @@ export const processJobAction = internalAction({
       });
       if (!queueItem) throw new Error("Queue item not found");
 
-      const images: Array<{ base64: string; mimeType: string }> = [];
-      for (const storageId of queueItem.fileStorageIds) {
-        const blob = await ctx.storage.get(storageId);
-        if (!blob) continue;
+      const files = await loadExtractionFiles(
+        ctx,
+        queueItem.sourceFileId,
+        queueItem.fileStorageIds,
+      );
+      if (files.length === 0) throw new Error("No document found in storage");
 
-        const arrayBuffer = await blob.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString("base64");
-        images.push({ base64, mimeType: blob.type });
+      // 3. Extract the job with Gemini
+      const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+      const { job: extractedJob, warnings } = await extractJob(ai, files);
+      if (warnings.length > 0) {
+        console.warn(`Extraction warnings for ${queueItem.fileName}:`, warnings);
       }
-
-      if (images.length === 0) throw new Error("No images found in storage");
-
-      // 3. Call Gemini via shared utility
-      const extractedJob = await extractJobFromImages(images);
 
       // 4. Validate Address
       if (!extractedJob.propertyAddress) {
@@ -53,24 +97,28 @@ export const processJobAction = internalAction({
       // 6. Finalize Job
       const tasks = extractedJob.tasks.map((task, idx) => ({
         id: `task-${idx}-${Date.now()}`,
-        category: task.category || "General",
+        category: task.category,
         taskName: task.taskName,
+        sourceItem: task.sourceItem,
+        area: task.area ?? undefined,
+        page: task.page,
         specificInstructions: task.specificInstructions || undefined,
-        quantity: typeof task.quantity === "number" ? task.quantity : undefined,
-        unit: task.unit || undefined,
-        materials: Array.isArray(task.materialsNeeded) ? task.materialsNeeded : [],
-        tools: Array.isArray(task.toolsNeeded) ? task.toolsNeeded : [],
-        requiresOnlineOrder: !!task.requiresOnlineOrder,
+        quantity: task.quantity ?? undefined,
+        unit: task.unit ?? undefined,
+        materials: task.materials,
+        tools: task.tools,
+        requiresOnlineOrder: task.requiresOnlineOrder,
         completed: false,
       }));
 
       await ctx.runMutation(internal.jobs.finalizeJob, {
         queueId: args.queueId,
         address: extractedJob.propertyAddress,
-        summary: extractedJob.jobSummary,
+        summary: extractedJob.jobSummary || undefined,
         tasks,
-        accessCodes: Array.isArray(extractedJob.accessCodes) ? extractedJob.accessCodes : [],
-        dueDate: extractedJob.targetCompletionDate,
+        accessCodes: extractedJob.accessCodes.map(formatAccessCode),
+        dueDate: extractedJob.dueDate ?? undefined,
+        notes: extractedJob.notes.join("\n") || undefined,
         coordinates: coordinates || undefined,
         sourceImageIds: queueItem.fileStorageIds,
       });
