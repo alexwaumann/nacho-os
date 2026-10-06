@@ -2,16 +2,7 @@ import { useMutation } from "convex/react";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { Reorder, useDragControls } from "framer-motion";
-import {
-  AlertCircle,
-  ClipboardList,
-  GripVertical,
-  Loader2,
-  Navigation,
-  Plus,
-  Scan,
-  X,
-} from "lucide-react";
+import { AlertCircle, ClipboardList, GripVertical, Loader2, Navigation, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
@@ -23,16 +14,13 @@ import type { Doc, Id } from "../../convex/_generated/dataModel";
 import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckDetectedModal } from "@/features/checks/components/CheckDetectedModal";
-import { useAddCheck } from "@/features/checks/hooks/useAddCheck";
 import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
 import { RouteJobCard } from "@/features/jobs/components/RouteJobCard";
 import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
 import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobSheet";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
-import { AddJobModal } from "@/features/jobs/components/AddJobModal";
+import { ScanActions } from "@/features/scan/components/ScanActions";
 import { generateGoogleMapsUrl } from "@/server/geo";
-import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
   "new-job": z.string().optional(),
@@ -47,8 +35,6 @@ export const Route = createFileRoute("/")({
 type Job = Doc<"jobs">;
 
 function YouPage() {
-  const navigate = Route.useNavigate();
-
   // Sync user on first load
   const getOrCreateUser = useMutation(api.users.getOrCreateUser);
   const removeQueueItem = useMutation(api.jobs.removeQueueItem);
@@ -72,24 +58,6 @@ function YouPage() {
   const { isOptimizing, optimizeAndSaveRoute, recalculateRouteMetrics, clearRoute } =
     useRouteOptimization();
 
-  // Check flow
-  const checkFileInputRef = useRef<HTMLInputElement>(null);
-  const [checkModalOpen, setCheckModalOpen] = useState(false);
-  const {
-    isProcessing: isCheckProcessing,
-    checkData,
-    imageData,
-    handleFileSelect: handleCheckFileSelect,
-    reset: resetCheck,
-  } = useAddCheck();
-
-  // Open modal when check data is ready
-  useEffect(() => {
-    if (checkData && imageData) {
-      setCheckModalOpen(true);
-    }
-  }, [checkData, imageData]);
-
   // Local state for drag reordering
   const [localJobOrder, setLocalJobOrder] = useState<Array<Job>>(selectedJobs);
   const prevJobIdsRef = useRef<string>("");
@@ -102,12 +70,6 @@ function YouPage() {
       setLocalJobOrder(selectedJobs);
     }
   }, [selectedJobs]);
-
-  const handleAddJobClick = () => {
-    navigate({
-      search: (prev) => ({ ...prev, "new-job": "true" }),
-    });
-  };
 
   const handleNavigate = () => {
     if (selectedJobs.length === 0) return;
@@ -149,7 +111,6 @@ function YouPage() {
 
   return (
     <div className="space-y-6">
-      <AddJobModal />
       <JobDetailSheet
         jobId={jobSheet.jobId}
         open={jobSheet.isOpen}
@@ -164,70 +125,7 @@ function YouPage() {
         isOptimizing={isOptimizing}
       />
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-6">
-        <Card
-          onClick={handleAddJobClick}
-          className="border border-border shadow-sm bg-card active:scale-95 transition-transform cursor-pointer group"
-        >
-          <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-              <Plus size={32} strokeWidth={3} />
-            </div>
-            <span className="font-bold text-foreground">Add Job</span>
-          </CardContent>
-        </Card>
-
-        <Card
-          onClick={() => {
-            if (!isCheckProcessing) {
-              checkFileInputRef.current?.click();
-            }
-          }}
-          className={cn(
-            "border border-border shadow-sm bg-card transition-transform cursor-pointer group",
-            isCheckProcessing ? "opacity-75" : "active:scale-95",
-          )}
-        >
-          <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-              {isCheckProcessing ?
-                <Loader2 size={32} className="animate-spin" />
-              : <Scan size={32} strokeWidth={3} />}
-            </div>
-            <span className="font-bold text-foreground">
-              {isCheckProcessing ? "Processing..." : "Add Check"}
-            </span>
-          </CardContent>
-        </Card>
-
-        {/* Hidden file input for check upload */}
-        <input
-          type="file"
-          ref={checkFileInputRef}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleCheckFileSelect(file);
-            e.target.value = "";
-          }}
-          className="hidden"
-          accept=".pdf,image/*"
-        />
-      </div>
-
-      {/* Check Detected Modal */}
-      {checkData && imageData && (
-        <CheckDetectedModal
-          open={checkModalOpen}
-          onOpenChange={setCheckModalOpen}
-          checkData={checkData}
-          imageData={imageData}
-          onCancel={() => {
-            setCheckModalOpen(false);
-            resetCheck();
-          }}
-        />
-      )}
+      <ScanActions />
 
       {/* Processing Queue */}
       {processingQueue.length > 0 && (

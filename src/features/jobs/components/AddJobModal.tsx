@@ -13,7 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function AddJobModal() {
+interface AddJobModalProps {
+  /** Files picked before the modal opened (e.g. from "Scan work order"). Read on mount only. */
+  initialFiles?: Array<File>;
+}
+
+export function AddJobModal({ initialFiles }: AddJobModalProps) {
   const navigate = useNavigate();
   const search = useSearch({ from: "/" });
   const isOpen = search["new-job"] === "true";
@@ -27,7 +32,7 @@ export function AddJobModal() {
     isDone,
     processedCount,
     handleProcess,
-  } = useAddJob();
+  } = useAddJob(initialFiles);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
