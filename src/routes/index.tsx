@@ -2,7 +2,7 @@ import { useMutation } from "convex/react";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { Reorder, useDragControls } from "framer-motion";
-import { AlertCircle, ClipboardList, GripVertical, Loader2, Navigation, X } from "lucide-react";
+import { AlertCircle, Check, GripVertical, Loader2, Navigation, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
@@ -15,13 +15,17 @@ import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
+import { EmptyRouteCard } from "@/features/jobs/components/EmptyRouteCard";
+import { AllStopsDoneCard, NextStopCard } from "@/features/jobs/components/NextStopCard";
 import { RouteBriefCard } from "@/features/jobs/components/RouteBriefCard";
 import { RouteJobCard } from "@/features/jobs/components/RouteJobCard";
 import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
 import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobSheet";
 import { useRouteBrief } from "@/features/jobs/hooks/useRouteBrief";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
+import { isStopDone, mergeRestOrder, splitRoute } from "@/features/jobs/lib/today";
 import { ScanActions } from "@/features/scan/components/ScanActions";
+import { cn } from "@/lib/utils";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
 const searchSchema = z.object({
@@ -31,12 +35,13 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/")({
   validateSearch: (search) => searchSchema.parse(search),
-  component: YouPage,
+  component: TodayPage,
 });
 
 type Job = Doc<"jobs">;
+type JobId = Id<"jobs">;
 
-function YouPage() {
+function TodayPage() {
   // Sync user on first load
   const getOrCreateUser = useMutation(api.users.getOrCreateUser);
   const removeQueueItem = useMutation(api.jobs.removeQueueItem);
@@ -45,18 +50,17 @@ function YouPage() {
     getOrCreateUser().catch(console.error);
   }, [getOrCreateUser]);
 
-  const { data: selectedJobs = [] } = useQuery(convexQuery(api.jobs.getSelectedForRoute, {}));
+  const { data: selectedJobs = [], isSuccess: isRouteLoaded } = useQuery(
+    convexQuery(api.jobs.getSelectedForRoute, {}),
+  );
   const { data: routeTotals } = useQuery(convexQuery(api.jobs.getRouteTotals, {}));
-  const { data: stats } = useQuery(convexQuery(api.jobs.getStats, {}));
   const { data: processingQueue = [] } = useQuery(convexQuery(api.jobs.listQueue, {}));
   const { data: currentUser } = useQuery(convexQuery(api.users.getCurrentUser, {}));
 
-  // Edit Route Modal state
   const [editRouteOpen, setEditRouteOpen] = useState(false);
 
   const jobSheet = useJobSheet();
 
-  // Route optimization hook
   const { isOptimizing, optimizeAndSaveRoute, recalculateRouteMetrics, clearRoute } =
     useRouteOptimization();
 
@@ -67,35 +71,46 @@ function YouPage() {
     recalculateRouteMetrics,
   });
 
-  // Local state for drag reordering
-  const [localJobOrder, setLocalJobOrder] = useState<Array<Job>>(selectedJobs);
+  // Local order (ids) for drag reordering; the jobs themselves always come fresh from the server
+  const [localOrder, setLocalOrder] = useState<Array<JobId>>(() =>
+    selectedJobs.map((job) => job._id),
+  );
   const prevJobIdsRef = useRef<string>("");
 
-  // Sync local order with server data (only when job IDs actually change)
+  // Sync local order with server data (only when the ids or their order change)
   useEffect(() => {
-    const currentIds = selectedJobs.map((j) => j._id).join(",");
+    const currentIds = selectedJobs.map((job) => job._id).join(",");
     if (currentIds !== prevJobIdsRef.current) {
       prevJobIdsRef.current = currentIds;
-      setLocalJobOrder(selectedJobs);
+      setLocalOrder(selectedJobs.map((job) => job._id));
     }
   }, [selectedJobs]);
 
-  const handleNavigate = () => {
-    if (selectedJobs.length === 0) return;
+  // Derived values
+  const jobsById = new Map(selectedJobs.map((job) => [job._id, job]));
+  const orderedJobs = localOrder
+    .map((id) => jobsById.get(id))
+    .filter((job): job is Job => job !== undefined);
+  // The next stop comes from the saved order, so it doesn't jump around mid-drag
+  const { next: nextStop, allDone } = splitRoute(selectedJobs);
+  const restIds = localOrder.filter((id) => id !== nextStop?._id && jobsById.has(id));
+  const pendingStops = orderedJobs.filter((job) => !isStopDone(job));
+  const hasRoute = selectedJobs.length > 0;
 
-    const waypoints = selectedJobs
-      .filter((j) => j.coordinates)
-      .map((j) => ({
-        coordinates: j.coordinates!,
-      }));
-
-    const url = generateGoogleMapsUrl(waypoints, true, currentUser?.homeCoordinates ?? undefined);
+  // Handlers
+  const handleNavigateRoute = () => {
+    // Only the stops still to do; done stops are skipped
+    const url = generateGoogleMapsUrl(
+      pendingStops,
+      true,
+      currentUser?.homeCoordinates ?? undefined,
+    );
     if (url) {
       window.open(url, "_blank");
     }
   };
 
-  const handleEditRouteDone = async (selectedJobIds: Array<Id<"jobs">>) => {
+  const handleEditRouteDone = async (selectedJobIds: Array<JobId>) => {
     try {
       await optimizeAndSaveRoute(selectedJobIds);
     } catch (error) {
@@ -106,15 +121,23 @@ function YouPage() {
     }
   };
 
+  const handleClearRoute = () => {
+    if (window.confirm("Clear today's route? The jobs stay in your job list.")) {
+      void clearRoute();
+    }
+  };
+
+  const handleRestReorder = (newRestIds: Array<JobId>) => {
+    setLocalOrder((prev) => mergeRestOrder(prev, nextStop?._id ?? null, newRestIds));
+  };
+
   const handleReorderEnd = () => {
     // Only recalculate if order actually changed
-    const newOrderIds = localJobOrder.map((j) => j._id);
-    const originalOrderIds = selectedJobs.map((j) => j._id);
+    const originalOrderIds = selectedJobs.map((job) => job._id);
+    const orderChanged = localOrder.some((id, index) => id !== originalOrderIds[index]);
 
-    const orderChanged = newOrderIds.some((id, index) => id !== originalOrderIds[index]);
-
-    if (orderChanged && newOrderIds.length >= 2) {
-      recalculateRouteMetrics(newOrderIds);
+    if (orderChanged && localOrder.length >= 2) {
+      void recalculateRouteMetrics(localOrder);
     }
   };
 
@@ -136,158 +159,135 @@ function YouPage() {
 
       <ScanActions />
 
-      {/* Processing Queue */}
+      {/* Work orders being read */}
       {processingQueue.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-1">
-            Processing Jobs
-          </h3>
+        <section className="space-y-3">
+          <h2 className="text-lg font-bold text-foreground">Reading work orders</h2>
           <div className="space-y-2">
             {processingQueue.map((item) => (
               <Card
                 key={item._id}
-                className={`border shadow-sm py-0 overflow-hidden ${
-                  item.status === "failed" ? "border-destructive/50 bg-destructive/5" : "bg-card"
-                }`}
+                className={cn(
+                  "overflow-hidden border py-0 shadow-sm",
+                  item.status === "failed" ? "border-destructive/50 bg-destructive/5" : "bg-card",
+                )}
               >
-                <CardContent className="p-4 flex items-center gap-3">
+                <CardContent className="flex items-center gap-3 p-4">
                   {item.status === "failed" ?
-                    <AlertCircle className="text-destructive shrink-0" size={20} />
-                  : <Loader2 className="text-primary animate-spin shrink-0" size={20} />}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate">{item.fileName}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {item.status === "failed" ? item.error : "Extracting details..."}
+                    <AlertCircle className="shrink-0 text-destructive" size={24} />
+                  : <Loader2 className="shrink-0 animate-spin text-primary" size={24} />}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-bold">{item.fileName}</p>
+                    <p className="mt-0.5 text-base text-muted-foreground">
+                      {item.status === "failed" ? item.error : "Reading the details..."}
                     </p>
                   </div>
                   {item.status === "failed" && (
                     <button
                       onClick={() => removeQueueItem({ queueId: item._id })}
-                      className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                      aria-label="Remove"
+                      className="-mr-2 flex size-12 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
-                      <X size={18} />
+                      <X size={24} />
                     </button>
                   )}
                 </CardContent>
               </Card>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Today's Plan */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-foreground">
-            <ClipboardList size={24} className="text-muted-foreground" />
-            <h2 className="text-xl font-bold tracking-tight">Today's Plan</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditRouteOpen(true)}
-              className="text-xs font-bold rounded-full px-4"
-            >
-              Edit Route
-            </Button>
-            {selectedJobs.length > 0 && (
+      <RouteBriefCard routeBrief={routeBrief} />
+
+      {/* Wait for the route before choosing between the empty state and the stops */}
+      {!isRouteLoaded ?
+        null
+      : !hasRoute ?
+        <EmptyRouteCard onPlanRoute={() => setEditRouteOpen(true)} onOpenJob={jobSheet.openJob} />
+      : <>
+          {/* Next stop */}
+          <section className="space-y-3">
+            {nextStop ?
+              <>
+                <h2 className="text-xl font-bold tracking-tight text-foreground">Next stop</h2>
+                <NextStopCard
+                  job={nextStop}
+                  stopNumber={localOrder.indexOf(nextStop._id) + 1}
+                  totalStops={selectedJobs.length}
+                  arrivalTime={routeBrief.arrivalTimes[nextStop._id]}
+                  weatherNote={routeBrief.siteNotes[nextStop._id]}
+                  onOpen={() => jobSheet.openJob(nextStop._id)}
+                />
+              </>
+            : allDone && <AllStopsDoneCard onPlanTomorrow={() => setEditRouteOpen(true)} />}
+          </section>
+
+          {/* Rest of the route */}
+          <section className="space-y-4">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">Today's route</h2>
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                size="sm"
-                onClick={clearRoute}
-                className="text-xs font-bold rounded-full px-4 text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => setEditRouteOpen(true)}
+                className="h-12 rounded-xl text-base font-bold"
               >
-                Clear Route
+                Edit route
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleClearRoute}
+                className="h-12 rounded-xl border-destructive/30 text-base font-bold text-destructive hover:bg-destructive/10"
+              >
+                Clear route
+              </Button>
+            </div>
+
+            {routeTotals && selectedJobs.length >= 2 && (
+              <RouteSummaryCard
+                totalDistance={routeTotals.totalDistance}
+                totalDuration={routeTotals.totalDuration}
+              />
+            )}
+
+            {pendingStops.length >= 2 && (
+              <Button
+                onClick={handleNavigateRoute}
+                variant="secondary"
+                className="h-14 w-full gap-2 rounded-xl text-lg font-bold"
+              >
+                <Navigation className="size-6" />
+                Navigate whole route
               </Button>
             )}
-          </div>
-        </div>
 
-        {/* Route Summary */}
-        {routeTotals && selectedJobs.length >= 2 && (
-          <RouteSummaryCard
-            totalDistance={routeTotals.totalDistance}
-            totalDuration={routeTotals.totalDuration}
-          />
-        )}
-
-        {/* Navigate Button */}
-        {selectedJobs.length > 0 && (
-          <Button
-            onClick={handleNavigate}
-            variant="secondary"
-            className="w-full h-12 font-bold rounded-xl gap-2"
-          >
-            <Navigation size={18} />
-            Navigate in Google Maps
-          </Button>
-        )}
-
-        <RouteBriefCard routeBrief={routeBrief} />
-
-        {selectedJobs.length === 0 ?
-          <Card className="border-2 border-dashed border-border bg-card/50 shadow-none rounded-2xl py-0">
-            <CardContent className="py-12 flex flex-col items-center justify-center text-center gap-2">
-              <p className="text-muted-foreground font-medium">No stops planned.</p>
-              <button
-                onClick={() => setEditRouteOpen(true)}
-                className="text-primary font-bold hover:underline text-sm"
+            {restIds.length > 0 && (
+              <Reorder.Group
+                axis="y"
+                values={restIds}
+                onReorder={handleRestReorder}
+                className="space-y-3"
               >
-                Tap to add stops +
-              </button>
-            </CardContent>
-          </Card>
-        : <Reorder.Group
-            axis="y"
-            values={localJobOrder}
-            onReorder={setLocalJobOrder}
-            className="space-y-3"
-          >
-            {localJobOrder.map((job, index) => (
-              <DraggableRouteCard
-                key={job._id}
-                job={job}
-                index={index}
-                onClick={() => jobSheet.openJob(job._id)}
-                onDragEnd={handleReorderEnd}
-                arrivalTime={routeBrief.arrivalTimes[job._id]}
-                weatherNote={routeBrief.siteNotes[job._id]}
-              />
-            ))}
-          </Reorder.Group>
-        }
-      </div>
-
-      {/* Quick Stats */}
-      {stats && (
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="border border-border shadow-sm bg-card py-0">
-            <CardContent className="p-4 text-center">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
-                Pending
-              </p>
-              <p className="text-2xl font-black text-foreground">{stats.pending}</p>
-            </CardContent>
-          </Card>
-          <Card className="border border-border shadow-sm bg-card py-0">
-            <CardContent className="p-4 text-center">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
-                Done
-              </p>
-              <p className="text-2xl font-black text-foreground">{stats.completed}</p>
-            </CardContent>
-          </Card>
-          <Card className="border border-border shadow-sm bg-card py-0">
-            <CardContent className="p-4 text-center">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
-                Paid
-              </p>
-              <p className="text-2xl font-black text-emerald-600">{stats.paid}</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                {restIds.map((id) => {
+                  const job = jobsById.get(id)!;
+                  return (
+                    <DraggableRouteCard
+                      key={id}
+                      job={job}
+                      stopNumber={localOrder.indexOf(id) + 1}
+                      isDone={isStopDone(job)}
+                      onClick={() => jobSheet.openJob(id)}
+                      onDragEnd={handleReorderEnd}
+                      arrivalTime={routeBrief.arrivalTimes[id]}
+                      weatherNote={routeBrief.siteNotes[id]}
+                    />
+                  );
+                })}
+              </Reorder.Group>
+            )}
+          </section>
+        </>
+      }
     </div>
   );
 }
@@ -295,7 +295,8 @@ function YouPage() {
 // Draggable route card component using framer-motion Reorder
 interface DraggableRouteCardProps {
   job: Job;
-  index: number;
+  stopNumber: number;
+  isDone: boolean;
   onClick: () => void;
   onDragEnd: () => void;
   arrivalTime?: number;
@@ -304,7 +305,8 @@ interface DraggableRouteCardProps {
 
 function DraggableRouteCard({
   job,
-  index,
+  stopNumber,
+  isDone,
   onClick,
   onDragEnd,
   arrivalTime,
@@ -314,35 +316,49 @@ function DraggableRouteCard({
 
   return (
     <Reorder.Item
-      value={job}
+      value={job._id}
       dragListener={false}
       dragControls={dragControls}
       onDragEnd={onDragEnd}
-      className="flex items-stretch gap-0 bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
+      className={cn(
+        "flex items-stretch gap-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm",
+        isDone && "bg-muted/40",
+      )}
       whileDrag={{ scale: 1.02, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
     >
       {/* Drag Handle - Touch-friendly area */}
       <div
         onPointerDown={(e) => dragControls.start(e)}
-        className="flex flex-col items-center justify-center px-3 bg-muted/30 cursor-grab active:cursor-grabbing touch-none select-none"
+        aria-label={`Drag to move stop ${stopNumber}`}
+        className="flex w-14 cursor-grab touch-none select-none flex-col items-center justify-center bg-muted/30 active:cursor-grabbing"
       >
-        <GripVertical size={20} className="text-muted-foreground" />
-        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm mt-2">
-          {index + 1}
+        <GripVertical size={22} className="text-muted-foreground" />
+        <div
+          className={cn(
+            "mt-2 flex size-8 items-center justify-center rounded-full text-base font-bold",
+            isDone ? "bg-emerald-600 text-white" : "bg-primary/10 text-primary",
+          )}
+        >
+          {isDone ?
+            <Check size={18} strokeWidth={3} aria-label="Done" />
+          : stopNumber}
         </div>
       </div>
 
       {/* Card Content - Clickable area */}
       <div
-        className="flex-1 cursor-pointer active:scale-[0.99] transition-transform"
+        className={cn(
+          "flex-1 cursor-pointer transition-transform active:scale-[0.99]",
+          isDone && "opacity-60",
+        )}
         onClick={onClick}
       >
         <RouteJobCard
           job={job}
-          className="border-0 shadow-none rounded-none"
-          showForecast
-          arrivalTime={arrivalTime}
-          weatherNote={weatherNote}
+          className="rounded-none border-0 bg-transparent shadow-none"
+          showForecast={!isDone}
+          arrivalTime={isDone ? undefined : arrivalTime}
+          weatherNote={isDone ? undefined : weatherNote}
         />
       </div>
     </Reorder.Item>
