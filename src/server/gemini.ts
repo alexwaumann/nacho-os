@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { createServerFn } from "@tanstack/react-start";
 
 import { env } from "@/env";
@@ -70,7 +70,7 @@ function getGeminiClient() {
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY not configured in environment variables");
   }
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 }
 
 /**
@@ -79,32 +79,31 @@ function getGeminiClient() {
 export const analyzeReceipt = createServerFn({ method: "POST" })
   .inputValidator((data: { image: ImageInput }) => data)
   .handler(async ({ data }) => {
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({
+    const ai = getGeminiClient();
+    const result = await ai.models.generateContent({
       model: "gemini-2.0-flash",
-      generationConfig: {
+      config: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            storeName: { type: SchemaType.STRING },
-            storeLocation: { type: SchemaType.STRING },
-            summary: { type: SchemaType.STRING },
-            total: { type: SchemaType.NUMBER },
-            date: { type: SchemaType.STRING },
+            storeName: { type: Type.STRING },
+            storeLocation: { type: Type.STRING },
+            summary: { type: Type.STRING },
+            total: { type: Type.NUMBER },
+            date: { type: Type.STRING },
           },
         },
       },
+      contents: [
+        {
+          text: "Analyze this receipt image. Extract the Store Name. Look carefully at the header or footer for the Store Address (Street, City, State, Zip). Also extract a short summary of items, the Total amount, and the Date (MM/DD/YYYY).",
+        },
+        { inlineData: { data: data.image.base64, mimeType: data.image.mimeType } },
+      ],
     });
 
-    const result = await model.generateContent([
-      {
-        text: "Analyze this receipt image. Extract the Store Name. Look carefully at the header or footer for the Store Address (Street, City, State, Zip). Also extract a short summary of items, the Total amount, and the Date (MM/DD/YYYY).",
-      },
-      { inlineData: { data: data.image.base64, mimeType: data.image.mimeType } },
-    ]);
-
-    const text = result.response.text();
+    const text = result.text ?? "";
     try {
       return JSON.parse(text) as ReceiptData;
     } catch {
@@ -119,35 +118,34 @@ export const analyzeReceipt = createServerFn({ method: "POST" })
 export const analyzeCheck = createServerFn({ method: "POST" })
   .inputValidator((data: { image: ImageInput }) => data)
   .handler(async ({ data }) => {
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({
+    const ai = getGeminiClient();
+    const result = await ai.models.generateContent({
       model: "gemini-2.0-flash",
-      generationConfig: {
+      config: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            amount: { type: SchemaType.NUMBER },
-            payerName: { type: SchemaType.STRING },
-            date: { type: SchemaType.STRING },
+            amount: { type: Type.NUMBER },
+            payerName: { type: Type.STRING },
+            date: { type: Type.STRING },
             detectedAddress: {
-              type: SchemaType.STRING,
+              type: Type.STRING,
               description:
                 "Address found in memo or address fields related to the service location.",
             },
           },
         },
       },
+      contents: [
+        {
+          text: "Analyze this bank check. Extract the written Amount (as a number), the Payer Name (top left), the Date written on the check (MM/DD/YYYY), and any Address found in the Memo line or on the check that indicates what job this is for.",
+        },
+        { inlineData: { data: data.image.base64, mimeType: data.image.mimeType } },
+      ],
     });
 
-    const result = await model.generateContent([
-      {
-        text: "Analyze this bank check. Extract the written Amount (as a number), the Payer Name (top left), the Date written on the check (MM/DD/YYYY), and any Address found in the Memo line or on the check that indicates what job this is for.",
-      },
-      { inlineData: { data: data.image.base64, mimeType: data.image.mimeType } },
-    ]);
-
-    const text = result.response.text();
+    const text = result.text ?? "";
     try {
       return JSON.parse(text) as CheckData;
     } catch {
@@ -169,28 +167,26 @@ export const analyzeWeatherRisk = createServerFn({ method: "POST" })
       return { hasRisk: false } as WeatherRisk;
     }
 
-    const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({
+    const taskList = tasks.map((t) => t.taskName).join("; ");
+    const weatherDesc = `${weather.condition}, ${weather.tempMax}°F, ${weather.precipProb}% chance of precipitation`;
+
+    const ai = getGeminiClient();
+    const result = await ai.models.generateContent({
       model: "gemini-2.0-flash",
-      generationConfig: {
+      config: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            hasRisk: { type: SchemaType.BOOLEAN },
-            reason: { type: SchemaType.STRING },
+            hasRisk: { type: Type.BOOLEAN },
+            reason: { type: Type.STRING },
           },
           required: ["hasRisk"],
         },
       },
-    });
-
-    const taskList = tasks.map((t) => t.taskName).join("; ");
-    const weatherDesc = `${weather.condition}, ${weather.tempMax}°F, ${weather.precipProb}% chance of precipitation`;
-
-    const result = await model.generateContent([
-      {
-        text: `
+      contents: [
+        {
+          text: `
           Analyze the following tasks against the weather forecast.
           Tasks: "${taskList}"
           Weather: "${weatherDesc}"
@@ -198,10 +194,11 @@ export const analyzeWeatherRisk = createServerFn({ method: "POST" })
           Determine if the weather poses a risk to completing these tasks (e.g. painting outside in rain, roofing in snow).
           Return JSON: { "hasRisk": boolean, "reason": "short explanation" }
         `,
-      },
-    ]);
+        },
+      ],
+    });
 
-    const text = result.response.text();
+    const text = result.text ?? "";
     try {
       return JSON.parse(text) as WeatherRisk;
     } catch {

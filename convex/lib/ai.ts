@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
+import type { GenerateContentConfig } from "@google/genai";
 
 import { env } from "@/env";
 
@@ -31,76 +32,73 @@ export type ExtractedJob = {
  * Extract job data from images (supports multi-page PDFs converted to images)
  */
 export async function extractJobFromImages(images: Array<ImageInput>): Promise<ExtractedJob> {
-  const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-3-flash-preview",
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          propertyAddress: {
-            type: SchemaType.STRING,
-            description: "Street, City, State found in the header",
-          },
-          jobSummary: { type: SchemaType.STRING },
-          tasks: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                category: {
-                  type: SchemaType.STRING,
-                  description: "The broader classification (e.g. Interior, Plumbing)",
-                },
-                taskName: {
-                  type: SchemaType.STRING,
-                  description: "The main item name",
-                },
-                specificInstructions: {
-                  type: SchemaType.STRING,
-                  description: "Detailed notes, scope constraints, and location specifics",
-                },
-                quantity: { type: SchemaType.NUMBER, nullable: true },
-                unit: {
-                  type: SchemaType.STRING,
-                  nullable: true,
-                  description: "e.g. EA, SF, LF",
-                },
-                requiresOnlineOrder: {
-                  type: SchemaType.BOOLEAN,
-                  description: "True if item usually requires lead time/delivery",
-                },
-                materialsNeeded: {
-                  type: SchemaType.ARRAY,
-                  items: { type: SchemaType.STRING },
-                  description: "Specific materials required for THIS task",
-                },
-                toolsNeeded: {
-                  type: SchemaType.ARRAY,
-                  items: { type: SchemaType.STRING },
-                  description: "Specific tools required for THIS task",
-                },
-              },
-              required: [
-                "category",
-                "taskName",
-                "specificInstructions",
-                "quantity",
-                "unit",
-                "requiresOnlineOrder",
-                "materialsNeeded",
-                "toolsNeeded",
-              ],
-            },
-          },
-          accessCodes: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          targetCompletionDate: { type: SchemaType.STRING },
+  const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+  const config: GenerateContentConfig = {
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        propertyAddress: {
+          type: Type.STRING,
+          description: "Street, City, State found in the header",
         },
-        required: ["propertyAddress", "tasks"],
+        jobSummary: { type: Type.STRING },
+        tasks: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              category: {
+                type: Type.STRING,
+                description: "The broader classification (e.g. Interior, Plumbing)",
+              },
+              taskName: {
+                type: Type.STRING,
+                description: "The main item name",
+              },
+              specificInstructions: {
+                type: Type.STRING,
+                description: "Detailed notes, scope constraints, and location specifics",
+              },
+              quantity: { type: Type.NUMBER, nullable: true },
+              unit: {
+                type: Type.STRING,
+                nullable: true,
+                description: "e.g. EA, SF, LF",
+              },
+              requiresOnlineOrder: {
+                type: Type.BOOLEAN,
+                description: "True if item usually requires lead time/delivery",
+              },
+              materialsNeeded: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "Specific materials required for THIS task",
+              },
+              toolsNeeded: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "Specific tools required for THIS task",
+              },
+            },
+            required: [
+              "category",
+              "taskName",
+              "specificInstructions",
+              "quantity",
+              "unit",
+              "requiresOnlineOrder",
+              "materialsNeeded",
+              "toolsNeeded",
+            ],
+          },
+        },
+        accessCodes: { type: Type.ARRAY, items: { type: Type.STRING } },
+        targetCompletionDate: { type: Type.STRING },
       },
+      required: ["propertyAddress", "tasks"],
     },
-  });
+  };
 
   const systemPrompt = `
 You are an expert Construction Data Analyst processing "Scope of Work" documents converted to images.
@@ -165,13 +163,17 @@ Analyze the header and layout to determine the provider. Apply the specific MAPP
     inlineData: { data: img.base64, mimeType: img.mimeType },
   }));
 
-  const result = await model.generateContent([
-    { text: systemPrompt },
-    ...imageParts,
-    { text: "Extract job details from these document pages." },
-  ]);
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: [
+      { text: systemPrompt },
+      ...imageParts,
+      { text: "Extract job details from these document pages." },
+    ],
+    config,
+  });
 
-  const text = result.response.text();
+  const text = response.text ?? "";
   try {
     return JSON.parse(text) as ExtractedJob;
   } catch (error) {
@@ -193,42 +195,39 @@ export type ExtractedReceipt = {
  * Extract receipt data from an image using Gemini
  */
 export async function extractReceiptFromImage(image: ImageInput): Promise<ExtractedReceipt> {
-  const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: SchemaType.OBJECT,
-        properties: {
-          storeName: {
-            type: SchemaType.STRING,
-            description: "The name of the store or business from the receipt header/logo",
-          },
-          storeLocation: {
-            type: SchemaType.STRING,
-            nullable: true,
-            description: "The store address or location if visible on the receipt",
-          },
-          summary: {
-            type: SchemaType.STRING,
-            nullable: true,
-            description:
-              "Brief summary of main items purchased (e.g. 'Building materials, paint supplies')",
-          },
-          total: {
-            type: SchemaType.NUMBER,
-            description: "The total amount paid (final total after tax, as a number)",
-          },
-          date: {
-            type: SchemaType.STRING,
-            description: "The purchase date in YYYY-MM-DD format",
-          },
+  const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+  const config: GenerateContentConfig = {
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        storeName: {
+          type: Type.STRING,
+          description: "The name of the store or business from the receipt header/logo",
         },
-        required: ["storeName", "total", "date"],
+        storeLocation: {
+          type: Type.STRING,
+          nullable: true,
+          description: "The store address or location if visible on the receipt",
+        },
+        summary: {
+          type: Type.STRING,
+          nullable: true,
+          description:
+            "Brief summary of main items purchased (e.g. 'Building materials, paint supplies')",
+        },
+        total: {
+          type: Type.NUMBER,
+          description: "The total amount paid (final total after tax, as a number)",
+        },
+        date: {
+          type: Type.STRING,
+          description: "The purchase date in YYYY-MM-DD format",
+        },
       },
+      required: ["storeName", "total", "date"],
     },
-  });
+  };
 
   const systemPrompt = `
 You are an expert Receipt Data Extractor. Analyze the receipt image and extract the following information:
@@ -254,15 +253,19 @@ If a field is not clearly visible or readable, use your best judgment or omit op
 Return ONLY valid JSON matching the schema.
 `;
 
-  const result = await model.generateContent([
-    { text: systemPrompt },
-    {
-      inlineData: { data: image.base64, mimeType: image.mimeType },
-    },
-    { text: "Extract receipt details from this image." },
-  ]);
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: [
+      { text: systemPrompt },
+      {
+        inlineData: { data: image.base64, mimeType: image.mimeType },
+      },
+      { text: "Extract receipt details from this image." },
+    ],
+    config,
+  });
 
-  const text = result.response.text();
+  const text = response.text ?? "";
   try {
     return JSON.parse(text) as ExtractedReceipt;
   } catch (error) {

@@ -17,7 +17,7 @@
     "@clerk/clerk-react": "^5.49.0",
     "@convex-dev/react-query": "0.0.0-alpha.11",
     "@fontsource-variable/outfit": "^5.2.8",
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^2.24.0",
     "@t3-oss/env-core": "^0.13.8",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/query-sync-storage-persister": "^5.90.18",
