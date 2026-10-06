@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 import netlify from "@netlify/vite-plugin-tanstack-start";
@@ -13,6 +14,8 @@ const config = defineConfig({
       eventBusConfig: { port: Number(process.env.DEVTOOLS_EVENT_BUS_PORT) || undefined },
     }),
     process.env.NODE_ENV === "production" ? netlify() : null,
+    // HTTPS=1 serves over HTTPS with a self-signed cert, since iOS only allows the mic on HTTPS
+    process.env.HTTPS ? basicSsl() : null,
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
     }),
