@@ -9,7 +9,6 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Loader2,
-  MapPin,
   MoreHorizontal,
   Package,
   Plus,
@@ -307,14 +306,20 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
             <DrawerHeader className="text-left px-6 pt-10 pb-4 space-y-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1 flex-1 min-w-0">
-                  <DrawerTitle className="text-xl font-black uppercase tracking-tight leading-tight line-clamp-2">
-                    <MapPin className="inline-block w-5 h-5 mr-1 -mt-1 text-muted-foreground shrink-0" />
+                  <DrawerTitle className="text-left text-xl font-black uppercase tracking-tight leading-tight line-clamp-2">
                     {job.address}
                   </DrawerTitle>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={<Button variant="ghost" size="icon" className="shrink-0 h-10 w-10" />}
+                    render={
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        aria-label="Job actions"
+                        className="shrink-0 h-11 w-11 rounded-full border border-border"
+                      />
+                    }
                   >
                     <MoreHorizontal className="h-6 w-6" />
                   </DropdownMenuTrigger>
