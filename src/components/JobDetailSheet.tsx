@@ -10,11 +10,9 @@ import {
   Image as ImageIcon,
   Loader2,
   MoreHorizontal,
-  Package,
   Plus,
   Receipt,
   Trash2,
-  Wrench,
   ZoomIn,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -721,105 +719,83 @@ export function JobDetailSheet({
                     <button
                       key={task.id}
                       onClick={() => handleTaskToggle(task.id, !task.completed)}
-                      className={`w-full flex items-start gap-4 p-5 rounded-[1.5rem] border transition-all text-left ${
+                      className={`w-full flex flex-col gap-3 p-5 rounded-[1.5rem] border transition-all text-left ${
                         task.completed ?
                           "bg-muted/30 border-border/50 opacity-80"
                         : "bg-card border-border hover:border-primary/30 shadow-sm"
                       }`}
                     >
-                      <div
-                        className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                          task.completed ?
-                            "bg-primary border-primary text-primary-foreground"
-                          : "border-muted-foreground/30"
-                        }`}
-                      >
-                        {task.completed && <CheckCircle2 className="w-4.5 h-4.5" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
-                          <span className="text-xs font-black text-primary uppercase tracking-wider">
-                            {task.category}
-                          </span>
-                          {task.area && (
-                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                              · {task.area}
-                            </span>
-                          )}
-                          {task.quantity && task.unit && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs px-2 py-0.5 h-6 border-muted-foreground/20 text-muted-foreground font-bold rounded-lg"
-                            >
-                              {task.quantity} {task.unit}
-                            </Badge>
-                          )}
-                          {task.requiresOnlineOrder && !task.completed && (
-                            <Badge
-                              variant="destructive"
-                              className="ml-auto text-xs bg-destructive/10 text-destructive border-destructive/20 font-black uppercase tracking-tighter rounded-lg"
-                            >
-                              Order
-                            </Badge>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-4">
                         <div
-                          className={`text-lg font-bold leading-snug ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
+                          className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            task.completed ?
+                              "bg-primary border-primary text-primary-foreground"
+                            : "border-muted-foreground/30"
+                          }`}
                         >
-                          {task.taskName}
+                          {task.completed && <CheckCircle2 className="w-4.5 h-4.5" />}
                         </div>
-                        {task.sourceItem ?
-                          <div
-                            className={`mt-3 rounded-2xl px-4 py-3 ${task.completed ? "bg-muted/40" : "bg-muted"}`}
-                          >
-                            <div className="flex items-center justify-between gap-2 mb-1 text-[11px] font-black text-muted-foreground uppercase tracking-[0.14em]">
-                              <span>On the sheet</span>
-                              {task.page && <span>Page {task.page}</span>}
-                            </div>
-                            <p
-                              className={`text-[15px] font-bold leading-snug ${task.completed ? "text-muted-foreground" : "text-foreground"}`}
-                            >
-                              {task.sourceItem}
-                            </p>
-                            {task.specificInstructions && (
-                              <p className="text-[15px] mt-1.5 leading-relaxed text-muted-foreground font-medium">
-                                {task.specificInstructions}
-                              </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                            <span className="text-xs font-black text-primary uppercase tracking-wider">
+                              {task.category}
+                            </span>
+                            {task.area && (
+                              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                · {task.area}
+                              </span>
+                            )}
+                            {task.quantity && task.unit && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs px-2 py-0.5 h-6 border-muted-foreground/20 text-muted-foreground font-bold rounded-lg"
+                              >
+                                {task.quantity} {task.unit}
+                              </Badge>
+                            )}
+                            {task.requiresOnlineOrder && !task.completed && (
+                              <Badge
+                                variant="destructive"
+                                className="ml-auto text-xs bg-destructive/10 text-destructive border-destructive/20 font-black uppercase tracking-tighter rounded-lg"
+                              >
+                                Order
+                              </Badge>
                             )}
                           </div>
-                        : task.specificInstructions && (
-                            <p
-                              className={`text-base mt-2 leading-relaxed ${task.completed ? "text-muted-foreground/70" : "text-muted-foreground font-medium"}`}
-                            >
+                          <div
+                            className={`text-lg font-bold leading-snug ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
+                          >
+                            {task.taskName}
+                          </div>
+                        </div>
+                      </div>
+                      {task.sourceItem ?
+                        <div
+                          className={`rounded-2xl px-4 py-3 ${task.completed ? "bg-muted/40" : "bg-muted"}`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1 text-[11px] font-black text-muted-foreground uppercase tracking-[0.14em]">
+                            <span>On the sheet</span>
+                            {task.page && <span>Page {task.page}</span>}
+                          </div>
+                          <p
+                            className={`text-[15px] font-bold leading-snug ${task.completed ? "text-muted-foreground" : "text-foreground"}`}
+                          >
+                            {task.sourceItem}
+                          </p>
+                          {task.specificInstructions && (
+                            <p className="text-[15px] mt-1.5 leading-relaxed text-muted-foreground font-medium">
                               {task.specificInstructions}
                             </p>
-                          )
-                        }
-                        {((task.materials?.length ?? 0) > 0 || (task.tools?.length ?? 0) > 0) && (
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            {task.materials?.map((m, i) => (
-                              <Badge
-                                key={i}
-                                variant="secondary"
-                                className="text-xs px-2.5 py-0.5 h-7 [&>svg]:size-3.5! bg-orange-500/10 text-orange-600 border-orange-500/20 font-bold rounded-lg"
-                              >
-                                <Package className="w-3.5 h-3.5 mr-1.5" />
-                                {m}
-                              </Badge>
-                            ))}
-                            {task.tools?.map((t, i) => (
-                              <Badge
-                                key={i}
-                                variant="secondary"
-                                className="text-xs px-2.5 py-0.5 h-7 [&>svg]:size-3.5! bg-blue-500/10 text-blue-600 border-blue-500/20 font-bold rounded-lg"
-                              >
-                                <Wrench className="w-3.5 h-3.5 mr-1.5" />
-                                {t}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      : task.specificInstructions && (
+                          <p
+                            className={`text-base leading-relaxed ${task.completed ? "text-muted-foreground/70" : "text-muted-foreground font-medium"}`}
+                          >
+                            {task.specificInstructions}
+                          </p>
+                        )
+                      }
                     </button>
                   ))}
                 </div>
