@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { findNearestSlotIndex } from "../lib/arrival";
 
@@ -10,10 +10,29 @@ const HOUR = 1000 * 60 * 60;
 // Enough hours to reach the arrival time at the last stop of a long day
 const FORECAST_HOURS = 16;
 
-function getHourStart(now = Date.now()) {
+export function getHourStart(now = Date.now()) {
   const date = new Date(now);
   date.setMinutes(0, 0, 0);
   return date.getTime();
+}
+
+// ~1km precision so nearby stops share a forecast
+const roundCoordinate = (value: number) => Number(value.toFixed(2));
+
+/**
+ * The hourly forecast query for a site, shared by the forecast strip and the voice assistant.
+ * The hour is part of the key, so a new forecast is fetched every time the hour turns.
+ */
+export function hourlyForecastQueryOptions(coordinates: Coordinates, hourStart: number) {
+  const lat = roundCoordinate(coordinates.lat);
+  const lng = roundCoordinate(coordinates.lng);
+  return queryOptions({
+    queryKey: ["weather", "hourly", lat, lng, hourStart, FORECAST_HOURS],
+    queryFn: () =>
+      fetchHourlyForecast({ data: { coordinates: { lat, lng }, hours: FORECAST_HOURS } }),
+    staleTime: HOUR / 2,
+    gcTime: HOUR * 2,
+  });
 }
 
 /**
@@ -62,20 +81,9 @@ export function useHourlyForecast(
 ) {
   const hourStart = useCurrentHour();
 
-  // ~1km precision so nearby stops share a forecast
-  const lat = coordinates ? Number(coordinates.lat.toFixed(2)) : undefined;
-  const lng = coordinates ? Number(coordinates.lng.toFixed(2)) : undefined;
-
   const query = useQuery({
-    // The hour is part of the key, so a new forecast is fetched every time the hour turns
-    queryKey: ["weather", "hourly", lat, lng, hourStart, FORECAST_HOURS],
-    queryFn: () =>
-      fetchHourlyForecast({
-        data: { coordinates: { lat: lat!, lng: lng! }, hours: FORECAST_HOURS },
-      }),
-    enabled: lat !== undefined && lng !== undefined,
-    staleTime: HOUR / 2,
-    gcTime: HOUR * 2,
+    ...hourlyForecastQueryOptions(coordinates ?? { lat: 0, lng: 0 }, hourStart),
+    enabled: !!coordinates,
     placeholderData: keepPreviousData,
   });
 

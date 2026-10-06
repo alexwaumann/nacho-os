@@ -25,7 +25,7 @@ const responseJsonSchema = (() => {
 })();
 
 // Compact JSON without empty fields: fewer tokens, so cheaper and a little faster
-const omitEmpty = (_key: string, value: unknown) =>
+export const omitEmpty = (_key: string, value: unknown) =>
   value === "" || (Array.isArray(value) && value.length === 0) ? undefined : value;
 
 function buildFollowUp({ transcript, reply, applied }: VoiceFollowUp) {
