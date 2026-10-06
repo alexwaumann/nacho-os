@@ -1,5 +1,4 @@
-import { Cloud } from "lucide-react";
-
+import { HourlyForecast } from "./HourlyForecast";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,9 +10,11 @@ interface RouteJobCardProps {
   job: Job;
   onClick?: () => void;
   className?: string;
+  // Hourly weather at the job site, for jobs that are in today's route
+  showForecast?: boolean;
 }
 
-export function RouteJobCard({ job, onClick, className }: RouteJobCardProps) {
+export function RouteJobCard({ job, onClick, className, showForecast }: RouteJobCardProps) {
   const completedTasks = job.tasks?.filter((t) => t.completed).length ?? 0;
   const totalTasks = job.tasks?.length ?? 0;
   const progressValue = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
@@ -24,18 +25,10 @@ export function RouteJobCard({ job, onClick, className }: RouteJobCardProps) {
       onClick={onClick}
     >
       <CardContent className="p-4 space-y-2">
-        {/* Address + Weather */}
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base font-bold leading-tight text-foreground flex-1 line-clamp-2 uppercase">
-            {job.address}
-          </h3>
-          {job.weather && (
-            <div className="flex items-center gap-1 text-muted-foreground text-xs font-bold shrink-0">
-              <Cloud size={12} />
-              {job.weather.tempMax}°F
-            </div>
-          )}
-        </div>
+        {/* Address */}
+        <h3 className="text-base font-bold leading-tight text-foreground line-clamp-2 uppercase">
+          {job.address}
+        </h3>
 
         {/* Summary (2 lines max) */}
         {job.summary && <p className="text-sm text-muted-foreground line-clamp-2">{job.summary}</p>}
@@ -49,6 +42,8 @@ export function RouteJobCard({ job, onClick, className }: RouteJobCardProps) {
             </span>
           </div>
         )}
+
+        {showForecast && <HourlyForecast coordinates={job.coordinates} className="mt-3" />}
       </CardContent>
     </Card>
   );

@@ -417,7 +417,7 @@ function DraggableRouteCard({ job, index, onClick, onDragEnd }: DraggableRouteCa
         className="flex-1 cursor-pointer active:scale-[0.99] transition-transform"
         onClick={onClick}
       >
-        <RouteJobCard job={job} className="border-0 shadow-none rounded-none" />
+        <RouteJobCard job={job} className="border-0 shadow-none rounded-none" showForecast />
       </div>
     </Reorder.Item>
   );
