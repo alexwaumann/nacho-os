@@ -43,17 +43,27 @@ function getWeatherIcon(code: number, isDay: boolean): { Icon: LucideIcon; class
   return { Icon: CloudLightning, className: "text-violet-500" };
 }
 
+const QUARTER_HOUR = 15 * 60 * 1000;
+
 function formatHour(time: number) {
   return new Date(time).toLocaleTimeString([], { hour: "numeric" });
 }
 
+// Rounded to the quarter hour, since it's only an estimate
+function formatArrival(time: number) {
+  const rounded = Math.round(time / QUARTER_HOUR) * QUARTER_HOUR;
+  return new Date(rounded).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
 interface HourlyForecastProps {
   coordinates: Coordinates | undefined;
+  // Estimated arrival (ms); the nearest hour is highlighted
+  arrivalTime?: number;
   className?: string;
 }
 
-export function HourlyForecast({ coordinates, className }: HourlyForecastProps) {
-  const { slots, isLoading } = useHourlyForecast(coordinates);
+export function HourlyForecast({ coordinates, arrivalTime, className }: HourlyForecastProps) {
+  const { slots, arrivalIndex, isLoading } = useHourlyForecast(coordinates, 4, arrivalTime);
 
   // Keep the columns aligned: show the rain row for every hour, or for none
   const hasRainChance = slots?.some((slot) => slot.precipProb >= PRECIP_THRESHOLD) ?? false;
@@ -62,15 +72,23 @@ export function HourlyForecast({ coordinates, className }: HourlyForecastProps) 
   if (!slots) return null;
 
   return (
-    <div className={cn("grid grid-cols-5 gap-1 rounded-xl bg-muted/50 p-1", className)}>
-      {slots.map((slot, index) => (
-        <ForecastSlot
-          key={slot.time}
-          slot={slot}
-          isNow={index === 0}
-          showRainChance={hasRainChance}
-        />
-      ))}
+    <div className={cn("space-y-1.5", className)}>
+      <div className="grid grid-cols-5 gap-1 rounded-xl bg-muted/50 p-1">
+        {slots.map((slot, index) => (
+          <ForecastSlot
+            key={slot.time}
+            slot={slot}
+            isNow={index === 0}
+            isArrival={index === arrivalIndex}
+            showRainChance={hasRainChance}
+          />
+        ))}
+      </div>
+      {arrivalTime !== undefined && (
+        <p className="text-base font-semibold text-foreground">
+          You get there around {formatArrival(arrivalTime)}
+        </p>
+      )}
     </div>
   );
 }
@@ -78,25 +96,28 @@ export function HourlyForecast({ coordinates, className }: HourlyForecastProps) 
 interface ForecastSlotProps {
   slot: HourlyForecastSlot;
   isNow: boolean;
+  isArrival: boolean;
   showRainChance: boolean;
 }
 
-function ForecastSlot({ slot, isNow, showRainChance }: ForecastSlotProps) {
+function ForecastSlot({ slot, isNow, isArrival, showRainChance }: ForecastSlotProps) {
   const { Icon, className: iconClassName } = getWeatherIcon(slot.code, slot.isDay);
   const label = isNow ? "Now" : formatHour(slot.time);
+  const arrivalLabel = isArrival ? ", about when you get there" : "";
 
   return (
     <div
-      aria-label={`${label}: ${slot.temp}°, ${slot.condition}, ${slot.precipProb}% chance of rain`}
+      aria-label={`${label}: ${slot.temp}°, ${slot.condition}, ${slot.precipProb}% chance of rain${arrivalLabel}`}
       className={cn(
         "flex flex-col items-center gap-1 rounded-lg py-1.5",
         isNow && "bg-card shadow-sm",
+        isArrival && "bg-primary/10 ring-2 ring-inset ring-primary",
       )}
     >
       <span
         className={cn(
           "text-xs font-bold whitespace-nowrap",
-          isNow ? "text-primary" : "text-muted-foreground",
+          isNow || isArrival ? "text-primary" : "text-muted-foreground",
         )}
       >
         {label}

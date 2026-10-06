@@ -1,10 +1,14 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { findNearestSlotIndex } from "../lib/arrival";
 
 import type { Coordinates, HourlyForecastSlot } from "@/server/weather";
 import { fetchHourlyForecast } from "@/server/weather";
 
 const HOUR = 1000 * 60 * 60;
+
+// Enough hours to reach the arrival time at the last stop of a long day
+const FORECAST_HOURS = 16;
 
 function getHourStart(now = Date.now()) {
   const date = new Date(now);
@@ -47,8 +51,15 @@ export function useCurrentHour() {
 
 /**
  * Current conditions followed by the next `upcomingHours` hourly slots.
+ *
+ * With an `arrivalTime`, `arrivalIndex` points at the slot nearest to it (-1 if none). When that
+ * hour is further out than the upcoming hours, it takes the place of the last one so it's shown.
  */
-export function useHourlyForecast(coordinates: Coordinates | undefined, upcomingHours = 4) {
+export function useHourlyForecast(
+  coordinates: Coordinates | undefined,
+  upcomingHours = 4,
+  arrivalTime?: number,
+) {
   const hourStart = useCurrentHour();
 
   // ~1km precision so nearby stops share a forecast
@@ -57,8 +68,11 @@ export function useHourlyForecast(coordinates: Coordinates | undefined, upcoming
 
   const query = useQuery({
     // The hour is part of the key, so a new forecast is fetched every time the hour turns
-    queryKey: ["weather", "hourly", lat, lng, hourStart],
-    queryFn: () => fetchHourlyForecast({ data: { coordinates: { lat: lat!, lng: lng! } } }),
+    queryKey: ["weather", "hourly", lat, lng, hourStart, FORECAST_HOURS],
+    queryFn: () =>
+      fetchHourlyForecast({
+        data: { coordinates: { lat: lat!, lng: lng! }, hours: FORECAST_HOURS },
+      }),
     enabled: lat !== undefined && lng !== undefined,
     staleTime: HOUR / 2,
     gcTime: HOUR * 2,
@@ -66,12 +80,26 @@ export function useHourlyForecast(coordinates: Coordinates | undefined, upcoming
   });
 
   let slots: Array<HourlyForecastSlot> | undefined;
+  let arrivalIndex = -1;
   if (query.data) {
-    const upcoming = query.data.hourly
-      .filter((slot) => slot.time > hourStart)
-      .slice(0, upcomingHours);
-    slots = [query.data.current, ...upcoming];
+    const upcoming = query.data.hourly.filter((slot) => slot.time > hourStart);
+    const shown = upcoming.slice(0, upcomingHours);
+
+    if (arrivalTime !== undefined && shown.length === upcomingHours) {
+      const nearest = findNearestSlotIndex(
+        upcoming.map((slot) => slot.time),
+        arrivalTime,
+      );
+      if (nearest >= upcomingHours) {
+        shown[upcomingHours - 1] = upcoming[nearest];
+        arrivalIndex = upcomingHours;
+      } else if (nearest >= 0) {
+        arrivalIndex = nearest + 1;
+      }
+    }
+
+    slots = [query.data.current, ...shown];
   }
 
-  return { slots, isLoading: query.isLoading };
+  return { slots, arrivalIndex, isLoading: query.isLoading };
 }
