@@ -41,7 +41,7 @@ export function AccessCodesEditor({ codes, onChange }: AccessCodesEditorProps) {
 
   return (
     <div className="space-y-4">
-      <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+      <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
         <Key className="w-3.5 h-3.5" />
         Access Codes
       </h4>
@@ -50,7 +50,7 @@ export function AccessCodesEditor({ codes, onChange }: AccessCodesEditorProps) {
           <Badge
             key={i}
             variant="secondary"
-            className="font-mono text-sm h-auto pl-3 pr-1 py-1 gap-1 bg-muted/50 rounded-xl"
+            className="font-mono text-base h-auto pl-3 pr-1 py-1 gap-1 bg-muted/50 rounded-xl"
           >
             {code}
             <button

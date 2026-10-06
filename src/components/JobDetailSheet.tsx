@@ -345,16 +345,16 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                 </DropdownMenu>
               </div>
 
-              <TabsList className="grid w-full grid-cols-2 h-14 bg-muted p-1.5 rounded-2xl">
+              <TabsList className="grid w-full grid-cols-2 group-data-horizontal/tabs:h-14 bg-muted p-1.5 rounded-2xl">
                 <TabsTrigger
                   value="details"
-                  className="rounded-xl font-bold uppercase tracking-widest text-xs h-full transition-all text-muted-foreground data-active:bg-card data-active:text-primary data-active:shadow-sm"
+                  className="rounded-xl font-bold uppercase tracking-widest text-sm h-full transition-all text-muted-foreground data-active:bg-card data-active:text-primary data-active:shadow-sm dark:data-active:bg-card dark:data-active:text-primary dark:data-active:border-transparent"
                 >
                   Details
                 </TabsTrigger>
                 <TabsTrigger
                   value="tasks"
-                  className="rounded-xl font-bold uppercase tracking-widest text-xs h-full transition-all text-muted-foreground data-active:bg-card data-active:text-primary data-active:shadow-sm"
+                  className="rounded-xl font-bold uppercase tracking-widest text-sm h-full transition-all text-muted-foreground data-active:bg-card data-active:text-primary data-active:shadow-sm dark:data-active:bg-card dark:data-active:text-primary dark:data-active:border-transparent"
                 >
                   Tasks
                 </TabsTrigger>
@@ -362,7 +362,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
 
               {totalTasks > 0 && (
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <div className="flex justify-between text-xs font-black uppercase tracking-widest text-muted-foreground">
                     <span>Tasks Progress</span>
                     <span>
                       {completedTasks}/{totalTasks}
@@ -381,8 +381,8 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
               {/* Route Toggle */}
               <div className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 border border-border/50">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold">Today's Route</Label>
-                  <p className="text-xs text-muted-foreground">Include this job in your route</p>
+                  <Label className="text-base font-bold">Today's Route</Label>
+                  <p className="text-sm text-muted-foreground">Include this job in your route</p>
                 </div>
                 <Switch
                   checked={job.selectedForRoute}
@@ -396,7 +396,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant="outline"
-                  className="bg-primary/5 text-primary border-primary/20 font-bold px-3 py-1.5 rounded-xl"
+                  className="bg-primary/5 text-primary border-primary/20 h-auto text-sm font-bold px-3 py-1.5 rounded-xl [&>svg]:size-4!"
                 >
                   <Calendar className="w-3.5 h-3.5 mr-1.5" />
                   Created: {new Date(job._creationTime).toLocaleDateString()}
@@ -404,7 +404,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                 {job.status === "completed" && job.completedOn && (
                   <Badge
                     variant="outline"
-                    className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 font-bold px-3 py-1.5 rounded-xl"
+                    className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 h-auto text-sm font-bold px-3 py-1.5 rounded-xl [&>svg]:size-4!"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                     Completed: {job.completedOn}
@@ -413,7 +413,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                 {job.status === "paid" && job.paidOn && (
                   <Badge
                     variant="outline"
-                    className="bg-blue-500/5 text-blue-600 border-blue-500/20 font-bold px-3 py-1.5 rounded-xl"
+                    className="bg-blue-500/5 text-blue-600 border-blue-500/20 h-auto text-sm font-bold px-3 py-1.5 rounded-xl [&>svg]:size-4!"
                   >
                     <DollarSign className="w-3.5 h-3.5 mr-1.5" />
                     Paid: {job.paidOn}
@@ -432,10 +432,10 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
               {/* Scope Summary */}
               {job.summary && (
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                     Scope Summary
                   </h4>
-                  <p className="text-sm font-medium leading-relaxed text-foreground/80">
+                  <p className="text-base font-medium leading-relaxed text-foreground/80">
                     {job.summary}
                   </p>
                 </div>
@@ -444,10 +444,10 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
               {/* Notes from the source document (conditions, handwriting) */}
               {job.notes && (
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                     Document Notes
                   </h4>
-                  <p className="text-sm font-medium leading-relaxed text-foreground/80 whitespace-pre-line">
+                  <p className="text-base font-medium leading-relaxed text-foreground/80 whitespace-pre-line">
                     {job.notes}
                   </p>
                 </div>
@@ -463,7 +463,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
               {/* Source Document */}
               {sourceImages && sourceImages.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                     <ImageIcon className="w-3.5 h-3.5" />
                     Source Documents
                   </h4>
@@ -493,14 +493,14 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
               {/* Financials: Receipts */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                     <Receipt className="w-3.5 h-3.5" />
                     Receipts
                   </h4>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-[10px] font-black uppercase h-8 px-3 hover:bg-primary/5 text-primary rounded-xl"
+                    className="text-xs font-black uppercase h-8 px-3 hover:bg-primary/5 text-primary rounded-xl"
                     onClick={() => receiptInputRef.current?.click()}
                     disabled={isUploading}
                   >
@@ -535,13 +535,13 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                               <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
                             : <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />}
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-bold">
+                              <div className="text-base font-bold">
                                 {item.status === "failed" ?
                                   "Processing failed"
                                 : "Processing receipt..."}
                               </div>
                               {item.status === "failed" && item.error && (
-                                <div className="text-xs text-muted-foreground truncate">
+                                <div className="text-sm text-muted-foreground truncate">
                                   {item.error}
                                 </div>
                               )}
@@ -551,7 +551,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-xs shrink-0"
+                              className="text-sm shrink-0"
                               onClick={() => dismissQueueItemMutation({ queueId: item._id })}
                             >
                               Dismiss
@@ -572,21 +572,21 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                       >
                         <div className="px-6 flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-black truncate">{r.storeName}</div>
-                            <div className="text-[10px] font-medium text-muted-foreground truncate">
+                            <div className="text-base font-black truncate">{r.storeName}</div>
+                            <div className="text-xs font-medium text-muted-foreground truncate">
                               {r.storeLocation || "No location"} •{" "}
                               {new Date(r.date).toLocaleDateString()}
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="text-sm font-black text-destructive">
+                            <div className="text-base font-black text-destructive">
                               ${r.total.toFixed(2)}
                             </div>
                             {r.imageUrl && (
                               <Button
                                 variant="link"
                                 size="sm"
-                                className="h-6 p-0 text-[10px] font-black uppercase text-primary"
+                                className="h-6 p-0 text-xs font-black uppercase text-primary"
                                 onClick={() => window.open(r.imageUrl!, "_blank")}
                               >
                                 View Receipt
@@ -597,7 +597,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                       </Card>
                     ))}
                     <div className="flex justify-between items-center p-5 rounded-[1.5rem] bg-destructive/5 border border-destructive/10">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-destructive/70">
+                      <span className="text-xs font-black uppercase tracking-widest text-destructive/70">
                         Total Expenses
                       </span>
                       <span className="text-xl font-black text-destructive">
@@ -606,7 +606,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                     </div>
                   </div>
                 : (!receiptQueue || receiptQueue.length === 0) && (
-                    <p className="text-xs text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
+                    <p className="text-sm text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
                       No receipts added yet.
                     </p>
                   )
@@ -615,7 +615,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
 
               {/* Financials: Check */}
               <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
                   <DollarSign className="w-3.5 h-3.5" />
                   Payment Info
                 </h4>
@@ -623,13 +623,13 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                   <Card className="overflow-hidden border-border/50 bg-emerald-500/5 border-emerald-500/10 shadow-none rounded-[1.5rem]">
                     <div className="p-5 flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-black text-emerald-600/70 uppercase tracking-widest mb-1.5">
+                        <div className="text-xs font-black text-emerald-600/70 uppercase tracking-widest mb-1.5">
                           Received from
                         </div>
-                        <div className="text-sm font-black truncate">
+                        <div className="text-base font-black truncate">
                           {payment.payerName || "Unknown"}
                         </div>
-                        <div className="text-[10px] font-medium text-muted-foreground mt-1">
+                        <div className="text-xs font-medium text-muted-foreground mt-1">
                           {new Date(payment.date).toLocaleDateString()}
                         </div>
                       </div>
@@ -641,7 +641,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                           <Button
                             variant="link"
                             size="sm"
-                            className="h-6 p-0 text-[10px] font-black uppercase text-emerald-600"
+                            className="h-6 p-0 text-xs font-black uppercase text-emerald-600"
                             onClick={() => window.open(payment.imageUrl!, "_blank")}
                           >
                             View Check
@@ -650,7 +650,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                       </div>
                     </div>
                   </Card>
-                : <p className="text-xs text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
+                : <p className="text-sm text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
                     No payment record found.
                   </p>
                 }
@@ -666,13 +666,10 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
             <TabsContent value="tasks" className="m-0 p-6 outline-none space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">
                     Tasks Checklist
                   </h4>
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] font-black px-2.5 py-1 rounded-lg"
-                  >
+                  <Badge variant="secondary" className="text-xs font-black px-2.5 py-1 rounded-lg">
                     {completedTasks}/{totalTasks}
                   </Badge>
                 </div>
@@ -697,45 +694,73 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                         {task.completed && <CheckCircle2 className="w-4.5 h-4.5" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-[10px] font-black text-primary uppercase tracking-wider">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
+                          <span className="text-xs font-black text-primary uppercase tracking-wider">
                             {task.category}
                           </span>
                           {task.area && (
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                               · {task.area}
                             </span>
                           )}
                           {task.quantity && task.unit && (
                             <Badge
                               variant="outline"
-                              className="text-[10px] px-2 py-0.5 h-5 border-muted-foreground/20 text-muted-foreground font-bold rounded-lg"
+                              className="text-xs px-2 py-0.5 h-6 border-muted-foreground/20 text-muted-foreground font-bold rounded-lg"
                             >
                               {task.quantity} {task.unit}
                             </Badge>
                           )}
+                          {task.requiresOnlineOrder && !task.completed && (
+                            <Badge
+                              variant="destructive"
+                              className="ml-auto text-xs bg-destructive/10 text-destructive border-destructive/20 font-black uppercase tracking-tighter rounded-lg"
+                            >
+                              Order
+                            </Badge>
+                          )}
                         </div>
                         <div
-                          className={`text-base font-bold leading-tight ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
+                          className={`text-lg font-bold leading-snug ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
                         >
                           {task.taskName}
                         </div>
-                        {task.specificInstructions && (
-                          <p
-                            className={`text-sm mt-2 leading-relaxed ${task.completed ? "text-muted-foreground/70" : "text-muted-foreground font-medium"}`}
+                        {task.sourceItem ?
+                          <div
+                            className={`mt-3 rounded-2xl px-4 py-3 ${task.completed ? "bg-muted/40" : "bg-muted"}`}
                           >
-                            {task.specificInstructions}
-                          </p>
-                        )}
+                            <div className="flex items-center justify-between gap-2 mb-1 text-[11px] font-black text-muted-foreground uppercase tracking-[0.14em]">
+                              <span>On the sheet</span>
+                              {task.page && <span>Page {task.page}</span>}
+                            </div>
+                            <p
+                              className={`text-[15px] font-bold leading-snug ${task.completed ? "text-muted-foreground" : "text-foreground"}`}
+                            >
+                              {task.sourceItem}
+                            </p>
+                            {task.specificInstructions && (
+                              <p className="text-[15px] mt-1.5 leading-relaxed text-muted-foreground font-medium">
+                                {task.specificInstructions}
+                              </p>
+                            )}
+                          </div>
+                        : task.specificInstructions && (
+                            <p
+                              className={`text-base mt-2 leading-relaxed ${task.completed ? "text-muted-foreground/70" : "text-muted-foreground font-medium"}`}
+                            >
+                              {task.specificInstructions}
+                            </p>
+                          )
+                        }
                         {((task.materials?.length ?? 0) > 0 || (task.tools?.length ?? 0) > 0) && (
                           <div className="flex flex-wrap gap-2 mt-4">
                             {task.materials?.map((m, i) => (
                               <Badge
                                 key={i}
                                 variant="secondary"
-                                className="text-[10px] px-2.5 py-0.5 h-6 bg-orange-500/10 text-orange-600 border-orange-500/20 font-bold rounded-lg"
+                                className="text-xs px-2.5 py-0.5 h-7 [&>svg]:size-3.5! bg-orange-500/10 text-orange-600 border-orange-500/20 font-bold rounded-lg"
                               >
-                                <Package className="w-3 h-3 mr-1.5" />
+                                <Package className="w-3.5 h-3.5 mr-1.5" />
                                 {m}
                               </Badge>
                             ))}
@@ -743,23 +768,15 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                               <Badge
                                 key={i}
                                 variant="secondary"
-                                className="text-[10px] px-2.5 py-0.5 h-6 bg-blue-500/10 text-blue-600 border-blue-500/20 font-bold rounded-lg"
+                                className="text-xs px-2.5 py-0.5 h-7 [&>svg]:size-3.5! bg-blue-500/10 text-blue-600 border-blue-500/20 font-bold rounded-lg"
                               >
-                                <Wrench className="w-3 h-3 mr-1.5" />
+                                <Wrench className="w-3.5 h-3.5 mr-1.5" />
                                 {t}
                               </Badge>
                             ))}
                           </div>
                         )}
                       </div>
-                      {task.requiresOnlineOrder && !task.completed && (
-                        <Badge
-                          variant="destructive"
-                          className="text-[10px] bg-destructive/10 text-destructive border-destructive/20 font-black uppercase tracking-tighter rounded-lg"
-                        >
-                          Order
-                        </Badge>
-                      )}
                     </button>
                   ))}
                 </div>

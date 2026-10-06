@@ -65,7 +65,7 @@ function JobsPage() {
             key={tab.id}
             to="/jobs"
             search={{ filter: tab.id }}
-            className={`flex-1 py-3 text-center rounded-xl font-bold transition-all text-sm ${
+            className={`flex-1 py-3 text-center rounded-xl font-bold transition-all text-base ${
               filter === tab.id ?
                 "bg-card text-primary shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -73,7 +73,7 @@ function JobsPage() {
           >
             {tab.label}
             {stats && (
-              <span className="ml-1 text-xs opacity-60">
+              <span className="ml-1 text-sm opacity-60">
                 (
                 {tab.id === "pending" ?
                   stats.pending
@@ -91,7 +91,7 @@ function JobsPage() {
       <div className="grid grid-cols-2 gap-4">
         <Card className="border border-border shadow-sm bg-card">
           <CardContent className="p-5 space-y-1">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+            <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">
               Total Jobs
             </p>
             <p className="text-4xl font-black text-foreground">
@@ -102,7 +102,7 @@ function JobsPage() {
 
         <Card className="border border-border shadow-sm bg-card">
           <CardContent className="p-5 space-y-1">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+            <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">
               Total Expenses
             </p>
             <p className="text-4xl font-black text-destructive">

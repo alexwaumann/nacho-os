@@ -86,48 +86,48 @@ export default function JobCard({ job, onClick }: JobCardProps) {
       onClick={onClick}
     >
       <CardContent className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-black leading-tight text-foreground uppercase tracking-tight flex-1">
-            <MapPin className="inline-block w-4 h-4 mr-1 -mt-0.5 text-muted-foreground" />
-            {job.address}
-          </h3>
+        {/* pr-10 leaves room for the route toggle the jobs page overlays in the top-right corner */}
+        <h3 className="pr-10 text-lg font-black leading-tight text-foreground uppercase tracking-tight">
+          <MapPin className="inline-block w-4 h-4 mr-1 -mt-0.5 text-muted-foreground" />
+          {job.address}
+        </h3>
+
+        <div className="flex flex-wrap gap-2">
           {isNew && (
-            <Badge className="bg-primary text-primary-foreground shrink-0 text-[10px] font-black uppercase tracking-wider">
+            <Badge className="h-auto px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-sm font-black uppercase tracking-wider">
               New
             </Badge>
           )}
-        </div>
 
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-lg text-xs font-bold border border-primary/20">
-            <Calendar size={12} />
+          <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-lg text-sm font-bold border border-primary/20">
+            <Calendar size={14} />
             {createdDate}
           </div>
 
           <Badge
             variant={status.variant}
-            className={`${status.className} flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg shadow-none uppercase`}
+            className={`${status.className} flex items-center gap-1.5 h-auto px-2.5 py-1 text-sm font-bold rounded-lg shadow-none uppercase [&>svg]:size-3.5!`}
           >
-            <StatusIcon size={12} />
+            <StatusIcon size={14} />
             {status.label}
           </Badge>
 
           {job.dueDate && (
-            <div className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg text-xs font-bold border border-border">
-              <Clock size={12} />
+            <div className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg text-sm font-bold border border-border">
+              <Clock size={14} />
               Due: {formatDueDate(job.dueDate)}
             </div>
           )}
         </div>
 
         {job.summary && (
-          <p className="text-muted-foreground text-sm font-medium line-clamp-2">{job.summary}</p>
+          <p className="text-muted-foreground text-base font-medium line-clamp-2">{job.summary}</p>
         )}
 
         {totalTasks > 0 && (
           <div className="space-y-2">
             <div className="flex justify-end">
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">
                 {completedTasks}/{totalTasks} tasks
               </span>
             </div>
@@ -136,7 +136,7 @@ export default function JobCard({ job, onClick }: JobCardProps) {
         )}
 
         {job.weather && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-bold">{job.weather.condition}</span>
             <span>{job.weather.tempMax}°F</span>
             {job.weather.precipProb > 20 && (

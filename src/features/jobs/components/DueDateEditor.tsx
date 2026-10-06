@@ -24,7 +24,7 @@ export function DueDateEditor({ dueDate, onChange }: DueDateEditorProps) {
           render={<button type="button" />}
           onClick={() => setIsEditing(true)}
           aria-label={`Due ${formatDueDate(dueDate)}, edit due date`}
-          className="bg-orange-500/5 text-orange-600 border-orange-500/20 hover:bg-orange-500/10 font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+          className="bg-orange-500/5 text-orange-600 border-orange-500/20 hover:bg-orange-500/10 h-auto text-sm font-bold px-3 py-1.5 rounded-xl cursor-pointer [&>svg]:size-4!"
         >
           <Clock className="w-3.5 h-3.5 mr-1.5" />
           Due: {formatDueDate(dueDate)}
@@ -34,7 +34,7 @@ export function DueDateEditor({ dueDate, onChange }: DueDateEditorProps) {
           variant="outline"
           render={<button type="button" />}
           onClick={() => setIsEditing(true)}
-          className="bg-transparent text-muted-foreground border-dashed border-border hover:text-foreground font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+          className="bg-transparent text-muted-foreground border-dashed border-border hover:text-foreground h-auto text-sm font-bold px-3 py-1.5 rounded-xl cursor-pointer [&>svg]:size-4!"
         >
           <Plus className="w-3.5 h-3.5 mr-1.5" />
           Add due date

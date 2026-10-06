@@ -22,7 +22,7 @@ export function JobNotesEditor({ notes, onSave }: JobNotesEditorProps) {
 
   return (
     <div className="space-y-3">
-      <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+      <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">
         Job Notes
       </h4>
       <Textarea
