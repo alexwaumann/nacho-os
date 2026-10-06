@@ -164,7 +164,7 @@ Analyze the header and layout to determine the provider. Apply the specific MAPP
   }));
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-3.5-flash-lite",
     contents: [
       { text: systemPrompt },
       ...imageParts,
