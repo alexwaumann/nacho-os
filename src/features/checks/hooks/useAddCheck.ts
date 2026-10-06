@@ -3,31 +3,8 @@ import { toast } from "sonner";
 
 import type { ImageInput } from "@/server/gemini";
 import { analyzeCheck } from "@/server/gemini";
+import { toIsoDate } from "@/lib/date";
 import { processReceiptFile } from "@/lib/pdf";
-
-/**
- * Convert date from MM/DD/YYYY to YYYY-MM-DD format
- */
-function convertDateFormat(dateStr: string | undefined): string {
-  if (!dateStr) {
-    return new Date().toISOString().split("T")[0];
-  }
-
-  // Try to parse MM/DD/YYYY format
-  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (match) {
-    const [, month, day, year] = match;
-    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-  }
-
-  // Try to parse YYYY-MM-DD format (already correct)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return dateStr;
-  }
-
-  // Fallback to current date
-  return new Date().toISOString().split("T")[0];
-}
 
 export type ProcessedCheckData = {
   amount: number;
@@ -62,7 +39,7 @@ export function useAddCheck() {
       const processed: ProcessedCheckData = {
         amount: result.amount,
         payerName: result.payerName,
-        date: convertDateFormat(result.date),
+        date: toIsoDate(result.date),
         detectedAddress: result.detectedAddress,
       };
 

@@ -16,3 +16,10 @@ export function formatDueDate(value: string): string {
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
+
+/**
+ * Format a dollar amount, e.g. 84.1 -> "$84.10".
+ */
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+}
