@@ -18,6 +18,7 @@ import type * as lib_jobExtraction from "../lib/jobExtraction.js";
 import type * as payments from "../payments.js";
 import type * as receiptActions from "../receiptActions.js";
 import type * as receipts from "../receipts.js";
+import type * as routeBriefs from "../routeBriefs.js";
 import type * as users from "../users.js";
 
 import type {
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   payments: typeof payments;
   receiptActions: typeof receiptActions;
   receipts: typeof receipts;
+  routeBriefs: typeof routeBriefs;
   users: typeof users;
 }>;
 
