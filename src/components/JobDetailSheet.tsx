@@ -43,6 +43,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
+import { formatDueDate } from "@/lib/utils";
 
 interface JobDetailSheetProps {
   jobId: Id<"jobs"> | null;
@@ -430,7 +431,7 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                     className="bg-orange-500/5 text-orange-600 border-orange-500/20 font-bold px-3 py-1.5 rounded-xl"
                   >
                     <Clock className="w-3.5 h-3.5 mr-1.5" />
-                    Due: {job.dueDate}
+                    Due: {formatDueDate(job.dueDate)}
                   </Badge>
                 )}
               </div>
@@ -443,6 +444,18 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                   </h4>
                   <p className="text-sm font-medium leading-relaxed text-foreground/80">
                     {job.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Notes from the source document (conditions, handwriting) */}
+              {job.notes && (
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                    Document Notes
+                  </h4>
+                  <p className="text-sm font-medium leading-relaxed text-foreground/80 whitespace-pre-line">
+                    {job.notes}
                   </p>
                 </div>
               )}
@@ -732,6 +745,11 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                           <span className="text-[10px] font-black text-primary uppercase tracking-wider">
                             {task.category}
                           </span>
+                          {task.area && (
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                              · {task.area}
+                            </span>
+                          )}
                           {task.quantity && task.unit && (
                             <Badge
                               variant="outline"

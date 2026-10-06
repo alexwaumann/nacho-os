@@ -5,6 +5,7 @@ import type { Doc } from "../../convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { formatDueDate } from "@/lib/utils";
 
 type Job = Doc<"jobs">;
 
@@ -114,7 +115,7 @@ export default function JobCard({ job, onClick }: JobCardProps) {
           {job.dueDate && (
             <div className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg text-xs font-bold border border-border">
               <Clock size={12} />
-              Due: {job.dueDate}
+              Due: {formatDueDate(job.dueDate)}
             </div>
           )}
         </div>
