@@ -51,6 +51,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/*
+          Netlify injects a comment (plus a newline) into <head> on *.netlify.app. React never
+          rendered those nodes, so hydration fails (error #418). Remove them before React loads.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              Array.from(document.head.childNodes).forEach(function(node) {
+                var isComment = node.nodeType === Node.COMMENT_NODE;
+                var isBlankText = node.nodeType === Node.TEXT_NODE && !node.textContent.trim();
+                if (isComment || isBlankText) node.remove();
+              });
+            `,
+          }}
+        />
         {/* Prevent flash of wrong theme */}
         <script
           dangerouslySetInnerHTML={{
