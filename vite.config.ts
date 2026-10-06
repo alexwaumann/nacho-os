@@ -8,7 +8,10 @@ import netlify from "@netlify/vite-plugin-tanstack-start";
 
 const config = defineConfig({
   plugins: [
-    devtools(),
+    // Override the event bus port to run several dev servers side by side (e.g. in worktrees)
+    devtools({
+      eventBusConfig: { port: Number(process.env.DEVTOOLS_EVENT_BUS_PORT) || undefined },
+    }),
     process.env.NODE_ENV === "production" ? netlify() : null,
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
