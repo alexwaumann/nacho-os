@@ -14,9 +14,13 @@ import { parseArgs } from "node:util";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 import { interpretVoiceCommand } from "../../src/features/voice/lib/agent";
-import { applyVoiceOps, buildVoiceContext } from "../../src/features/voice/lib/ops";
+import {
+  applyVoiceOps,
+  buildVoiceContext,
+  getVoiceJobState,
+} from "../../src/features/voice/lib/ops";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { VoiceJobState } from "../../src/features/voice/lib/ops";
+import type { VoiceFollowUp, VoiceJobState } from "../../src/features/voice/lib/ops";
 
 const { values: args } = parseArgs({
   options: {
@@ -83,7 +87,22 @@ const check =
   (s, r) =>
     ok(s, r) ? null : msg;
 
-const CASES: Array<{ id: string; say: string; checks: Array<Check> }> = [
+// The fixture job with some tasks already done, for follow-ups to partly applied requests
+const withDone = (...ids: Array<string>) =>
+  ({
+    ...JOB,
+    tasks: JOB.tasks!.map((t) => (ids.includes(t.id) ? { ...t, completed: true } : t)),
+  }) as Doc<"jobs">;
+
+const BATHROOM_QUESTION = "Which bathroom task did you mean: the exhaust fan or the sink drain?";
+
+const CASES: Array<{
+  id: string;
+  say: string;
+  checks: Array<Check>;
+  job?: Doc<"jobs">;
+  previous?: VoiceFollowUp;
+}> = [
   {
     id: "done-simple",
     say: "I finished painting the trim in the living room.",
@@ -214,6 +233,56 @@ const CASES: Array<{ id: string; say: string; checks: Array<Check> }> = [
     checks: [check((s) => s.status === "completed", "job should be completed")],
   },
   {
+    id: "followup-answer",
+    say: "The exhaust fan.",
+    previous: { transcript: "Mark the bathroom one done.", reply: BATHROOM_QUESTION, applied: [] },
+    checks: [done("d"), sameTasksExcept("d")],
+  },
+  {
+    id: "followup-partial",
+    say: "The sink drain.",
+    job: withDone("a"),
+    previous: {
+      transcript: "I painted the trim and the bathroom one is done.",
+      reply: `Marked the trim done. ${BATHROOM_QUESTION}`,
+      applied: ["Done: Paint trim"],
+    },
+    checks: [
+      done("e"),
+      done("a"),
+      sameTasksExcept("a", "e"),
+      check((s) => s.tasks.length === 9, "no tasks added"),
+    ],
+  },
+  {
+    id: "followup-new-task",
+    say: "The garage.",
+    previous: {
+      transcript: "Add a task to replace the light fixture.",
+      reply: "Which room is the light fixture in?",
+      applied: [],
+    },
+    checks: [
+      check((s) => s.tasks.length === 10, "should add one task"),
+      check(
+        (s) =>
+          /light/i.test(s.tasks.at(-1)?.taskName ?? "") &&
+          /garage/i.test(s.tasks.at(-1)?.area ?? ""),
+        "new task should be the garage light fixture",
+      ),
+      sameTasksExcept(),
+    ],
+  },
+  {
+    id: "followup-ignored",
+    say: "Make a note that the water heater is really old.",
+    previous: { transcript: "Mark the bathroom one done.", reply: BATHROOM_QUESTION, applied: [] },
+    checks: [
+      check((s) => /water heater/i.test(s.notes), "note about the water heater"),
+      sameTasksExcept(),
+    ],
+  },
+  {
     id: "nothing",
     say: "Hmm, let me think about that.",
     checks: [
@@ -248,14 +317,6 @@ const configs = args.configs.split(",").map((c) => {
   const [model, level = "low"] = c.split(":");
   return { name: c, model, thinkingLevel: THINKING[level] };
 });
-const { context, refs } = buildVoiceContext(JOB);
-const state = {
-  tasks: JOB.tasks!,
-  accessCodes: JOB.accessCodes!,
-  notes: JOB.notes!,
-  dueDate: JOB.dueDate!,
-  status: JOB.status,
-} satisfies VoiceJobState;
 
 type Run = { config: string; id: string; failures: Array<string>; ms: number; reply: string };
 
@@ -267,10 +328,13 @@ const runs: Array<Run> = [];
 async function worker() {
   for (let next = jobs.shift(); next; next = jobs.shift()) {
     const { config, c } = next;
+    const job = c.job ?? JOB;
+    const { context, refs } = buildVoiceContext(job);
+    const state = getVoiceJobState(job);
     try {
       const result = await interpretVoiceCommand(
         ai,
-        { audio: audioFor(c.id, c.say), job: context, today: TODAY },
+        { audio: audioFor(c.id, c.say), job: context, today: TODAY, previous: c.previous },
         { model: config.model, thinkingLevel: config.thinkingLevel },
       );
       const applied = applyVoiceOps(state, result.ops, refs, () => "new");

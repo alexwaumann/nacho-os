@@ -146,6 +146,14 @@ export function buildVoiceContext(job: Doc<"jobs">) {
   return { context, refs };
 }
 
+/** The last exchange, sent along when the reply was a question so the next recording can answer it. */
+export interface VoiceFollowUp {
+  transcript: string;
+  reply: string;
+  /** Summary lines of the changes already made from that recording. */
+  applied: Array<string>;
+}
+
 export interface AppliedVoiceOps {
   /** Only the fields that changed, with their new values. */
   changes: Partial<VoiceJobState>;

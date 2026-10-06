@@ -1,18 +1,24 @@
 import { useMutation as useConvexMutationHook } from "convex/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
 import { applyVoiceOps, buildVoiceContext, getVoiceJobState } from "../lib/ops";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
-import type { VoiceJobState } from "../lib/ops";
+import type { VoiceFollowUp, VoiceJobState } from "../lib/ops";
 import { runVoiceCommand } from "@/server/voice";
 
 // Long enough to read the changes and reach for Undo
 const RESULT_TOAST_MS = 15_000;
+// How long a question from the assistant stays open for a spoken answer
+const FOLLOW_UP_MS = 2 * 60_000;
+
+interface PendingFollowUp extends VoiceFollowUp {
+  expiresAt: number;
+}
 
 const toastClassNames = {
   title: "text-base! font-bold! leading-snug!",
@@ -83,6 +89,14 @@ export function useVoiceCommand(job: Doc<"jobs">) {
   const updateJob = useConvexMutationHook(api.jobs.update);
   const updateStatus = useConvexMutationHook(api.jobs.updateStatus);
   const [isProcessing, setIsProcessing] = useState(false);
+  // Set when the last reply asked a question, so the next recording can just answer it
+  const [followUp, setFollowUp] = useState<PendingFollowUp | null>(null);
+
+  useEffect(() => {
+    if (!followUp) return;
+    const timer = window.setTimeout(() => setFollowUp(null), followUp.expiresAt - Date.now());
+    return () => window.clearTimeout(timer);
+  }, [followUp]);
 
   const saveFields = async (jobId: Id<"jobs">, fields: Partial<VoiceJobState>) => {
     const { status, ...rest } = fields;
@@ -105,6 +119,10 @@ export function useVoiceCommand(job: Doc<"jobs">) {
   const handleRecorded = async (audio: Blob) => {
     const jobId = job._id;
     const { context, refs } = buildVoiceContext(job);
+    const previous =
+      followUp && followUp.expiresAt > Date.now() ?
+        { transcript: followUp.transcript, reply: followUp.reply, applied: followUp.applied }
+      : undefined;
     setIsProcessing(true);
     try {
       const result = await runVoiceCommand({
@@ -112,6 +130,7 @@ export function useVoiceCommand(job: Doc<"jobs">) {
           audio: { base64: await blobToBase64(audio), mimeType: audio.type.split(";")[0] },
           job: context,
           today: describeToday(),
+          previous,
         },
       });
 
@@ -123,6 +142,17 @@ export function useVoiceCommand(job: Doc<"jobs">) {
       const title =
         result.reply ||
         (applied.summary.length > 0 ? "Job updated" : "Sorry, I didn't catch that.");
+      // Keep the whole exchange so a second question still has the original request
+      const nextFollowUp: PendingFollowUp | null =
+        result.reply.trim().endsWith("?") ?
+          {
+            transcript:
+              previous ? `${previous.transcript} … ${result.transcript}` : result.transcript,
+            reply: result.reply,
+            applied: [...(previous?.applied ?? []), ...applied.summary],
+            expiresAt: Date.now() + FOLLOW_UP_MS,
+          }
+        : null;
       const details = (
         <VoiceResultDetails
           lines={applied.summary}
@@ -132,6 +162,7 @@ export function useVoiceCommand(job: Doc<"jobs">) {
       );
 
       if (Object.keys(applied.changes).length === 0) {
+        setFollowUp(nextFollowUp);
         toast(title, {
           description: details,
           duration: RESULT_TOAST_MS,
@@ -141,6 +172,7 @@ export function useVoiceCommand(job: Doc<"jobs">) {
       }
 
       await saveFields(jobId, applied.changes);
+      setFollowUp(nextFollowUp);
       toast.success(title, {
         description: details,
         duration: RESULT_TOAST_MS,
@@ -157,5 +189,5 @@ export function useVoiceCommand(job: Doc<"jobs">) {
     }
   };
 
-  return { isProcessing, handleRecorded };
+  return { isProcessing, handleRecorded, followUpQuestion: followUp?.reply ?? null };
 }

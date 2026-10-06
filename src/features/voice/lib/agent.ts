@@ -3,7 +3,7 @@ import { z } from "zod";
 import { voiceResponseSchema } from "./ops";
 import type { GoogleGenAI } from "@google/genai";
 
-import type { VoiceJobContext, VoiceResponse } from "./ops";
+import type { VoiceFollowUp, VoiceJobContext, VoiceResponse } from "./ops";
 
 // Server-only: turns a recorded voice command into job edits with Gemini
 
@@ -15,6 +15,8 @@ export interface VoiceCommandInput {
   job: VoiceJobContext;
   /** The user's local date, e.g. "Tuesday, 2026-10-06", for resolving "Friday" or "next week". */
   today: string;
+  /** Set when this recording may answer a question asked in the previous reply. */
+  previous?: VoiceFollowUp;
 }
 
 const responseJsonSchema = (() => {
@@ -22,9 +24,21 @@ const responseJsonSchema = (() => {
   return schema;
 })();
 
-function buildPrompt({ job, today }: Omit<VoiceCommandInput, "audio">) {
+function buildFollowUp({ transcript, reply, applied }: VoiceFollowUp) {
+  return `
+Follow-up: this recording probably answers a question you just asked about this job.
+- Earlier they said: ${JSON.stringify(transcript)}
+- You replied: ${JSON.stringify(reply)}
+- Changes already made from that earlier recording (the job below already includes them; don't \
+make them again): ${applied.length > 0 ? applied.join("; ") : "none"}
+Combine the earlier request with this answer to decide the edits (e.g. "the exhaust fan" picks \
+which task to mark done). If this recording is clearly about something else, handle it on its own.
+`;
+}
+
+function buildPrompt({ job, today, previous }: Omit<VoiceCommandInput, "audio">) {
   return `You are the voice assistant in a handyman's job app. The user is standing at a job site, \
-holding a button and speaking a short update about the ONE job below. Turn what they say into \
+speaking a short recorded update about the ONE job below. Turn what they say into \
 edits to that job.
 
 How to respond:
@@ -71,6 +85,7 @@ reopened (pending).
 If the audio is silent or you can't make it out, return no ops and reply "Sorry, I didn't catch \
 that."
 
+${previous ? buildFollowUp(previous) : ""}
 The job:
 ${JSON.stringify(job, null, 2)}`;
 }

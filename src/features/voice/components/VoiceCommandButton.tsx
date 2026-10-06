@@ -34,7 +34,7 @@ interface VoiceCommandButtonProps {
 export function VoiceCommandButton({ job, isOpen }: VoiceCommandButtonProps) {
   const [isHintVisible, setIsHintVisible] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const { isProcessing, handleRecorded } = useVoiceCommand(job);
+  const { isProcessing, handleRecorded, followUpQuestion } = useVoiceCommand(job);
   const recorder = useVoiceRecorder({
     maxMs: MAX_RECORDING_MS,
     onRecorded: (audio) => void handleRecorded(audio),
@@ -110,6 +110,14 @@ export function VoiceCommandButton({ job, isOpen }: VoiceCommandButtonProps) {
               : "Tap the square to send"}
             </div>
           </div>
+        </div>
+      : !isProcessing && recorder.state === "idle" && !isHintVisible && followUpQuestion ?
+        <div
+          role="status"
+          className="max-w-72 rounded-2xl border border-primary/40 bg-card px-4 py-3 shadow-lg"
+        >
+          <p className="text-base font-bold leading-snug text-foreground">{followUpQuestion}</p>
+          <p className="mt-1 text-sm font-semibold text-primary">Tap the mic to answer</p>
         </div>
       : (isProcessing || recorder.state === "starting" || isHintVisible) && (
           <div
