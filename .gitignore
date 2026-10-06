@@ -14,3 +14,7 @@ todos.json
 
 # Local Netlify folder
 .netlify
+
+# Claude Code
+.claude/settings.local.json
+.claude/worktrees
