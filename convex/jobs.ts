@@ -110,7 +110,8 @@ export const update = mutation({
     summary: v.optional(v.string()),
     tasks: v.optional(v.array(taskValidator)),
     accessCodes: v.optional(v.array(v.string())),
-    dueDate: v.optional(v.string()),
+    // null clears the due date
+    dueDate: v.optional(v.union(v.string(), v.null())),
     notes: v.optional(v.string()),
     coordinates: v.optional(coordinatesValidator),
   },
@@ -122,9 +123,13 @@ export const update = mutation({
       throw new Error("Job not found or unauthorized");
     }
 
-    const { jobId, ...updates } = args;
+    const { jobId, dueDate, ...updates } = args;
 
-    await ctx.db.patch(jobId, updates);
+    // Patching a field to undefined removes it
+    await ctx.db.patch(jobId, {
+      ...updates,
+      ...(dueDate !== undefined && { dueDate: dueDate ?? undefined }),
+    });
     return jobId;
   },
 });

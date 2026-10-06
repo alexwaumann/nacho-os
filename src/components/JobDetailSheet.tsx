@@ -5,7 +5,6 @@ import {
   AlertCircle,
   Calendar,
   CheckCircle2,
-  Clock,
   DollarSign,
   ExternalLink,
   Image as ImageIcon,
@@ -40,9 +39,9 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccessCodesEditor } from "@/features/jobs/components/AccessCodesEditor";
+import { DueDateEditor } from "@/features/jobs/components/DueDateEditor";
 import { JobNotesEditor } from "@/features/jobs/components/JobNotesEditor";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
-import { formatDueDate } from "@/lib/utils";
 
 interface JobDetailSheetProps {
   jobId: Id<"jobs"> | null;
@@ -171,6 +170,28 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
       toast.error("Failed to update access codes", { description: String(err) });
+    },
+  });
+
+  // Optimistic mutation: Set or clear (null) the due date
+  const updateDueDateMutation = useMutation({
+    mutationFn: (variables: { jobId: Id<"jobs">; dueDate: string | null }) =>
+      updateJobConvex(variables),
+    onMutate: async (variables) => {
+      if (!jobQueryKey) return;
+      await queryClient.cancelQueries({ queryKey: jobQueryKey });
+      const previousJob = queryClient.getQueryData<Doc<"jobs">>(jobQueryKey);
+      queryClient.setQueryData<Doc<"jobs">>(jobQueryKey, (old) => {
+        if (!old) return old;
+        return { ...old, dueDate: variables.dueDate ?? undefined };
+      });
+      return { previousJob };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousJob && jobQueryKey) {
+        queryClient.setQueryData(jobQueryKey, context.previousJob);
+      }
+      toast.error("Failed to update due date", { description: String(err) });
     },
   });
 
@@ -398,16 +419,12 @@ export function JobDetailSheet({ jobId, open, onOpenChange }: JobDetailSheetProp
                     Paid: {job.paidOn}
                   </Badge>
                 )}
-                {job.status === "pending" && job.dueDate && (
-                  <Badge
-                    variant="outline"
-                    className="bg-orange-500/5 text-orange-600 border-orange-500/20 font-bold px-3 py-1.5 rounded-xl"
-                  >
-                    <Clock className="w-3.5 h-3.5 mr-1.5" />
-                    Due: {formatDueDate(job.dueDate)}
-                  </Badge>
-                )}
               </div>
+
+              <DueDateEditor
+                dueDate={job.dueDate}
+                onChange={(dueDate) => updateDueDateMutation.mutate({ jobId: job._id, dueDate })}
+              />
 
               {/* Scope Summary */}
               {job.summary && (
