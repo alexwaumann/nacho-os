@@ -13,6 +13,8 @@ import { runVoiceCommand } from "@/server/voice";
 
 // Long enough to read the changes and reach for Undo
 const RESULT_TOAST_MS = 15_000;
+// A failed send waits longer, since the recording is lost once this closes
+const RETRY_TOAST_MS = 60_000;
 // How long the last exchange is sent along, so the next recording can answer or correct it
 const FOLLOW_UP_MS = 2 * 60_000;
 
@@ -126,8 +128,9 @@ export function useVoiceCommand(job: Doc<"jobs">) {
         { transcript: followUp.transcript, reply: followUp.reply, applied: followUp.applied }
       : undefined;
     setIsProcessing(true);
+    let result: Awaited<ReturnType<typeof runVoiceCommand>>;
     try {
-      const result = await runVoiceCommand({
+      result = await runVoiceCommand({
         data: {
           audio: { base64: await blobToBase64(audio), mimeType: audio.type.split(";")[0] },
           job: context,
@@ -135,7 +138,20 @@ export function useVoiceCommand(job: Doc<"jobs">) {
           previous,
         },
       });
+    } catch (error) {
+      console.error("Voice command failed:", error);
+      setIsProcessing(false);
+      // Nothing was changed yet, so the same recording can safely be sent again
+      toast.error("Couldn't send your voice update", {
+        description: "Nothing was changed. Check your signal, then tap Try again.",
+        duration: RETRY_TOAST_MS,
+        classNames: toastClassNames,
+        action: { label: "Try again", onClick: () => void handleRecorded(audio) },
+      });
+      return;
+    }
 
+    try {
       // Apply to the latest job in case it changed while the command was processing
       const latest =
         queryClient.getQueryData<Doc<"jobs">>(convexQuery(api.jobs.get, { jobId }).queryKey) ?? job;
@@ -181,8 +197,8 @@ export function useVoiceCommand(job: Doc<"jobs">) {
         action: { label: "Undo", onClick: () => void handleUndo(jobId, applied.previous) },
       });
     } catch (error) {
-      console.error("Voice command failed:", error);
-      toast.error("Voice update failed", {
+      console.error("Saving voice changes failed:", error);
+      toast.error("Couldn't save the changes", {
         description: error instanceof Error ? error.message : "Unknown error",
       });
     } finally {
