@@ -1,5 +1,6 @@
-import { Key, Plus } from "lucide-react";
-import { useState } from "react";
+import { Key, Plus, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,29 @@ interface AccessCodesEditorProps {
 // Owns the draft input state so typing only re-renders this section, not the whole job sheet
 export function AccessCodesEditor({ codes, onChange }: AccessCodesEditorProps) {
   const [newCode, setNewCode] = useState("");
+  // Latest codes for the undo toast, which can fire after other edits
+  const codesRef = useRef(codes);
+  codesRef.current = codes;
 
   const handleAdd = () => {
     const code = newCode.trim();
     if (!code) return;
     onChange([...codes, code]);
     setNewCode("");
+  };
+
+  const handleRemove = (index: number) => {
+    const removed = codes[index];
+    onChange(codes.filter((_, i) => i !== index));
+    toast(`Removed code ${removed}`, {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          const current = codesRef.current;
+          onChange([...current.slice(0, index), removed, ...current.slice(index)]);
+        },
+      },
+    });
   };
 
   return (
@@ -32,9 +50,17 @@ export function AccessCodesEditor({ codes, onChange }: AccessCodesEditorProps) {
           <Badge
             key={i}
             variant="secondary"
-            className="font-mono text-sm px-3 py-1.5 bg-muted/50 rounded-xl"
+            className="font-mono text-sm h-auto pl-3 pr-1 py-1 gap-1 bg-muted/50 rounded-xl"
           >
             {code}
+            <button
+              type="button"
+              onClick={() => handleRemove(i)}
+              aria-label={`Remove code ${code}`}
+              className="flex items-center justify-center h-7 w-7 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </Badge>
         ))}
       </div>

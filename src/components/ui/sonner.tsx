@@ -19,7 +19,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={resolvedTheme as ToasterProps["theme"]}
-      className="toaster group"
+      // Modal drawers set pointer-events: none on <body>; toasts must stay clickable
+      className="toaster group pointer-events-auto"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
