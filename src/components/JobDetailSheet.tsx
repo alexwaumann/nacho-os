@@ -44,6 +44,7 @@ import { AccessCodesEditor } from "@/features/jobs/components/AccessCodesEditor"
 import { DueDateEditor } from "@/features/jobs/components/DueDateEditor";
 import { JobNotesEditor } from "@/features/jobs/components/JobNotesEditor";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
+import { VoiceCommandButton } from "@/features/voice/components/VoiceCommandButton";
 import { useImageViewer } from "@/hooks/useImageViewer";
 
 interface JobDetailSheetProps {
@@ -407,7 +408,7 @@ export function JobDetailSheet({
 
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto min-h-0 bg-background">
-            <TabsContent value="details" className="m-0 p-6 space-y-6 outline-none">
+            <TabsContent value="details" className="m-0 p-6 pb-32 space-y-6 outline-none">
               {/* Route Toggle */}
               <div className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 border border-border/50">
                 <div className="space-y-0.5">
@@ -705,7 +706,7 @@ export function JobDetailSheet({
               />
             </TabsContent>
 
-            <TabsContent value="tasks" className="m-0 p-6 outline-none space-y-6">
+            <TabsContent value="tasks" className="m-0 p-6 pb-32 outline-none space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">
@@ -826,6 +827,7 @@ export function JobDetailSheet({
             </TabsContent>
           </div>
         </Tabs>
+        <VoiceCommandButton key={job._id} job={job} />
         <ImageViewer {...viewerProps} />
       </DrawerContent>
     </Drawer>
