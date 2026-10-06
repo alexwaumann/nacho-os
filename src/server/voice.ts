@@ -21,6 +21,7 @@ export const runVoiceCommand = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
     const { ms, ...result } = await interpretVoiceCommand(ai, data);
-    console.log(`Voice command (${ms}ms): ${result.transcript}`);
+    const followUp = data.previous ? `, follow-up to "${data.previous.reply}"` : "";
+    console.log(`Voice command (${ms}ms${followUp}): ${result.transcript} → ${result.reply}`);
     return result;
   });

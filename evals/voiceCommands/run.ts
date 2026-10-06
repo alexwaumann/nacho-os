@@ -274,6 +274,28 @@ const CASES: Array<{
     ],
   },
   {
+    id: "followup-correction",
+    say: "Sorry, I meant the sink drain, not the fan.",
+    job: withDone("d"),
+    previous: {
+      transcript: "Mark the bathroom fan done.",
+      reply: "Marked the exhaust fan as completed.",
+      applied: ["Done: Replace exhaust fan"],
+    },
+    checks: [done("e"), done("d", false), sameTasksExcept("d", "e")],
+  },
+  {
+    id: "followup-too",
+    say: "And the gutters too.",
+    job: withDone("h"),
+    previous: {
+      transcript: "The deck is stained.",
+      reply: "Marked stain deck as completed.",
+      applied: ["Done: Stain deck"],
+    },
+    checks: [done("f"), done("h"), sameTasksExcept("f", "h")],
+  },
+  {
     id: "followup-ignored",
     say: "Make a note that the water heater is really old.",
     previous: { transcript: "Mark the bathroom one done.", reply: BATHROOM_QUESTION, applied: [] },

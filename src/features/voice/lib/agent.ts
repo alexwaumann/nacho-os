@@ -26,13 +26,18 @@ const responseJsonSchema = (() => {
 
 function buildFollowUp({ transcript, reply, applied }: VoiceFollowUp) {
   return `
-Follow-up: this recording probably answers a question you just asked about this job.
-- Earlier they said: ${JSON.stringify(transcript)}
+Recent context: a moment ago, about this same job, they recorded:
+- They said: ${JSON.stringify(transcript)}
 - You replied: ${JSON.stringify(reply)}
-- Changes already made from that earlier recording (the job below already includes them; don't \
-make them again): ${applied.length > 0 ? applied.join("; ") : "none"}
-Combine the earlier request with this answer to decide the edits (e.g. "the exhaust fan" picks \
-which task to mark done). If this recording is clearly about something else, handle it on its own.
+- Changes made from it (the job below already includes them; don't make them again): \
+${applied.length > 0 ? applied.join("; ") : "none"}
+This recording may follow up on that. Read the two together when it does:
+- Answering your question ("bedroom two", "the exhaust fan") → do what they originally asked, for \
+what they've now picked.
+- Correcting it ("I meant bedroom two", "no, the other one") → fix the earlier change: undo what \
+was wrong and apply what they meant.
+- Adding to it ("that one too", "and the kitchen") → apply the same kind of change.
+If it's about something else, handle it on its own.
 `;
 }
 

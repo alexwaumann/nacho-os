@@ -13,10 +13,12 @@ import { runVoiceCommand } from "@/server/voice";
 
 // Long enough to read the changes and reach for Undo
 const RESULT_TOAST_MS = 15_000;
-// How long a question from the assistant stays open for a spoken answer
+// How long the last exchange is sent along, so the next recording can answer or correct it
 const FOLLOW_UP_MS = 2 * 60_000;
 
 interface PendingFollowUp extends VoiceFollowUp {
+  /** The reply asked something, so the question is pinned by the mic until answered. */
+  isQuestion: boolean;
   expiresAt: number;
 }
 
@@ -89,7 +91,7 @@ export function useVoiceCommand(job: Doc<"jobs">) {
   const updateJob = useConvexMutationHook(api.jobs.update);
   const updateStatus = useConvexMutationHook(api.jobs.updateStatus);
   const [isProcessing, setIsProcessing] = useState(false);
-  // Set when the last reply asked a question, so the next recording can just answer it
+  // The last exchange, so the next recording can answer its question or correct it
   const [followUp, setFollowUp] = useState<PendingFollowUp | null>(null);
 
   useEffect(() => {
@@ -142,17 +144,16 @@ export function useVoiceCommand(job: Doc<"jobs">) {
       const title =
         result.reply ||
         (applied.summary.length > 0 ? "Job updated" : "Sorry, I didn't catch that.");
-      // Keep the whole exchange so a second question still has the original request
-      const nextFollowUp: PendingFollowUp | null =
-        result.reply.trim().endsWith("?") ?
-          {
-            transcript:
-              previous ? `${previous.transcript} … ${result.transcript}` : result.transcript,
-            reply: result.reply,
-            applied: [...(previous?.applied ?? []), ...applied.summary],
-            expiresAt: Date.now() + FOLLOW_UP_MS,
-          }
-        : null;
+      // While answering a question, keep the original request so a second question still has it
+      const isContinuing = !!previous && !!followUp?.isQuestion;
+      const nextFollowUp: PendingFollowUp = {
+        transcript:
+          isContinuing ? `${previous.transcript} … ${result.transcript}` : result.transcript,
+        reply: result.reply,
+        applied: [...(isContinuing ? previous.applied : []), ...applied.summary],
+        isQuestion: result.reply.trim().endsWith("?"),
+        expiresAt: Date.now() + FOLLOW_UP_MS,
+      };
       const details = (
         <VoiceResultDetails
           lines={applied.summary}
@@ -189,5 +190,9 @@ export function useVoiceCommand(job: Doc<"jobs">) {
     }
   };
 
-  return { isProcessing, handleRecorded, followUpQuestion: followUp?.reply ?? null };
+  return {
+    isProcessing,
+    handleRecorded,
+    followUpQuestion: followUp?.isQuestion ? followUp.reply : null,
+  };
 }
