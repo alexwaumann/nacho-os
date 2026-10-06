@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 export type RecorderState = "idle" | "starting" | "recording";
 
@@ -16,25 +16,30 @@ interface RecordingSession {
 
 interface UseVoiceRecorderOptions {
   onRecorded: (audio: Blob) => void;
-  /** Released too soon to have said anything (including while the mic permission prompt was up). */
+  /** Stopped too soon to have said anything. */
   onTooShort: () => void;
   onError: (error: unknown) => void;
+  /** Discarded because the page was hidden (screen off, app switch) or the mic was cut off. */
+  onInterrupted: () => void;
   minMs?: number;
+  /** Recording stops (and is sent) after this long, so a forgotten recording can't run on. */
   maxMs?: number;
 }
 
 /**
- * Press-and-hold recording: call start() on press and stop() on release. Handles release
- * before the mic is ready and caps the length so a stuck press can't record forever.
+ * Tap-to-toggle recording: start() begins, stop() ends and delivers the audio, cancel()
+ * discards it. Recordings are discarded when the page is hidden or the mic is taken away.
  */
 export function useVoiceRecorder({
   onRecorded,
   onTooShort,
   onError,
-  minMs = 600,
+  onInterrupted,
+  minMs = 800,
   maxMs = 60_000,
 }: UseVoiceRecorderOptions) {
   const [state, setState] = useState<RecorderState>("idle");
+  const [startedAt, setStartedAt] = useState<number | null>(null);
   const sessionRef = useRef<RecordingSession | null>(null);
 
   const finish = (session: RecordingSession) => {
@@ -42,6 +47,7 @@ export function useVoiceRecorder({
     window.clearTimeout(session.timer);
     if (sessionRef.current === session) sessionRef.current = null;
     setState("idle");
+    setStartedAt(null);
   };
 
   const stop = () => {
@@ -51,12 +57,18 @@ export function useVoiceRecorder({
     if (session.recorder?.state === "recording") session.recorder.stop();
   };
 
+  /** Discards the current recording; returns whether there was one. */
   const cancel = () => {
     const session = sessionRef.current;
-    if (!session) return;
+    if (!session) return false;
     session.isCancelled = true;
     stop();
+    return true;
   };
+
+  const interrupt = useEffectEvent(() => {
+    if (cancel()) onInterrupted();
+  });
 
   const start = async () => {
     if (sessionRef.current) return;
@@ -74,9 +86,9 @@ export function useVoiceRecorder({
       return;
     }
 
+    // Cancelled while the mic was starting (e.g. tapped again during the permission prompt)
     if (session.isStopRequested) {
       finish(session);
-      if (!session.isCancelled) onTooShort();
       return;
     }
 
@@ -95,16 +107,34 @@ export function useVoiceRecorder({
       }
       onRecorded(new Blob(chunks, { type: recorder.mimeType || mimeType }));
     };
+    // iOS ends the track when a phone call or another app takes the mic
+    session.stream.getAudioTracks()[0]?.addEventListener("ended", () => {
+      if (cancel()) onInterrupted();
+    });
 
     session.recorder = recorder;
     recorder.start();
     session.startedAt = Date.now();
     session.timer = window.setTimeout(stop, maxMs);
     setState("recording");
+    setStartedAt(session.startedAt);
   };
 
-  // Release the mic if the sheet closes mid-recording
-  useEffect(() => cancel, []);
+  // Screen off or switching apps discards the recording rather than sending half a thought
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") interrupt();
+    };
+    const handlePageHide = () => interrupt();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      // Release the mic if the job sheet goes away mid-recording
+      cancel();
+    };
+  }, []);
 
-  return { state, start, stop, cancel };
+  return { state, startedAt, start, stop, cancel };
 }

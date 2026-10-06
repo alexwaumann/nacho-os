@@ -827,7 +827,7 @@ export function JobDetailSheet({
             </TabsContent>
           </div>
         </Tabs>
-        <VoiceCommandButton key={job._id} job={job} />
+        <VoiceCommandButton key={job._id} job={job} isOpen={open} />
         <ImageViewer {...viewerProps} />
       </DrawerContent>
     </Drawer>
