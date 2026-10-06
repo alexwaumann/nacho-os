@@ -50,6 +50,8 @@ export default defineSchema({
     settings: v.optional(
       v.object({
         theme: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
+        // Speak voice replies out loud; unset means on
+        readRepliesAloud: v.optional(v.boolean()),
       }),
     ),
   })
