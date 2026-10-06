@@ -12,6 +12,7 @@ import {
   Sun,
 } from "lucide-react";
 import { useHourlyForecast } from "../hooks/useHourlyForecast";
+import { formatArrivalTime } from "../lib/arrival";
 import type { LucideIcon } from "lucide-react";
 
 import type { Coordinates, HourlyForecastSlot } from "@/server/weather";
@@ -43,26 +44,25 @@ function getWeatherIcon(code: number, isDay: boolean): { Icon: LucideIcon; class
   return { Icon: CloudLightning, className: "text-violet-500" };
 }
 
-const QUARTER_HOUR = 15 * 60 * 1000;
-
 function formatHour(time: number) {
   return new Date(time).toLocaleTimeString([], { hour: "numeric" });
-}
-
-// Rounded to the quarter hour, since it's only an estimate
-function formatArrival(time: number) {
-  const rounded = Math.round(time / QUARTER_HOUR) * QUARTER_HOUR;
-  return new Date(rounded).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
 interface HourlyForecastProps {
   coordinates: Coordinates | undefined;
   // Estimated arrival (ms); the nearest hour is highlighted
   arrivalTime?: number;
+  // Hide the "You get there around" line when the card already says when he arrives
+  hideArrivalLabel?: boolean;
   className?: string;
 }
 
-export function HourlyForecast({ coordinates, arrivalTime, className }: HourlyForecastProps) {
+export function HourlyForecast({
+  coordinates,
+  arrivalTime,
+  hideArrivalLabel,
+  className,
+}: HourlyForecastProps) {
   const { slots, arrivalIndex, isLoading } = useHourlyForecast(coordinates, 4, arrivalTime);
 
   // Keep the columns aligned: show the rain row for every hour, or for none
@@ -84,9 +84,9 @@ export function HourlyForecast({ coordinates, arrivalTime, className }: HourlyFo
           />
         ))}
       </div>
-      {arrivalTime !== undefined && (
+      {arrivalTime !== undefined && !hideArrivalLabel && (
         <p className="text-base font-semibold text-foreground">
-          You get there around {formatArrival(arrivalTime)}
+          You get there around {formatArrivalTime(arrivalTime)}
         </p>
       )}
     </div>
