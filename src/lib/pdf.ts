@@ -1,10 +1,18 @@
-import * as pdfjs from "pdfjs-dist";
+/**
+ * Load pdf.js on demand. A top-level import would also load it on the server, where it
+ * crashes at startup (it needs browser APIs like DOMMatrix) and takes every server function down.
+ */
+async function loadPdfjs() {
+  const pdfjs = await import("pdfjs-dist");
 
-// Set the worker source - using the bundled worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
+  // Set the worker source - using the bundled worker
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
+
+  return pdfjs;
+}
 
 export type ImageData = {
   base64: string;
@@ -16,7 +24,7 @@ export type ImageData = {
  * This must run on the client as it uses canvas
  */
 export async function convertPdfToImages(file: File): Promise<Array<ImageData>> {
-  const arrayBuffer = await file.arrayBuffer();
+  const [pdfjs, arrayBuffer] = await Promise.all([loadPdfjs(), file.arrayBuffer()]);
   const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
 
   const pagePromises = Array.from({ length: pdf.numPages }, async (_, i) => {
