@@ -3,15 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import {
   AlertCircle,
-  Calendar,
   CheckCircle2,
   DollarSign,
   ExternalLink,
   Image as ImageIcon,
+  Key,
   Loader2,
   MoreHorizontal,
   Plus,
   Receipt,
+  RotateCcw,
   Trash2,
   ZoomIn,
 } from "lucide-react";
@@ -33,7 +34,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -44,6 +44,23 @@ import { JobNotesEditor } from "@/features/jobs/components/JobNotesEditor";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
 import { VoiceCommandButton } from "@/features/voice/components/VoiceCommandButton";
 import { useImageViewer } from "@/hooks/useImageViewer";
+import { cn, formatDueDate } from "@/lib/utils";
+
+const TAB_TRIGGER_CLASS =
+  "rounded-xl font-bold uppercase tracking-wider text-base h-full transition-all text-muted-foreground data-active:bg-card data-active:text-primary data-active:shadow-sm dark:data-active:bg-card dark:data-active:text-primary dark:data-active:border-transparent";
+
+const SECTION_HEADING_CLASS =
+  "text-sm font-black text-muted-foreground uppercase tracking-[0.15em] flex items-center gap-2";
+
+// "Lockbox: 7731" → label "Lockbox", code "7731"; anything else is shown whole as the code
+function splitAccessCode(code: string) {
+  const match = /^([^:]+):\s*(.+)$/.exec(code);
+  return match ? { label: match[1].trim(), value: match[2].trim() } : { label: null, value: code };
+}
+
+function formatMoney(amount: number) {
+  return `$${amount.toFixed(2)}`;
+}
 
 interface JobDetailSheetProps {
   jobId: Id<"jobs"> | null;
@@ -272,20 +289,30 @@ export function JobDetailSheet({
   const completedTasks = job.tasks?.filter((t) => t.completed).length ?? 0;
   const totalTasks = job.tasks?.length ?? 0;
   const progressValue = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const isAllTasksDone = totalTasks > 0 && completedTasks === totalTasks;
+  const accessCodes = job.accessCodes ?? [];
+  // On a route day he reads the codes at the door, so they ride in the header
+  const hasHeaderCodes = job.selectedForRoute && accessCodes.length > 0;
+  const hasFooter = tab === "tasks" || (tab === "money" && job.status === "completed");
 
   const handleTaskToggle = (taskId: string, completed: boolean) => {
     updateTaskMutation.mutate({ jobId: job._id, taskId, completed });
   };
 
-  const handleStatusChange = (newStatus: "pending" | "completed") => {
-    const confirmMsg =
-      newStatus === "completed" ?
-        "Are you sure you want to mark this job as complete?"
-      : "Are you sure you want to mark this job as pending?";
+  const setStatus = (status: "pending" | "completed" | "paid") => {
+    updateStatusMutation.mutate({ jobId: job._id, status });
+  };
 
-    if (confirm(confirmMsg)) {
-      updateStatusMutation.mutate({ jobId: job._id, status: newStatus });
-    }
+  const handleMarkComplete = () => {
+    if (confirm("Mark this job as complete?")) setStatus("completed");
+  };
+
+  const handleReopen = () => {
+    if (confirm("Reopen this job? It goes back to your pending jobs.")) setStatus("pending");
+  };
+
+  const handleMarkPaid = () => {
+    if (confirm("Mark this job as paid?")) setStatus("paid");
   };
 
   const handleDelete = () => {
@@ -311,14 +338,14 @@ export function JobDetailSheet({
   const receiptsWithImages = (receipts ?? []).filter((r) => r.imageUrl);
   const receiptViewerImages = receiptsWithImages.map((r) => ({
     src: r.imageUrl!,
-    caption: `${r.storeName} · $${r.total.toFixed(2)}`,
+    caption: `${r.storeName} · ${formatMoney(r.total)}`,
   }));
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent
         ref={setDrawerContentEl}
-        className="h-[90vh] data-[vaul-drawer-direction=bottom]:max-h-[90vh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-hidden shadow-2xl border-t border-border/50"
+        className="h-[90vh] data-[vaul-drawer-direction=bottom]:max-h-[90vh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-clip shadow-2xl border-t border-border/50"
       >
         <Tabs
           value={tab}
@@ -327,12 +354,31 @@ export function JobDetailSheet({
         >
           {/* Sticky Header */}
           <div className="bg-background shrink-0 z-20">
-            <DrawerHeader className="text-left px-6 pt-10 pb-4 space-y-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1 flex-1 min-w-0">
+            <DrawerHeader className="text-left px-5 pt-9 pb-4 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-3 flex-1 min-w-0">
                   <DrawerTitle className="text-left text-xl font-black uppercase tracking-tight leading-tight line-clamp-2">
                     {job.address}
                   </DrawerTitle>
+                  {hasHeaderCodes && (
+                    <ul aria-label="Access codes" className="flex flex-wrap gap-2">
+                      {accessCodes.map((code, i) => {
+                        const { label, value } = splitAccessCode(code);
+                        return (
+                          <li
+                            key={i}
+                            className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-foreground"
+                          >
+                            <Key className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                            {label && <span className="text-lg font-bold">{label}</span>}
+                            <span className="font-mono text-xl font-black tracking-wider">
+                              {value}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger
@@ -340,161 +386,213 @@ export function JobDetailSheet({
                       <Button
                         variant="secondary"
                         size="icon"
-                        aria-label="Job actions"
-                        className="shrink-0 h-11 w-11 rounded-full border border-border"
+                        aria-label="More actions"
+                        className="shrink-0 h-12 w-12 rounded-full border border-border"
                       />
                     }
                   >
                     <MoreHorizontal className="h-6 w-6" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56" container={drawerContentEl}>
-                    <DropdownMenuItem onClick={openInGoogleMaps}>
-                      <ExternalLink className="mr-2 h-4 w-4" />
+                  <DropdownMenuContent align="end" className="w-60" container={drawerContentEl}>
+                    <DropdownMenuItem onClick={openInGoogleMaps} className="text-base py-3">
+                      <ExternalLink className="mr-2 h-5 w-5" />
                       Open in Google Maps
                     </DropdownMenuItem>
                     <Separator className="my-1" />
-                    {job.status === "pending" ?
-                      <DropdownMenuItem onClick={() => handleStatusChange("completed")}>
-                        <CheckCircle2 className="mr-2 h-4 w-4 text-primary" />
-                        Mark as Complete
-                      </DropdownMenuItem>
-                    : <DropdownMenuItem onClick={() => handleStatusChange("pending")}>
-                        <AlertCircle className="mr-2 h-4 w-4 text-muted-foreground" />
-                        Mark as Pending
-                      </DropdownMenuItem>
-                    }
                     <DropdownMenuItem
                       onClick={handleDelete}
-                      className="text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20"
+                      className="text-base py-3 text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
+                      <Trash2 className="mr-2 h-5 w-5" />
                       Delete Job
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
 
-              <TabsList className="grid w-full grid-cols-2 group-data-horizontal/tabs:h-14 bg-muted p-1.5 rounded-2xl">
-                <TabsTrigger
-                  value="details"
-                  className="rounded-xl font-bold uppercase tracking-widest text-sm h-full transition-all text-muted-foreground data-active:bg-card data-active:text-primary data-active:shadow-sm dark:data-active:bg-card dark:data-active:text-primary dark:data-active:border-transparent"
-                >
-                  Details
-                </TabsTrigger>
-                <TabsTrigger
-                  value="tasks"
-                  className="rounded-xl font-bold uppercase tracking-widest text-sm h-full transition-all text-muted-foreground data-active:bg-card data-active:text-primary data-active:shadow-sm dark:data-active:bg-card dark:data-active:text-primary dark:data-active:border-transparent"
-                >
+              <TabsList className="grid w-full grid-cols-3 group-data-horizontal/tabs:h-14 bg-muted p-1.5 rounded-2xl">
+                <TabsTrigger value="tasks" className={TAB_TRIGGER_CLASS}>
                   Tasks
                 </TabsTrigger>
+                <TabsTrigger value="info" className={TAB_TRIGGER_CLASS}>
+                  Info
+                </TabsTrigger>
+                <TabsTrigger value="money" className={TAB_TRIGGER_CLASS}>
+                  Money
+                </TabsTrigger>
               </TabsList>
-
-              {totalTasks > 0 && (
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    <span>Tasks Progress</span>
-                    <span>
-                      {completedTasks}/{totalTasks}
-                    </span>
-                  </div>
-                  <Progress value={progressValue} className="h-2" />
-                </div>
-              )}
             </DrawerHeader>
             <Separator />
           </div>
 
-          {/* Scrollable Content Area */}
+          {/* Scrollable Content Area. Without a footer, leave room so the mic doesn't cover the end */}
           <div className="flex-1 overflow-y-auto min-h-0 bg-background">
-            <TabsContent value="details" className="m-0 p-6 pb-32 space-y-6 outline-none">
-              {/* Route Toggle */}
-              <div className="flex items-center justify-between p-5 rounded-3xl bg-muted/30 border border-border/50">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-bold">Today's Route</Label>
-                  <p className="text-sm text-muted-foreground">Include this job in your route</p>
+            <TabsContent
+              value="tasks"
+              className={cn("m-0 p-5 outline-none space-y-5", hasFooter ? "pb-6" : "pb-32")}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className={SECTION_HEADING_CLASS}>Tasks</h4>
+                  <span className="text-lg font-black tabular-nums">
+                    {completedTasks} of {totalTasks} done
+                  </span>
                 </div>
+                {totalTasks > 0 && (
+                  <Progress value={progressValue} className="h-3" aria-label="Tasks done" />
+                )}
+              </div>
+              {totalTasks === 0 && (
+                <p className="text-base text-muted-foreground text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
+                  No tasks on this job.
+                </p>
+              )}
+              <div className="space-y-3">
+                {job.tasks?.map((task) => (
+                  <button
+                    key={task.id}
+                    onClick={() => handleTaskToggle(task.id, !task.completed)}
+                    className={`w-full flex flex-col gap-3 p-5 rounded-[1.5rem] border transition-all text-left ${
+                      task.completed ?
+                        "bg-muted/30 border-border/50 opacity-80"
+                      : "bg-card border-border hover:border-primary/30 shadow-sm"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          task.completed ?
+                            "bg-primary border-primary text-primary-foreground"
+                          : "border-muted-foreground/30"
+                        }`}
+                      >
+                        {task.completed && <CheckCircle2 className="w-4.5 h-4.5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                          <span className="text-xs font-black text-primary uppercase tracking-wider">
+                            {task.category}
+                          </span>
+                          {task.area && (
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                              · {task.area}
+                            </span>
+                          )}
+                          {task.quantity && task.unit && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs px-2 py-0.5 h-6 border-muted-foreground/20 text-muted-foreground font-bold rounded-lg"
+                            >
+                              {task.quantity} {task.unit}
+                            </Badge>
+                          )}
+                          {task.requiresOnlineOrder && !task.completed && (
+                            <Badge
+                              variant="destructive"
+                              className="ml-auto text-xs bg-destructive/10 text-destructive border-destructive/20 font-black uppercase tracking-tighter rounded-lg"
+                            >
+                              Order
+                            </Badge>
+                          )}
+                        </div>
+                        <div
+                          className={`text-lg font-bold leading-snug ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
+                        >
+                          {task.taskName}
+                        </div>
+                      </div>
+                    </div>
+                    {task.sourceItem ?
+                      <div
+                        className={`rounded-2xl px-4 py-3 ${task.completed ? "bg-muted/40" : "bg-muted"}`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1 text-[11px] font-black text-muted-foreground uppercase tracking-[0.14em]">
+                          <span>On the sheet</span>
+                          {task.page && <span>Page {task.page}</span>}
+                        </div>
+                        <p
+                          className={`text-[15px] font-bold leading-snug ${task.completed ? "text-muted-foreground" : "text-foreground"}`}
+                        >
+                          {task.sourceItem}
+                        </p>
+                        {task.specificInstructions && (
+                          <p className="text-[15px] mt-1.5 leading-relaxed text-muted-foreground font-medium">
+                            {task.specificInstructions}
+                          </p>
+                        )}
+                      </div>
+                    : task.specificInstructions && (
+                        <p
+                          className={`text-base leading-relaxed ${task.completed ? "text-muted-foreground/70" : "text-muted-foreground font-medium"}`}
+                        >
+                          {task.specificInstructions}
+                        </p>
+                      )
+                    }
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="info" className="m-0 p-5 pb-32 space-y-7 outline-none">
+              {/* Route Toggle: the whole row is the label, so tapping anywhere flips it */}
+              <label className="flex items-center justify-between gap-4 p-5 rounded-3xl bg-muted/30 border border-border/50 cursor-pointer">
+                <span className="space-y-0.5">
+                  <span className="block text-lg font-bold">Today's route</span>
+                  <span className="block text-base text-muted-foreground">
+                    Include this job in your route
+                  </span>
+                </span>
                 <Switch
                   checked={job.selectedForRoute}
                   onCheckedChange={(checked) =>
                     toggleRouteMutation.mutate({ jobId: job._id, selected: checked })
                   }
+                  className="mr-3 scale-150"
                 />
-              </div>
+              </label>
 
-              {/* Dates Section */}
-              <div className="flex flex-wrap gap-2">
-                <Badge
-                  variant="outline"
-                  className="bg-primary/5 text-primary border-primary/20 h-auto text-sm font-bold px-3 py-1.5 rounded-xl [&>svg]:size-4!"
-                >
-                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                  Created: {new Date(job._creationTime).toLocaleDateString()}
-                </Badge>
-                {job.status === "completed" && job.completedOn && (
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 h-auto text-sm font-bold px-3 py-1.5 rounded-xl [&>svg]:size-4!"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                    Completed: {job.completedOn}
-                  </Badge>
-                )}
-                {job.status === "paid" && job.paidOn && (
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-500/5 text-blue-600 border-blue-500/20 h-auto text-sm font-bold px-3 py-1.5 rounded-xl [&>svg]:size-4!"
-                  >
-                    <DollarSign className="w-3.5 h-3.5 mr-1.5" />
-                    Paid: {job.paidOn}
-                  </Badge>
-                )}
-                {job.status === "pending" && (
+              {job.status === "pending" && (
+                <div className="space-y-3">
+                  <h4 className={SECTION_HEADING_CLASS}>Due date</h4>
                   <DueDateEditor
                     dueDate={job.dueDate}
                     onChange={(dueDate) =>
                       updateDueDateMutation.mutate({ jobId: job._id, dueDate })
                     }
                   />
-                )}
-              </div>
+                </div>
+              )}
+
+              <AccessCodesEditor
+                codes={accessCodes}
+                onChange={(codes) =>
+                  updateAccessCodesMutation.mutate({ jobId: job._id, accessCodes: codes })
+                }
+              />
 
               {/* Scope Summary */}
               {job.summary && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                    Scope Summary
-                  </h4>
+                  <h4 className={SECTION_HEADING_CLASS}>Scope summary</h4>
                   <p className="text-base font-medium leading-relaxed text-foreground/80">
                     {job.summary}
                   </p>
                 </div>
               )}
 
-              {/* Notes from the source document (conditions, handwriting) */}
-              {job.notes && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                    Document Notes
-                  </h4>
-                  <p className="text-base font-medium leading-relaxed text-foreground/80 whitespace-pre-line">
-                    {job.notes}
-                  </p>
-                </div>
-              )}
-
-              <AccessCodesEditor
-                codes={job.accessCodes ?? []}
-                onChange={(accessCodes) =>
-                  updateAccessCodesMutation.mutate({ jobId: job._id, accessCodes })
-                }
+              <JobNotesEditor
+                key={job._id}
+                notes={job.notes ?? ""}
+                onSave={(notes) => updateNotesMutation.mutate({ jobId: job._id, notes })}
               />
 
-              {/* Source Document */}
+              {/* Work order pages */}
               {sourceImages && sourceImages.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    Source Documents
+                  <h4 className={SECTION_HEADING_CLASS}>
+                    <ImageIcon className="w-4 h-4" />
+                    Work order
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     {sourceImages.map((url, i) => (
@@ -519,26 +617,119 @@ export function JobDetailSheet({
                 </div>
               )}
 
-              {/* Financials: Receipts */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Receipt className="w-3.5 h-3.5" />
-                    Receipts
-                  </h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs font-black uppercase h-8 px-3 hover:bg-primary/5 text-primary rounded-xl"
-                    onClick={() => receiptInputRef.current?.click()}
-                    disabled={isUploading}
-                  >
-                    {isUploading ?
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                    : <Plus className="w-3.5 h-3.5 mr-1.5" />}
-                    {isUploading ? "Uploading..." : "Add Receipt"}
-                  </Button>
+              <p className="text-base text-muted-foreground">
+                Added{" "}
+                {new Date(job._creationTime).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            </TabsContent>
+
+            <TabsContent
+              value="money"
+              className={cn("m-0 p-5 space-y-7 outline-none", hasFooter ? "pb-6" : "pb-32")}
+            >
+              {/* Where the job stands: finished and paid dates */}
+              {job.status === "paid" && (
+                <div className="p-5 rounded-[1.5rem] bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                  <div className="flex items-center gap-2 text-2xl font-black text-emerald-600">
+                    <CheckCircle2 className="h-7 w-7 shrink-0" />
+                    {job.paidOn ? `Paid on ${formatDueDate(job.paidOn)}` : "Paid"}
+                  </div>
+                  {job.completedOn && (
+                    <p className="text-base font-medium text-muted-foreground">
+                      Finished on {formatDueDate(job.completedOn)}
+                    </p>
+                  )}
                 </div>
+              )}
+              {job.status === "completed" && (
+                <div className="p-5 rounded-[1.5rem] bg-orange-500/10 border border-orange-500/20 space-y-1">
+                  <div className="text-2xl font-black text-orange-600">Not paid yet</div>
+                  {job.completedOn && (
+                    <p className="text-base font-medium text-muted-foreground">
+                      Finished on {formatDueDate(job.completedOn)}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Payment (check) */}
+              <div className="space-y-3">
+                <h4 className={SECTION_HEADING_CLASS}>
+                  <DollarSign className="w-4 h-4" />
+                  Payment
+                </h4>
+                {payment ?
+                  <Card className="overflow-hidden border-border/50 bg-emerald-500/5 border-emerald-500/10 shadow-none rounded-[1.5rem] py-0">
+                    <div className="p-5 flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-black text-emerald-600/80 uppercase tracking-widest mb-1">
+                          Check from
+                        </div>
+                        <div className="text-lg font-black truncate">
+                          {payment.payerName || "Unknown"}
+                        </div>
+                        <div className="text-base font-medium text-muted-foreground mt-0.5">
+                          {new Date(payment.date).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 space-y-1">
+                        <div className="text-3xl font-black text-emerald-600 tabular-nums">
+                          {formatMoney(payment.amount)}
+                        </div>
+                        {payment.imageUrl && (
+                          <Button
+                            variant="outline"
+                            className="h-12 px-4 text-base font-bold rounded-xl text-emerald-600"
+                            onClick={() =>
+                              openViewer([
+                                {
+                                  src: payment.imageUrl!,
+                                  caption: `Check from ${payment.payerName || "Unknown"}`,
+                                },
+                              ])
+                            }
+                          >
+                            View check
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                : <p className="text-base text-muted-foreground text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
+                    No check scanned yet.
+                  </p>
+                }
+              </div>
+
+              {/* Expenses: Receipts */}
+              <div className="space-y-4">
+                <h4 className={SECTION_HEADING_CLASS}>
+                  <Receipt className="w-4 h-4" />
+                  Receipts
+                </h4>
+
+                <div className="flex items-end justify-between gap-4 p-5 rounded-[1.5rem] bg-destructive/5 border border-destructive/10">
+                  <span className="text-base font-bold text-destructive/80">Spent on this job</span>
+                  <span className="text-4xl font-black text-destructive tabular-nums">
+                    {formatMoney(totalExpenses)}
+                  </span>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-14 text-lg font-bold rounded-2xl"
+                  onClick={() => receiptInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ?
+                    <Loader2 className="size-5 animate-spin" />
+                  : <Plus className="size-5" />}
+                  {isUploading ? "Uploading..." : "Add Receipt"}
+                </Button>
 
                 {/* Hidden file input for receipt capture */}
                 <input
@@ -579,8 +770,7 @@ export function JobDetailSheet({
                           {item.status === "failed" && (
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="text-sm shrink-0"
+                              className="h-12 px-4 text-base shrink-0"
                               onClick={() => dismissQueueItemMutation({ queueId: item._id })}
                             >
                               Dismiss
@@ -597,25 +787,24 @@ export function JobDetailSheet({
                     {receipts.map((r) => (
                       <Card
                         key={r._id}
-                        className="overflow-hidden border-border/50 bg-muted/20 shadow-none rounded-[1.5rem]"
+                        className="overflow-hidden border-border/50 bg-muted/20 shadow-none rounded-[1.5rem] py-0"
                       >
-                        <div className="px-6 flex items-center justify-between gap-4">
+                        <div className="p-5 flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="text-base font-black truncate">{r.storeName}</div>
-                            <div className="text-xs font-medium text-muted-foreground truncate">
-                              {r.storeLocation || "No location"} •{" "}
+                            <div className="text-lg font-black truncate">{r.storeName}</div>
+                            <div className="text-base font-medium text-muted-foreground truncate">
                               {new Date(r.date).toLocaleDateString()}
+                              {r.storeLocation && ` · ${r.storeLocation}`}
                             </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-base font-black text-destructive">
-                              ${r.total.toFixed(2)}
+                          <div className="text-right shrink-0 space-y-1">
+                            <div className="text-xl font-black text-destructive tabular-nums">
+                              {formatMoney(r.total)}
                             </div>
                             {r.imageUrl && (
                               <Button
-                                variant="link"
-                                size="sm"
-                                className="h-6 p-0 text-xs font-black uppercase text-primary"
+                                variant="outline"
+                                className="h-12 px-4 text-base font-bold rounded-xl"
                                 onClick={() =>
                                   openViewer(
                                     receiptViewerImages,
@@ -623,185 +812,80 @@ export function JobDetailSheet({
                                   )
                                 }
                               >
-                                View Receipt
+                                View
                               </Button>
                             )}
                           </div>
                         </div>
                       </Card>
                     ))}
-                    <div className="flex justify-between items-center p-5 rounded-[1.5rem] bg-destructive/5 border border-destructive/10">
-                      <span className="text-xs font-black uppercase tracking-widest text-destructive/70">
-                        Total Expenses
-                      </span>
-                      <span className="text-xl font-black text-destructive">
-                        ${totalExpenses.toFixed(2)}
-                      </span>
-                    </div>
                   </div>
                 : (!receiptQueue || receiptQueue.length === 0) && (
-                    <p className="text-sm text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
+                    <p className="text-base text-muted-foreground text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
                       No receipts added yet.
                     </p>
                   )
                 }
               </div>
-
-              {/* Financials: Check */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                  <DollarSign className="w-3.5 h-3.5" />
-                  Payment Info
-                </h4>
-                {payment ?
-                  <Card className="overflow-hidden border-border/50 bg-emerald-500/5 border-emerald-500/10 shadow-none rounded-[1.5rem] py-0">
-                    <div className="p-5 flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-black text-emerald-600/70 uppercase tracking-widest mb-1.5">
-                          Received from
-                        </div>
-                        <div className="text-base font-black truncate">
-                          {payment.payerName || "Unknown"}
-                        </div>
-                        <div className="text-xs font-medium text-muted-foreground mt-1">
-                          {new Date(payment.date).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-2xl font-black text-emerald-600">
-                          ${payment.amount.toFixed(2)}
-                        </div>
-                        {payment.imageUrl && (
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="h-6 p-0 text-xs font-black uppercase text-emerald-600"
-                            onClick={() =>
-                              openViewer([
-                                {
-                                  src: payment.imageUrl!,
-                                  caption: `Check from ${payment.payerName || "Unknown"}`,
-                                },
-                              ])
-                            }
-                          >
-                            View Check
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                : <p className="text-sm text-muted-foreground italic text-center py-6 bg-muted/10 rounded-[1.5rem] border border-dashed border-border/50">
-                    No payment record found.
-                  </p>
-                }
-              </div>
-
-              <JobNotesEditor
-                key={job._id}
-                notes={job.notes ?? ""}
-                onSave={(notes) => updateNotesMutation.mutate({ jobId: job._id, notes })}
-              />
-            </TabsContent>
-
-            <TabsContent value="tasks" className="m-0 p-6 pb-32 outline-none space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">
-                    Tasks Checklist
-                  </h4>
-                  <Badge variant="secondary" className="text-xs font-black px-2.5 py-1 rounded-lg">
-                    {completedTasks}/{totalTasks}
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {job.tasks?.map((task) => (
-                    <button
-                      key={task.id}
-                      onClick={() => handleTaskToggle(task.id, !task.completed)}
-                      className={`w-full flex flex-col gap-3 p-5 rounded-[1.5rem] border transition-all text-left ${
-                        task.completed ?
-                          "bg-muted/30 border-border/50 opacity-80"
-                        : "bg-card border-border hover:border-primary/30 shadow-sm"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                            task.completed ?
-                              "bg-primary border-primary text-primary-foreground"
-                            : "border-muted-foreground/30"
-                          }`}
-                        >
-                          {task.completed && <CheckCircle2 className="w-4.5 h-4.5" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
-                            <span className="text-xs font-black text-primary uppercase tracking-wider">
-                              {task.category}
-                            </span>
-                            {task.area && (
-                              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                · {task.area}
-                              </span>
-                            )}
-                            {task.quantity && task.unit && (
-                              <Badge
-                                variant="outline"
-                                className="text-xs px-2 py-0.5 h-6 border-muted-foreground/20 text-muted-foreground font-bold rounded-lg"
-                              >
-                                {task.quantity} {task.unit}
-                              </Badge>
-                            )}
-                            {task.requiresOnlineOrder && !task.completed && (
-                              <Badge
-                                variant="destructive"
-                                className="ml-auto text-xs bg-destructive/10 text-destructive border-destructive/20 font-black uppercase tracking-tighter rounded-lg"
-                              >
-                                Order
-                              </Badge>
-                            )}
-                          </div>
-                          <div
-                            className={`text-lg font-bold leading-snug ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
-                          >
-                            {task.taskName}
-                          </div>
-                        </div>
-                      </div>
-                      {task.sourceItem ?
-                        <div
-                          className={`rounded-2xl px-4 py-3 ${task.completed ? "bg-muted/40" : "bg-muted"}`}
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-1 text-[11px] font-black text-muted-foreground uppercase tracking-[0.14em]">
-                            <span>On the sheet</span>
-                            {task.page && <span>Page {task.page}</span>}
-                          </div>
-                          <p
-                            className={`text-[15px] font-bold leading-snug ${task.completed ? "text-muted-foreground" : "text-foreground"}`}
-                          >
-                            {task.sourceItem}
-                          </p>
-                          {task.specificInstructions && (
-                            <p className="text-[15px] mt-1.5 leading-relaxed text-muted-foreground font-medium">
-                              {task.specificInstructions}
-                            </p>
-                          )}
-                        </div>
-                      : task.specificInstructions && (
-                          <p
-                            className={`text-base leading-relaxed ${task.completed ? "text-muted-foreground/70" : "text-muted-foreground font-medium"}`}
-                          >
-                            {task.specificInstructions}
-                          </p>
-                        )
-                      }
-                    </button>
-                  ))}
-                </div>
-              </div>
             </TabsContent>
           </div>
+
+          {/* Pinned primary action. Bottom padding keeps it clear of the mic (bottom-right) */}
+          {hasFooter && (
+            <div className="shrink-0 border-t border-border bg-background px-5 pt-4 pb-28 space-y-3">
+              {tab === "tasks" ?
+                job.status === "pending" ?
+                  isAllTasksDone ?
+                    <>
+                      <p role="status" className="text-lg font-bold text-center">
+                        All tasks done. Mark job complete?
+                      </p>
+                      <Button
+                        className="w-full h-16 text-lg font-black rounded-2xl"
+                        onClick={() => setStatus("completed")}
+                      >
+                        <CheckCircle2 className="size-6" />
+                        Yes, mark complete
+                      </Button>
+                    </>
+                  : <Button
+                      className="w-full h-16 text-lg font-black rounded-2xl"
+                      onClick={handleMarkComplete}
+                    >
+                      <CheckCircle2 className="size-6" />
+                      Mark job complete
+                    </Button>
+
+                : <>
+                    <p className="flex items-center justify-center gap-2 text-lg font-bold text-emerald-600">
+                      <CheckCircle2 className="size-6" />
+                      {job.status === "paid" ? "Job done and paid" : "Job done"}
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="w-full h-14 text-lg font-bold rounded-2xl"
+                      onClick={handleReopen}
+                    >
+                      <RotateCcw className="size-5" />
+                      Reopen job
+                    </Button>
+                  </>
+
+              : <Button
+                  className="w-full h-16 px-5 text-lg font-black rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 justify-between"
+                  onClick={handleMarkPaid}
+                >
+                  <span className="flex items-center gap-2">
+                    <DollarSign className="size-6" />
+                    Mark as paid
+                  </span>
+                  {payment && (
+                    <span className="text-xl tabular-nums">{formatMoney(payment.amount)}</span>
+                  )}
+                </Button>
+              }
+            </div>
+          )}
         </Tabs>
         <VoiceCommandButton key={job._id} job={job} isOpen={open} />
         <ImageViewer {...viewerProps} />
