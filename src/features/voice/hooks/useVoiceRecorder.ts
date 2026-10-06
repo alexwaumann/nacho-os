@@ -4,6 +4,8 @@ export type RecorderState = "idle" | "starting" | "recording";
 
 // iOS Safari only records audio/mp4; Chrome 126+ does too. Gemini accepts both mp4 and webm.
 const MIME_TYPES = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
+// Plenty for speech (Gemini downsamples to 16kHz) and ~4x smaller uploads on a weak signal
+const AUDIO_BITS_PER_SECOND = 32_000;
 
 interface RecordingSession {
   stream?: MediaStream;
@@ -78,7 +80,12 @@ export function useVoiceRecorder({
 
     try {
       session.stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
     } catch (error) {
       finish(session);
@@ -93,7 +100,10 @@ export function useVoiceRecorder({
     }
 
     const mimeType = MIME_TYPES.find((type) => MediaRecorder.isTypeSupported(type));
-    const recorder = new MediaRecorder(session.stream, mimeType ? { mimeType } : undefined);
+    const recorder = new MediaRecorder(session.stream, {
+      mimeType,
+      audioBitsPerSecond: AUDIO_BITS_PER_SECOND,
+    });
     const chunks: Array<Blob> = [];
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunks.push(e.data);
