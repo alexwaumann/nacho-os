@@ -1,38 +1,65 @@
-import { APIProvider, AdvancedMarker, Map } from "@vis.gl/react-google-maps";
+import { APIProvider, AdvancedMarker, Map, useMap } from "@vis.gl/react-google-maps";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { LocateFixed, Map as MapIcon, Navigation, Route as RouteIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../convex/_generated/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { env } from "@/env";
+import { cn } from "@/lib/utils";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
 export const Route = createFileRoute("/map")({
   component: MapPage,
 });
 
+type LatLng = { lat: number; lng: number };
+
+const ROUTE_PADDING = { top: 140, right: 96, bottom: 48, left: 48 };
+const LOCATE_ZOOM = 15;
+
+function getCurrentPosition(): Promise<LatLng> {
+  return new Promise((resolve, reject) => {
+    if (!("geolocation" in navigator)) {
+      reject(new Error("Geolocation is not supported by this browser"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      reject,
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  });
+}
+
+function getGeolocationErrorMessage(error: unknown) {
+  if (error instanceof GeolocationPositionError) {
+    if (error.code === error.PERMISSION_DENIED) {
+      return "Location permission is blocked. Allow it in your browser settings.";
+    }
+    if (error.code === error.TIMEOUT) return "Timed out finding your location.";
+    return "Your location is unavailable right now.";
+  }
+  return error instanceof Error ? error.message : "Unknown error";
+}
+
 function MapPage() {
   const apiKey = env.VITE_GOOGLE_MAPS_API_KEY;
   const { data: selectedJobs = [] } = useQuery(convexQuery(api.jobs.getSelectedForRoute, {}));
   const { data: currentUser } = useQuery(convexQuery(api.users.getCurrentUser, {}));
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+
+  const stops = selectedJobs.flatMap((job) => (job.coordinates ? [job.coordinates] : []));
 
   // Get user location
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-      },
-      (err) => console.warn("Geolocation error:", err),
-      { enableHighAccuracy: true },
-    );
+    getCurrentPosition()
+      .then(setUserLocation)
+      .catch((err) => console.warn("Geolocation error:", err));
   }, []);
 
   const handleNavigate = () => {
@@ -54,27 +81,11 @@ function MapPage() {
     }
   };
 
-  const handleLocateMe = () => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-      },
-      (err) => console.warn("Geolocation error:", err),
-      { enableHighAccuracy: true },
-    );
-  };
-
   // Calculate center based on jobs or user location
   const center = (() => {
-    const jobsWithCoords = selectedJobs.filter((j) => j.coordinates);
-    if (jobsWithCoords.length > 0) {
-      const avgLat =
-        jobsWithCoords.reduce((sum, j) => sum + j.coordinates!.lat, 0) / jobsWithCoords.length;
-      const avgLng =
-        jobsWithCoords.reduce((sum, j) => sum + j.coordinates!.lng, 0) / jobsWithCoords.length;
+    if (stops.length > 0) {
+      const avgLat = stops.reduce((sum, c) => sum + c.lat, 0) / stops.length;
+      const avgLng = stops.reduce((sum, c) => sum + c.lng, 0) / stops.length;
       return { lat: avgLat, lng: avgLng };
     }
     if (userLocation) return userLocation;
@@ -115,41 +126,134 @@ function MapPage() {
             : null,
           )}
         </Map>
+
+        {/* Job List Overlay */}
+        {selectedJobs.length > 0 && (
+          <div className="absolute top-4 left-4 right-4">
+            <Card className="bg-card/95 backdrop-blur-sm border-border shadow-lg">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <RouteIcon size={16} className="text-primary" />
+                  {selectedJobs.length} stop{selectedJobs.length !== 1 ? "s" : ""} selected
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <MapControls
+          stops={stops}
+          userLocation={userLocation}
+          onUserLocationChange={setUserLocation}
+          canNavigate={selectedJobs.length > 0}
+          onNavigate={handleNavigate}
+        />
       </APIProvider>
+    </div>
+  );
+}
 
-      {/* Job List Overlay */}
-      {selectedJobs.length > 0 && (
-        <div className="absolute top-4 left-4 right-4">
-          <Card className="bg-card/95 backdrop-blur-sm border-border shadow-lg">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-                <RouteIcon size={16} className="text-primary" />
-                {selectedJobs.length} stop{selectedJobs.length !== 1 ? "s" : ""} selected
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+interface MapControlsProps {
+  stops: Array<LatLng>;
+  userLocation: LatLng | null;
+  onUserLocationChange: (location: LatLng) => void;
+  canNavigate: boolean;
+  onNavigate: () => void;
+}
 
-      {/* Floating Action Buttons */}
-      <div className="absolute right-4 bottom-4 flex flex-col gap-3">
-        <button
-          onClick={handleNavigate}
-          disabled={selectedJobs.length === 0}
-          className="w-14 h-14 rounded-full bg-card shadow-xl border border-border flex items-center justify-center text-primary active:scale-90 transition-transform hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Navigation size={28} fill="currentColor" className="opacity-80" />
-        </button>
-        <button className="w-14 h-14 rounded-full bg-card shadow-xl border border-border flex items-center justify-center text-primary active:scale-90 transition-transform hover:bg-muted">
-          <RouteIcon size={28} />
-        </button>
-        <button
-          onClick={handleLocateMe}
-          className="w-14 h-14 rounded-full bg-card shadow-xl border border-border flex items-center justify-center text-foreground active:scale-90 transition-transform hover:bg-muted"
-        >
-          <LocateFixed size={28} />
-        </button>
-      </div>
+function MapControls({
+  stops,
+  userLocation,
+  onUserLocationChange,
+  canNavigate,
+  onNavigate,
+}: MapControlsProps) {
+  const map = useMap();
+  const [isLocating, setIsLocating] = useState(false);
+  const hasAutoFitRef = useRef(false);
+
+  const fitRoute = (includeUserLocation: boolean) => {
+    if (!map || stops.length === 0) return;
+    const points = includeUserLocation && userLocation ? [...stops, userLocation] : stops;
+    if (points.length === 1) {
+      map.panTo(points[0]);
+      map.setZoom(LOCATE_ZOOM);
+      return;
+    }
+    const lats = points.map((point) => point.lat);
+    const lngs = points.map((point) => point.lng);
+    map.fitBounds(
+      {
+        north: Math.max(...lats),
+        south: Math.min(...lats),
+        east: Math.max(...lngs),
+        west: Math.min(...lngs),
+      },
+      ROUTE_PADDING,
+    );
+  };
+
+  // Frame the route once the map and selected stops are both loaded
+  useEffect(() => {
+    if (!map || stops.length === 0 || hasAutoFitRef.current) return;
+    hasAutoFitRef.current = true;
+    fitRoute(false);
+  });
+
+  const handleShowRoute = () => {
+    if (stops.length === 0) {
+      toast.info("No stops with a location selected");
+      return;
+    }
+    fitRoute(true);
+  };
+
+  const handleLocateMe = async () => {
+    if (!map) return;
+    // Pan right away to the last known position while we fetch a fresh one
+    if (userLocation) map.panTo(userLocation);
+    setIsLocating(true);
+    try {
+      const location = await getCurrentPosition();
+      onUserLocationChange(location);
+      map.panTo(location);
+      map.setZoom(Math.max(map.getZoom() ?? 0, LOCATE_ZOOM));
+    } catch (error) {
+      console.error("Geolocation failed:", error);
+      toast.error("Couldn't get your location", {
+        description: getGeolocationErrorMessage(error),
+      });
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  return (
+    <div className="absolute right-4 bottom-4 flex flex-col gap-3">
+      <button
+        onClick={onNavigate}
+        disabled={!canNavigate}
+        aria-label="Open route in Google Maps"
+        className="w-14 h-14 rounded-full bg-card shadow-xl border border-border flex items-center justify-center text-primary active:scale-90 transition-transform hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Navigation size={28} fill="currentColor" className="opacity-80" />
+      </button>
+      <button
+        onClick={handleShowRoute}
+        disabled={!map}
+        aria-label="Show whole route"
+        className="w-14 h-14 rounded-full bg-card shadow-xl border border-border flex items-center justify-center text-primary active:scale-90 transition-transform hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <RouteIcon size={28} />
+      </button>
+      <button
+        onClick={handleLocateMe}
+        disabled={!map}
+        aria-label="Go to my location"
+        className="w-14 h-14 rounded-full bg-card shadow-xl border border-border flex items-center justify-center text-foreground active:scale-90 transition-transform hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <LocateFixed size={28} className={cn(isLocating && "animate-pulse text-primary")} />
+      </button>
     </div>
   );
 }
