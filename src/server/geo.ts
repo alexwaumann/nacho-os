@@ -196,7 +196,8 @@ export const optimizeRoute = createServerFn({ method: "POST" })
       intermediates,
       travelMode: "DRIVE",
       routingPreference: "TRAFFIC_AWARE",
-      optimizeWaypointOrder: data.optimize !== false,
+      // Nothing to reorder with fewer than 2 stops
+      optimizeWaypointOrder: data.optimize !== false && data.waypoints.length > 1,
       computeAlternativeRoutes: false,
     };
 
@@ -218,19 +219,28 @@ export const optimizeRoute = createServerFn({ method: "POST" })
     }
 
     const route = result.routes[0];
-    const waypointOrder =
-      route.optimizedIntermediateWaypointIndex || data.waypoints.map((_, i) => i);
+    const identityOrder = data.waypoints.map((_, i) => i);
+    // Google returns [-1] when no reordering happened (e.g. a single stop), so only
+    // trust the optimized order when it's a full permutation of the waypoints
+    const optimizedOrder: Array<number> | undefined = route.optimizedIntermediateWaypointIndex;
+    const isValidOrder =
+      optimizedOrder?.length === data.waypoints.length &&
+      identityOrder.every((i) => optimizedOrder.includes(i));
+    const waypointOrder = isValidOrder ? optimizedOrder : identityOrder;
 
     // Reorder waypoints based on optimization
     const orderedWaypoints = waypointOrder.map((i: number) => data.waypoints[i]);
 
     // Extract metrics from legs
-    const metrics = route.legs.map((leg: Record<string, unknown>) => ({
-      distance: formatDistance(leg.distanceMeters as number),
-      duration: formatDuration(leg.duration as string),
-      distanceValue: leg.distanceMeters as number,
-      durationValue: parseDuration(leg.duration as string),
-    }));
+    const metrics = (route.legs as Array<RouteLeg>).map((rawLeg) => {
+      const leg = normalizeLeg(rawLeg);
+      return {
+        distance: formatDistance(leg.distanceMeters),
+        duration: formatDuration(leg.duration),
+        distanceValue: leg.distanceMeters,
+        durationValue: parseDuration(leg.duration),
+      };
+    });
 
     // Calculate totals
     const totalDistanceMeters = metrics.reduce(
@@ -286,6 +296,16 @@ export const fetchRouteMatrix = createServerFn({ method: "POST" })
   });
 
 // Helper functions
+interface RouteLeg {
+  distanceMeters?: number;
+  duration?: string;
+}
+
+// Google omits zero-valued fields, so a leg that starts at the stop has no distanceMeters
+function normalizeLeg(leg: RouteLeg): Required<RouteLeg> {
+  return { distanceMeters: leg.distanceMeters ?? 0, duration: leg.duration ?? "0s" };
+}
+
 function formatDistance(meters: number): string {
   const miles = meters / 1609.34;
   return miles < 1 ? `${Math.round(miles * 10) / 10} mi` : `${Math.round(miles * 10) / 10} mi`;
@@ -411,10 +431,7 @@ export const calculateRouteMetrics = createServerFn({ method: "POST" })
     // Extract metrics from legs
     // Legs: origin->waypoint1, waypoint1->waypoint2, ..., waypointN->destination
     // We want to return metrics for travel TO each waypoint (not including travel to home)
-    const allLegs = route.legs as Array<{
-      distanceMeters: number;
-      duration: string;
-    }>;
+    const allLegs = (route.legs as Array<RouteLeg>).map(normalizeLeg);
 
     // Calculate metrics for each waypoint (travel TO that waypoint)
     const waypointMetrics = data.waypoints.map((_wp, index) => {
