@@ -167,6 +167,17 @@ export const remove = mutation({
       await ctx.db.delete(receipt._id);
     }
 
+    // Delete associated job photos
+    const photos = await ctx.db
+      .query("jobPhotos")
+      .withIndex("by_job", (q: any) => q.eq("jobId", args.jobId))
+      .collect();
+
+    for (const photo of photos) {
+      await ctx.storage.delete(photo.imageId);
+      await ctx.db.delete(photo._id);
+    }
+
     // Delete associated payments
     const payments = await ctx.db
       .query("payments")

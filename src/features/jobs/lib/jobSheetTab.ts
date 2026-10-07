@@ -2,7 +2,7 @@ import * as z from "zod";
 
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
-export const JOB_SHEET_TABS = ["tasks", "info", "money"] as const;
+export const JOB_SHEET_TABS = ["tasks", "info", "money", "photos"] as const;
 
 export type JobSheetTab = (typeof JOB_SHEET_TABS)[number];
 

@@ -9,7 +9,7 @@ import type { AppliedVoiceOps, VoiceFollowUp, VoiceOp } from "./ops";
 type Job = Doc<"jobs">;
 type JobId = Id<"jobs">;
 export type GlobalJobStatus = Job["status"];
-export type GlobalJobSheetTab = "tasks" | "info" | "money";
+export type GlobalJobSheetTab = "tasks" | "info" | "money" | "photos";
 
 // Jobs are referenced by short refs ("j2") so the model never has to copy long ids
 const jobRef = z.string().describe('Ref of a job from the list, e.g. "j2"');
@@ -42,9 +42,15 @@ export const globalVoiceOpSchema = z.union([
     op: z.enum(["open_job"]),
     job: jobRef,
     tab: z
-      .enum(["tasks", "info", "money"])
+      .enum(["tasks", "info", "money", "photos"])
       .optional()
-      .describe("tasks: the checklist; info: address, codes, notes, files; money: costs and pay"),
+      .describe(
+        "tasks: the checklist; info: address, codes, notes, files; money: costs and pay; photos: job photos",
+      ),
+  }),
+  z.object({
+    op: z.enum(["add_photo"]),
+    job: jobRef.describe("The job to add a photo to; opens its photos with the camera ready"),
   }),
   z.object({ op: z.enum(["answer"]) }),
 ]);
@@ -226,7 +232,7 @@ export interface GlobalPlan {
   statuses: Array<{ jobId: JobId; from: GlobalJobStatus; to: GlobalJobStatus }>;
   /** Field edits per job, ready to save (status is never part of these) */
   edits: Array<{ jobId: JobId; applied: AppliedVoiceOps }>;
-  open: { jobId: JobId; tab?: GlobalJobSheetTab } | null;
+  open: { jobId: JobId; tab?: GlobalJobSheetTab; addPhoto?: boolean } | null;
   /** The job this command was about, for the next recording's "it" and "there" */
   focusJobId: JobId | null;
   /** One plain-language line per change */
@@ -313,6 +319,15 @@ export function planGlobalOps(
           skipped.push(`Open ${label(job)} to change its notes`);
           break;
         }
+        // Photos aren't in this context; the job's own mic captions them
+        if (op.edit.op === "set_photo_caption") {
+          skipped.push(`Open ${label(job)} to caption its photos`);
+          break;
+        }
+        if (op.edit.op === "add_photo") {
+          open = { jobId: job._id, tab: "photos", addPhoto: true };
+          break;
+        }
         editsById.set(job._id, [...(editsById.get(job._id) ?? []), op.edit]);
         break;
       }
@@ -364,6 +379,13 @@ export function planGlobalOps(
             `Today's route: ${next.map((id) => label(jobsById.get(id)!)).join(" → ")}`
           : "Cleared today's route",
         );
+        break;
+      }
+      case "add_photo": {
+        const job = findJob(op.job);
+        if (!job) break;
+        focusJobId = job._id;
+        open = { jobId: job._id, tab: "photos", addPhoto: true };
         break;
       }
       case "optimize_route": {

@@ -24,11 +24,13 @@ import {
   toVoiceAudio,
   toastClassNames,
 } from "../lib/voiceClient";
+import { splitVoiceChanges } from "../lib/ops";
 import { useSpokenReplies } from "./useSpokenReplies";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import type { GlobalJobSheetTab, GlobalPlan, StopWeatherInput } from "../lib/globalOps";
 import type { VoiceFollowUp } from "../lib/ops";
+import { requestPhoto } from "@/features/photos/store/photoIntent";
 import {
   hourlyForecastQueryOptions,
   useCurrentHour,
@@ -159,7 +161,7 @@ export function useGlobalVoiceCommand() {
   const handleUndo = async (plan: GlobalPlan, routeBefore: Array<JobId>) => {
     try {
       for (const { jobId, applied } of plan.edits) {
-        await updateJob({ jobId, ...applied.previous });
+        await updateJob({ jobId, ...splitVoiceChanges(applied.previous).job });
       }
       for (const { jobId, from } of plan.statuses) {
         await updateStatus({ jobId, status: from });
@@ -252,7 +254,7 @@ export function useGlobalVoiceCommand() {
       });
 
       for (const { jobId, applied } of plan.edits) {
-        await updateJob({ jobId, ...applied.changes });
+        await updateJob({ jobId, ...splitVoiceChanges(applied.changes).job });
       }
       for (const { jobId, to } of plan.statuses) {
         await updateStatus({ jobId, status: to });
@@ -290,7 +292,10 @@ export function useGlobalVoiceCommand() {
       } else if (plan.route && routeAfter.length >= 2) {
         void recalculateRouteMetrics(routeAfter);
       }
-      if (plan.open) openJobSheet(plan.open.jobId, plan.open.tab);
+      if (plan.open) {
+        openJobSheet(plan.open.jobId, plan.open.tab);
+        if (plan.open.addPhoto) requestPhoto(plan.open.jobId);
+      }
     } catch (error) {
       console.error("Saving voice changes failed:", error);
       toast.error("Couldn't save the changes", {

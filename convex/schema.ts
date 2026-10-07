@@ -110,6 +110,17 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_job", ["jobId"]),
 
+  // Job site photos he takes on the job (before/after, a problem to remember), stored
+  // downsized; the caption is optional ("Bathroom 2")
+  jobPhotos: defineTable({
+    userId: v.id("users"),
+    jobId: v.id("jobs"),
+    imageId: v.id("_storage"),
+    caption: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_job", ["jobId"]),
+
   // Payments table - check payments for jobs
   payments: defineTable({
     userId: v.id("users"),

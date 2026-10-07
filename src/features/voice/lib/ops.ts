@@ -1,12 +1,19 @@
 import * as z from "zod";
 
-import type { Doc } from "../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 type Task = NonNullable<Doc<"jobs">["tasks"]>[number];
 type JobStatus = "pending" | "completed";
 
-// Tasks are referenced by short refs ("t3") so the model never has to copy long ids
+/** A job photo as voice commands see it: its id and caption ("" when it has none). */
+export interface VoicePhoto {
+  id: Id<"jobPhotos">;
+  caption: string;
+}
+
+// Tasks and photos are referenced by short refs ("t3", "p2") so the model never copies long ids
 const taskRef = z.string().describe('Ref of an existing task from the job, e.g. "t3"');
+const photoRef = z.string().describe('Ref of one of the job\'s photos, e.g. "p2"');
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -80,6 +87,12 @@ export const voiceOpSchema = z.union([
   z.object({ op: z.enum(["set_due_date"]), date: isoDate }),
   z.object({ op: z.enum(["clear_due_date"]) }),
   z.object({ op: z.enum(["set_job_status"]), status: z.enum(["pending", "completed"]) }),
+  z.object({
+    op: z.enum(["set_photo_caption"]),
+    photo: photoRef,
+    caption: z.string().describe('Short caption, e.g. "Bathroom 2"; empty to remove it'),
+  }),
+  z.object({ op: z.enum(["add_photo"]) }),
 ]);
 
 export type VoiceOp = z.infer<typeof voiceOpSchema>;
@@ -103,6 +116,8 @@ export interface VoiceJobState {
   notes: string;
   dueDate: string | null;
   status: JobStatus | "paid";
+  /** The job's photos, oldest first */
+  photos: Array<VoicePhoto>;
 }
 
 /** What the model sees: the job with tasks keyed by short refs. */
@@ -114,21 +129,29 @@ export interface VoiceJobContext {
   accessCodes: Array<string>;
   notes: string;
   tasks: Array<Omit<Task, "id" | "page"> & { ref: string }>;
+  /** Oldest first, so the highest ref is the photo he just took */
+  photos: Array<{ ref: string; caption?: string }>;
 }
 
-export function getVoiceJobState(job: Doc<"jobs">): VoiceJobState {
+type PhotoDoc = Pick<Doc<"jobPhotos">, "_id" | "caption">;
+
+export function getVoiceJobState(job: Doc<"jobs">, photos: Array<PhotoDoc> = []): VoiceJobState {
   return {
     tasks: job.tasks ?? [],
     accessCodes: job.accessCodes ?? [],
     notes: job.notes ?? "",
     dueDate: job.dueDate ?? null,
     status: job.status,
+    photos: photos.map((photo) => ({ id: photo._id, caption: photo.caption ?? "" })),
   };
 }
 
-/** Builds the model's view of the job plus the ref → task id map used to apply its ops. */
-export function buildVoiceContext(job: Doc<"jobs">) {
-  const state = getVoiceJobState(job);
+/**
+ * Builds the model's view of the job plus the ref → id map (tasks "t1"…, photos "p1"…) used
+ * to apply its ops.
+ */
+export function buildVoiceContext(job: Doc<"jobs">, photos: Array<PhotoDoc> = []) {
+  const state = getVoiceJobState(job, photos);
   const refs = new Map<string, string>();
   const context: VoiceJobContext = {
     address: job.address,
@@ -141,6 +164,11 @@ export function buildVoiceContext(job: Doc<"jobs">) {
       const ref = `t${i + 1}`;
       refs.set(ref, id);
       return { ref, ...task };
+    }),
+    photos: state.photos.map((photo, i) => {
+      const ref = `p${i + 1}`;
+      refs.set(ref, photo.id);
+      return { ref, caption: photo.caption || undefined };
     }),
   };
   return { context, refs };
@@ -163,6 +191,17 @@ export interface AppliedVoiceOps {
   summary: Array<string>;
   /** Ops that couldn't be applied (unknown task, missing code), described for the user. */
   skipped: Array<string>;
+  /** He asked to add a photo: show the camera button (a browser can't open it from here). */
+  addPhoto: boolean;
+}
+
+/**
+ * Splits changed fields by where they're saved: job fields go to jobs.update, the status to
+ * jobs.updateStatus and photo captions to jobPhotos.setCaptions.
+ */
+export function splitVoiceChanges(fields: Partial<VoiceJobState>) {
+  const { status, photos, ...job } = fields;
+  return { job, status, photos };
 }
 
 const normalizeCode = (code: string) => code.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -197,6 +236,8 @@ export function applyVoiceOps(
   let notes = state.notes;
   let dueDate = state.dueDate;
   let status = state.status;
+  let photos = [...state.photos];
+  let addPhoto = false;
   const summary: Array<string> = [];
   const skipped: Array<string> = [];
 
@@ -314,10 +355,31 @@ export function applyVoiceOps(
         summary.push(op.status === "completed" ? "Marked job complete" : "Reopened job");
         break;
       }
+      case "set_photo_caption": {
+        const id = refs.get(op.photo);
+        const index = photos.findIndex((photo) => photo.id === id);
+        if (index === -1) {
+          skipped.push(`Couldn't find photo ${op.photo}`);
+          break;
+        }
+        const caption = op.caption.trim();
+        if (caption === photos[index].caption) break;
+        photos = photos.map((photo, i) => (i === index ? { ...photo, caption } : photo));
+        summary.push(
+          caption ?
+            `Captioned photo ${index + 1}: ${caption}`
+          : `Removed photo ${index + 1}'s caption`,
+        );
+        break;
+      }
+      case "add_photo": {
+        addPhoto = true;
+        break;
+      }
     }
   }
 
-  const next: VoiceJobState = { tasks, accessCodes, notes, dueDate, status };
+  const next: VoiceJobState = { tasks, accessCodes, notes, dueDate, status, photos };
   const changes: Partial<VoiceJobState> = {};
   const previous: Partial<VoiceJobState> = {};
   for (const key of Object.keys(next) as Array<keyof VoiceJobState>) {
@@ -327,5 +389,5 @@ export function applyVoiceOps(
     }
   }
 
-  return { changes, previous, summary, skipped };
+  return { changes, previous, summary, skipped, addPhoto };
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import {
   AlertCircle,
+  Camera,
   CheckCircle2,
   DollarSign,
   ExternalLink,
@@ -16,7 +17,7 @@ import {
   Trash2,
   ZoomIn,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
@@ -42,6 +43,8 @@ import { AccessCodesEditor } from "@/features/jobs/components/AccessCodesEditor"
 import { DueDateEditor } from "@/features/jobs/components/DueDateEditor";
 import { JobNotesEditor } from "@/features/jobs/components/JobNotesEditor";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
+import { JobPhotosTab } from "@/features/photos/components/JobPhotosTab";
+import { clearPhotoIntent, usePhotoIntent } from "@/features/photos/store/photoIntent";
 import { VoiceCommandButton } from "@/features/voice/components/VoiceCommandButton";
 import { useImageViewer } from "@/hooks/useImageViewer";
 import { openExternal } from "@/lib/openExternal";
@@ -121,6 +124,30 @@ export function JobDetailSheet({
     ...convexQuery(api.receipts.listQueueByJob, { jobId: jobId! }),
     enabled: !!jobId,
   });
+  const { data: photos } = useQuery({
+    ...convexQuery(api.jobPhotos.listByJob, { jobId: jobId! }),
+    enabled: !!jobId,
+  });
+
+  // "Add a photo" by voice while this job is open: jump to Photos, where the camera button waits
+  const photoIntentJobId = usePhotoIntent((state) => state.jobId);
+  const showPhotosTab = useEffectEvent(() => {
+    if (tab !== "photos") onTabChange("photos");
+  });
+  useEffect(() => {
+    if (open && jobId && photoIntentJobId === jobId) showPhotosTab();
+  }, [open, jobId, photoIntentJobId]);
+
+  const handleTabChange = (value: JobSheetTab) => {
+    // Leaving Photos on his own means he's not taking that photo now
+    if (value !== "photos") clearPhotoIntent();
+    onTabChange(value);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) clearPhotoIntent();
+    onOpenChange(isOpen);
+  };
 
   // Receipt upload hook
   const { handleAddReceipt, isUploading } = useAddReceipt(jobId);
@@ -378,7 +405,7 @@ export function JobDetailSheet({
   }));
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       {/* dvh, not vh: on iPhone Safari vh is the height with the toolbar hidden, so with the
           toolbar showing 90vh is taller than the screen and the sheet covers it all */}
       <DrawerContent
@@ -387,7 +414,7 @@ export function JobDetailSheet({
       >
         <Tabs
           value={tab}
-          onValueChange={(value: JobSheetTab) => onTabChange(value)}
+          onValueChange={handleTabChange}
           className="flex-1 flex flex-col min-h-0 gap-0"
         >
           {/* Sticky Header */}
@@ -467,7 +494,7 @@ export function JobDetailSheet({
                 </DropdownMenu>
               </div>
 
-              <TabsList className="grid w-full grid-cols-3 group-data-horizontal/tabs:h-14 bg-muted p-1.5 rounded-2xl">
+              <TabsList className="grid w-full grid-cols-4 group-data-horizontal/tabs:h-14 bg-muted p-1.5 rounded-2xl">
                 <TabsTrigger value="tasks" className={TAB_TRIGGER_CLASS}>
                   Tasks
                 </TabsTrigger>
@@ -476,6 +503,16 @@ export function JobDetailSheet({
                 </TabsTrigger>
                 <TabsTrigger value="money" className={TAB_TRIGGER_CLASS}>
                   Money
+                </TabsTrigger>
+                <TabsTrigger
+                  value="photos"
+                  aria-label="Photos"
+                  className={cn(TAB_TRIGGER_CLASS, "gap-1.5")}
+                >
+                  <Camera className="size-5 shrink-0" aria-hidden />
+                  {photos && photos.length > 0 && (
+                    <span className="tabular-nums">{photos.length}</span>
+                  )}
                 </TabsTrigger>
               </TabsList>
             </DrawerHeader>
@@ -878,6 +915,10 @@ export function JobDetailSheet({
                   )
                 }
               </div>
+            </TabsContent>
+
+            <TabsContent value="photos" className={TAB_CONTENT_CLASS}>
+              <JobPhotosTab jobId={job._id} photos={photos} />
             </TabsContent>
           </div>
         </Tabs>

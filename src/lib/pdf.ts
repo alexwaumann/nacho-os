@@ -149,3 +149,16 @@ export async function processReceiptFile(file: File): Promise<ImageData> {
   // For images, use higher resolution settings (1536px, 0.85 quality) for text-heavy receipts
   return compressImage(file, 1536, 1536, 0.85);
 }
+
+// Job site photos: 1600px on the long side at 80% JPEG stays sharp when zoomed on a phone and
+// is roughly a tenth the size of what the camera saves
+const JOB_PHOTO_MAX_SIDE = 1600;
+const JOB_PHOTO_QUALITY = 0.8;
+
+/**
+ * Downsize a photo taken or picked for a job before it's uploaded, so storage holds a
+ * phone-screen version rather than the full-resolution original.
+ */
+export function processJobPhoto(file: File): Promise<ImageData> {
+  return compressImage(file, JOB_PHOTO_MAX_SIDE, JOB_PHOTO_MAX_SIDE, JOB_PHOTO_QUALITY);
+}

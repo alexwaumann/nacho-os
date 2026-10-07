@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { applyVoiceOps, buildVoiceContext, voiceResponseSchema } from "./ops";
-import type { Doc } from "../../../../convex/_generated/dataModel";
-import type { VoiceJobState, VoiceOp } from "./ops";
+import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import type { VoiceJobState, VoiceOp, VoicePhoto } from "./ops";
 
 const task = (id: string, taskName: string, completed = false) => ({
   id,
@@ -22,13 +22,24 @@ const job = {
   tasks: [task("a", "Paint trim"), task("b", "Fix sink", true), task("c", "Stain deck")],
 } as unknown as Doc<"jobs">;
 
-const { refs } = buildVoiceContext(job);
+const photoId = (value: string) => value as Id<"jobPhotos">;
+const photoDocs = [
+  { _id: photoId("ph1"), caption: "Kitchen before" },
+  { _id: photoId("ph2"), caption: undefined },
+];
+const photos: Array<VoicePhoto> = [
+  { id: photoId("ph1"), caption: "Kitchen before" },
+  { id: photoId("ph2"), caption: "" },
+];
+
+const { refs } = buildVoiceContext(job, photoDocs);
 const state: VoiceJobState = {
   tasks: job.tasks!,
   accessCodes: job.accessCodes!,
   notes: job.notes!,
   dueDate: job.dueDate!,
   status: "pending",
+  photos,
 };
 const apply = (ops: Array<VoiceOp>, from = state) => applyVoiceOps(from, ops, refs, () => "new");
 
@@ -37,6 +48,12 @@ describe("buildVoiceContext", () => {
     const { context } = buildVoiceContext(job);
     expect(context.tasks.map((t) => t.ref)).toEqual(["t1", "t2", "t3"]);
     expect(refs.get("t2")).toBe("b");
+  });
+
+  it("lists photos oldest first by ref, leaving out empty captions", () => {
+    const { context } = buildVoiceContext(job, photoDocs);
+    expect(context.photos).toEqual([{ ref: "p1", caption: "Kitchen before" }, { ref: "p2" }]);
+    expect(refs.get("p2")).toBe("ph2");
   });
 });
 
@@ -131,5 +148,37 @@ describe("voiceResponseSchema", () => {
       reply: "Marked the trim done.",
     });
     expect(parsed.ops[0]).toEqual({ op: "update_task", task: "t1", completed: true });
+  });
+});
+
+describe("applyVoiceOps photos", () => {
+  it("captions a photo and can clear a caption, with undo values", () => {
+    const result = apply([
+      { op: "set_photo_caption", photo: "p2", caption: " Bathroom 2 " },
+      { op: "set_photo_caption", photo: "p1", caption: "" },
+    ]);
+    expect(result.changes.photos).toEqual([
+      { id: "ph1", caption: "" },
+      { id: "ph2", caption: "Bathroom 2" },
+    ]);
+    expect(result.previous.photos).toEqual(photos);
+    expect(result.summary).toEqual(["Captioned photo 2: Bathroom 2", "Removed photo 1's caption"]);
+    expect(result.addPhoto).toBe(false);
+  });
+
+  it("skips an unknown photo and an unchanged caption", () => {
+    const result = apply([
+      { op: "set_photo_caption", photo: "p9", caption: "Hall" },
+      { op: "set_photo_caption", photo: "p1", caption: "Kitchen before" },
+    ]);
+    expect(result.changes).toEqual({});
+    expect(result.skipped).toEqual(["Couldn't find photo p9"]);
+  });
+
+  it("flags a request to add a photo without changing anything", () => {
+    const result = apply([{ op: "add_photo" }]);
+    expect(result.addPhoto).toBe(true);
+    expect(result.changes).toEqual({});
+    expect(result.summary).toEqual([]);
   });
 });

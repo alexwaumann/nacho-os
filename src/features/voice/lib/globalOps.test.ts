@@ -244,6 +244,25 @@ describe("planGlobalOps: jobs", () => {
     expect(result.summary).toEqual([]);
   });
 
+  it("opens a job's photos with the camera ready when asked to add a photo", () => {
+    expect(plan([{ op: "add_photo", job: "j2" }]).open).toEqual({
+      jobId: "oak",
+      tab: "photos",
+      addPhoto: true,
+    });
+    const viaEdit = plan([{ op: "job_edit", job: "j2", edit: { op: "add_photo" } }]);
+    expect(viaEdit.open).toEqual({ jobId: "oak", tab: "photos", addPhoto: true });
+    expect(viaEdit.edits).toEqual([]);
+  });
+
+  it("sends photo captions to the job's own mic", () => {
+    const result = plan([
+      { op: "job_edit", job: "j2", edit: { op: "set_photo_caption", photo: "p1", caption: "A" } },
+    ]);
+    expect(result.edits).toEqual([]);
+    expect(result.skipped).toEqual(["Open 1418 Oak St to caption its photos"]);
+  });
+
   it("reports a job it can't find", () => {
     expect(plan([{ op: "select_job", job: "j42" }]).skipped).toEqual(["Couldn't find that job"]);
   });

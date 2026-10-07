@@ -1,12 +1,12 @@
 import { useMutation as useConvexMutationHook } from "convex/react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
 import { VoiceResultDetails } from "../components/VoiceResultDetails";
-import { applyVoiceOps, buildVoiceContext, getVoiceJobState } from "../lib/ops";
+import { applyVoiceOps, buildVoiceContext, getVoiceJobState, splitVoiceChanges } from "../lib/ops";
 import {
   FOLLOW_UP_MS,
   RESULT_TOAST_MS,
@@ -20,7 +20,10 @@ import { useSpokenReplies } from "./useSpokenReplies";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import type { VoiceFollowUp, VoiceJobState } from "../lib/ops";
+import { requestPhoto } from "@/features/photos/store/photoIntent";
 import { runVoiceCommand } from "@/server/voice";
+
+type JobPhotos = Array<Doc<"jobPhotos">>;
 
 interface PendingFollowUp extends VoiceFollowUp {
   /** The job it was about; a follow-up only carries over to the same job. */
@@ -42,6 +45,11 @@ export function useVoiceCommand(job: Doc<"jobs"> | null | undefined) {
   const queryClient = useQueryClient();
   const updateJob = useConvexMutationHook(api.jobs.update);
   const updateStatus = useConvexMutationHook(api.jobs.updateStatus);
+  const setCaptions = useConvexMutationHook(api.jobPhotos.setCaptions);
+  // Same query as the job sheet's Photos tab, so it shares the cache
+  const { data: jobPhotos } = useQuery({
+    ...convexQuery(api.jobPhotos.listByJob, job ? { jobId: job._id } : "skip"),
+  });
   const speakReply = useSpokenReplies();
   const [isProcessing, setIsProcessing] = useState(false);
   // The last exchange, so the next recording can answer its question or correct it
@@ -53,10 +61,21 @@ export function useVoiceCommand(job: Doc<"jobs"> | null | undefined) {
     return () => window.clearTimeout(timer);
   }, [followUp]);
 
+  const photosFor = (jobId: Id<"jobs">): JobPhotos =>
+    queryClient.getQueryData<JobPhotos>(convexQuery(api.jobPhotos.listByJob, { jobId }).queryKey) ??
+    (job?._id === jobId ? jobPhotos : undefined) ??
+    [];
+
   const saveFields = async (jobId: Id<"jobs">, fields: Partial<VoiceJobState>) => {
-    const { status, ...rest } = fields;
-    if (Object.keys(rest).length > 0) await updateJob({ jobId, ...rest });
+    const { job: jobFields, status, photos } = splitVoiceChanges(fields);
+    if (Object.keys(jobFields).length > 0) await updateJob({ jobId, ...jobFields });
     if (status) await updateStatus({ jobId, status });
+    if (photos) {
+      await setCaptions({
+        jobId,
+        captions: photos.map((photo) => ({ photoId: photo.id, caption: photo.caption })),
+      });
+    }
   };
 
   const handleUndo = async (jobId: Id<"jobs">, previous: Partial<VoiceJobState>) => {
@@ -74,7 +93,7 @@ export function useVoiceCommand(job: Doc<"jobs"> | null | undefined) {
   const handleRecorded = async (audio: Blob, target: Doc<"jobs"> | null | undefined = job) => {
     if (!target) return;
     const jobId = target._id;
-    const { context, refs } = buildVoiceContext(target);
+    const { context, refs } = buildVoiceContext(target, photosFor(jobId));
     const activeFollowUp =
       followUp && followUp.jobId === jobId && followUp.expiresAt > Date.now() ? followUp : null;
     const previous =
@@ -114,7 +133,9 @@ export function useVoiceCommand(job: Doc<"jobs"> | null | undefined) {
       const latest =
         queryClient.getQueryData<Doc<"jobs">>(convexQuery(api.jobs.get, { jobId }).queryKey) ??
         target;
-      const applied = applyVoiceOps(getVoiceJobState(latest), result.ops, refs);
+      const applied = applyVoiceOps(getVoiceJobState(latest, photosFor(jobId)), result.ops, refs);
+      // The camera only opens from a tap, so point him at the button instead
+      if (applied.addPhoto) requestPhoto(jobId);
       // The model occasionally leaves the reply empty
       const title =
         result.reply ||

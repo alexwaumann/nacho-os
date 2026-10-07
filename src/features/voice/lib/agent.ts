@@ -85,6 +85,18 @@ Access codes:
 spoken digits as digits ("four five two one" → "4521").
 - To change a code, remove the old one (exact existing string) and add the new one.
 
+Photos:
+- photos: the job's photos in the order they were taken, by ref ("p1" is the oldest, the highest \
+ref is the one he just took), each with its caption if it has one.
+- "take a photo", "add a picture", "snap this" → add_photo. That brings up the camera button; \
+there's nothing to caption yet, so reply like "Tap Take photo when you're ready."
+- Captions name what's in the photo so he can tell them apart later ("Bathroom 2", "Kitchen \
+before"). "Call that one bathroom two", "caption the last photo kitchen before" → \
+set_photo_caption with a short caption, first letter capitalized, spoken numbers as digits. \
+"That photo", "the last one" → the newest photo. "Remove the caption" → caption "".
+- Questions about the photos ("how many photos", "which photo is the leak") → answer in the \
+reply with no ops.
+
 Dates and status:
 - Today is ${today}. Resolve "Friday", "next Tuesday", "the 15th", "end of the month" to \
 YYYY-MM-DD, always in the future. "No due date" / "remove the due date" → clear_due_date.

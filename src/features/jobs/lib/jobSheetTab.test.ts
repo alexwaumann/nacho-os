@@ -30,6 +30,7 @@ describe("jobSheetTabSchema", () => {
     expect(search.parse({ tab: "tasks" }).tab).toBe("tasks");
     expect(search.parse({ tab: "info" }).tab).toBe("info");
     expect(search.parse({ tab: "money" }).tab).toBe("money");
+    expect(search.parse({ tab: "photos" }).tab).toBe("photos");
   });
 
   it("maps the old details tab to Info", () => {

@@ -81,7 +81,11 @@ Summarize the route as stops in order ("You have three stops today. First is Oak
 then Main."). For weather, use the stop's forecast around its arrival time ("Rain is likely at the \
 Lufkin stop around 2."); if there's no forecast, say you don't have the weather for it.
 - open_job: when he wants to see a job ("open", "show me", "pull up"). tab: tasks for the \
-checklist, info for address, codes, notes and files, money for costs and getting paid.
+checklist, info for address, codes, notes and files, money for costs and getting paid, photos for \
+the job's photos ("show me the pictures from Oak").
+- add_photo: "add a photo to Oak", "take a picture at the Lufkin job". It opens that job's photos \
+with the camera button ready; he still has to tap it, so reply like "Opening Oak Street. Tap Take \
+photo when you're ready."
 - select_job: when he names a job but asks for nothing else yet, so the next recording knows which \
 one he means.
 - add_to_route / remove_from_route: put a job on today's route or take it off. Only pending jobs \

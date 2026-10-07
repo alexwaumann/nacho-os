@@ -11,6 +11,7 @@
 import type * as env from "../env.js";
 import type * as files from "../files.js";
 import type * as jobActions from "../jobActions.js";
+import type * as jobPhotos from "../jobPhotos.js";
 import type * as jobs from "../jobs.js";
 import type * as lib_ai from "../lib/ai.js";
 import type * as lib_geo from "../lib/geo.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   env: typeof env;
   files: typeof files;
   jobActions: typeof jobActions;
+  jobPhotos: typeof jobPhotos;
   jobs: typeof jobs;
   "lib/ai": typeof lib_ai;
   "lib/geo": typeof lib_geo;
