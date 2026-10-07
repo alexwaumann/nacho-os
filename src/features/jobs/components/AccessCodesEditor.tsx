@@ -2,6 +2,7 @@ import { Key, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { TopDialog, TopDialogForm, TopDialogHeader } from "@/components/TopDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,18 +12,18 @@ interface AccessCodesEditorProps {
   onChange: (codes: Array<string>) => void;
 }
 
-// Owns the draft input state so typing only re-renders this section, not the whole job sheet
+// New codes are typed in a dialog pinned to the top of the screen, so the iOS keyboard can't
+// push the job sheet off-screen while typing
 export function AccessCodesEditor({ codes, onChange }: AccessCodesEditorProps) {
-  const [newCode, setNewCode] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
   // Latest codes for the undo toast, which can fire after other edits
   const codesRef = useRef(codes);
   codesRef.current = codes;
 
-  const handleAdd = () => {
+  const handleAdd = (newCode: string) => {
     const code = newCode.trim();
-    if (!code) return;
-    onChange([...codes, code]);
-    setNewCode("");
+    if (code) onChange([...codes, code]);
+    setIsAdding(false);
   };
 
   const handleRemove = (index: number) => {
@@ -63,24 +64,67 @@ export function AccessCodesEditor({ codes, onChange }: AccessCodesEditorProps) {
             </button>
           </Badge>
         ))}
-      </div>
-      <div className="flex gap-2">
-        <Input
-          placeholder="New code..."
-          value={newCode}
-          onChange={(e) => setNewCode(e.target.value)}
-          className="h-12 rounded-2xl"
-          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-        />
-        <Button
-          size="icon"
-          variant="secondary"
-          onClick={handleAdd}
-          className="shrink-0 h-12 w-12 rounded-2xl"
+        <Badge
+          variant="outline"
+          render={<button type="button" />}
+          onClick={() => setIsAdding(true)}
+          className="bg-transparent text-muted-foreground border-dashed border-border hover:text-foreground h-auto text-base font-bold px-3 py-1.5 rounded-xl cursor-pointer [&>svg]:size-4!"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="mr-1.5" />
+          Add code
+        </Badge>
+      </div>
+
+      <TopDialog open={isAdding} onClose={() => setIsAdding(false)}>
+        <AccessCodeForm onAdd={handleAdd} onClose={() => setIsAdding(false)} />
+      </TopDialog>
+    </div>
+  );
+}
+
+interface AccessCodeFormProps {
+  onAdd: (code: string) => void;
+  onClose: () => void;
+}
+
+// Mounted fresh each time the dialog opens, so it always starts empty
+function AccessCodeForm({ onAdd, onClose }: AccessCodeFormProps) {
+  const [draft, setDraft] = useState("");
+
+  return (
+    <TopDialogForm
+      onSubmit={(e) => {
+        e.preventDefault();
+        onAdd(draft);
+      }}
+    >
+      <TopDialogHeader title="Add access code" />
+      <Input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="Like Lockbox: 7731 or Gate 1234"
+        aria-label="Access code"
+        enterKeyHint="done"
+        autoCapitalize="sentences"
+        className="h-14 rounded-2xl px-4 text-lg md:text-lg"
+      />
+      <div className="flex gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 h-14 text-lg font-bold rounded-2xl"
+          onClick={onClose}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={!draft.trim()}
+          className="flex-1 h-14 text-lg font-black rounded-2xl"
+        >
+          Add
         </Button>
       </div>
-    </div>
+    </TopDialogForm>
   );
 }

@@ -1,6 +1,7 @@
-import { Check, Clock, Pencil, Plus, X } from "lucide-react";
+import { Clock, Pencil, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { TopDialog, TopDialogForm, TopDialogHeader } from "@/components/TopDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,14 @@ interface DueDateEditorProps {
   onChange: (dueDate: string | null) => void;
 }
 
-// A read-only due date tag that turns into a date input when tapped
+// A read-only due date tag; tapping it opens the date field in a dialog pinned to the top of
+// the screen, so the picker or keyboard can't push the job sheet off-screen
 export function DueDateEditor({ dueDate, onChange }: DueDateEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  if (!isEditing) {
-    return dueDate ?
+  return (
+    <>
+      {dueDate ?
         <Badge
           variant="outline"
           render={<button type="button" />}
@@ -38,38 +41,35 @@ export function DueDateEditor({ dueDate, onChange }: DueDateEditorProps) {
         >
           <Plus className="w-3.5 h-3.5 mr-1.5" />
           Add due date
-        </Badge>;
-  }
+        </Badge>
+      }
 
-  return (
-    <DueDateInput
-      dueDate={dueDate}
-      onChange={onChange}
-      onClear={() => {
-        onChange(null);
-        setIsEditing(false);
-      }}
-      onDone={() => setIsEditing(false)}
-    />
+      <TopDialog open={isEditing} onClose={() => setIsEditing(false)}>
+        <DueDateForm
+          dueDate={dueDate}
+          onSave={(value) => {
+            if (value !== (dueDate ?? null)) onChange(value);
+            setIsEditing(false);
+          }}
+          onClose={() => setIsEditing(false)}
+        />
+      </TopDialog>
+    </>
   );
 }
 
-interface DueDateInputProps {
+interface DueDateFormProps {
   dueDate: string | undefined;
-  onChange: (dueDate: string | null) => void;
-  onClear: () => void;
-  onDone: () => void;
+  onSave: (dueDate: string | null) => void;
+  onClose: () => void;
 }
 
-function DueDateInput({ dueDate, onChange, onClear, onDone }: DueDateInputProps) {
+// Mounted fresh each time the dialog opens, so the draft starts from the saved date
+function DueDateForm({ dueDate, onSave, onClose }: DueDateFormProps) {
   // Date inputs only accept YYYY-MM-DD; older free-text dates start out empty
   const savedValue = dueDate && ISO_DATE.test(dueDate) ? dueDate : "";
   const [draft, setDraft] = useState(savedValue);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setDraft(savedValue);
-  }, [savedValue]);
 
   // Open the native picker right away so one tap on the tag goes straight to choosing a date
   useEffect(() => {
@@ -83,49 +83,51 @@ function DueDateInput({ dueDate, onChange, onClear, onDone }: DueDateInputProps)
     }
   }, []);
 
-  const handleChange = (value: string) => {
-    setDraft(value);
-    // Typing a year digit by digit yields dates like 0020-10-06, so wait for a 4-digit year
-    if (ISO_DATE.test(value) && Number(value.slice(0, 4)) >= 1000 && value !== savedValue) {
-      onChange(value);
-    }
-  };
-
-  // An input left empty (cleared in the picker or by keyboard) clears the due date
-  const handleBlur = () => {
-    if (draft === "" && savedValue !== "") onChange(null);
-  };
+  // Typing a year digit by digit yields dates like 0020-10-06, so wait for a 4-digit year
+  const isComplete = ISO_DATE.test(draft) && Number(draft.slice(0, 4)) >= 1000;
 
   return (
-    <div className="basis-full flex gap-2">
+    <TopDialogForm
+      onSubmit={(e) => {
+        e.preventDefault();
+        // An empty field clears the due date; a half-typed one keeps whatever was saved
+        if (draft === "") onSave(null);
+        else if (isComplete) onSave(draft);
+        else onClose();
+      }}
+    >
+      <TopDialogHeader title={dueDate ? "Change due date" : "Add due date"} />
       <Input
         ref={inputRef}
         type="date"
         aria-label="Due date"
         value={draft}
-        onChange={(e) => handleChange(e.target.value)}
-        onBlur={handleBlur}
-        className="h-12 rounded-2xl dark:scheme-dark"
+        onChange={(e) => setDraft(e.target.value)}
+        className="h-14 rounded-2xl px-4 text-lg md:text-lg dark:scheme-dark"
       />
-      {dueDate && (
+      <div className="flex gap-3">
+        {dueDate && (
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 h-14 text-lg font-bold rounded-2xl"
+            onClick={() => onSave(null)}
+          >
+            Clear
+          </Button>
+        )}
         <Button
-          size="icon"
-          variant="secondary"
-          onClick={onClear}
-          aria-label="Clear due date"
-          className="shrink-0 h-12 w-12 rounded-2xl"
+          type="button"
+          variant="outline"
+          className="flex-1 h-14 text-lg font-bold rounded-2xl"
+          onClick={onClose}
         >
-          <X className="h-5 w-5" />
+          Cancel
         </Button>
-      )}
-      <Button
-        size="icon"
-        onClick={onDone}
-        aria-label="Done editing due date"
-        className="shrink-0 h-12 w-12 rounded-2xl"
-      >
-        <Check className="h-5 w-5" />
-      </Button>
-    </div>
+        <Button type="submit" className="flex-1 h-14 text-lg font-black rounded-2xl">
+          Save
+        </Button>
+      </div>
+    </TopDialogForm>
   );
 }
