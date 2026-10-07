@@ -39,7 +39,7 @@ export default function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 w-full pointer-events-none">
-      <div className="max-w-lg mx-auto flex items-center justify-between gap-3 px-4 pt-5 pb-3">
+      <div className="max-w-lg mx-auto flex items-center justify-between gap-3 px-4 pt-4 pb-3">
         <Link
           to="/"
           className="pointer-events-auto flex min-h-12 items-center gap-3 rounded-full border border-border bg-card/80 px-5 shadow-sm backdrop-blur-md"
