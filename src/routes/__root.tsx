@@ -91,7 +91,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 <Authenticated>
                   <div className="flex flex-col min-h-screen bg-background">
                     <TopBar />
-                    <main className="flex-1 max-w-lg mx-auto w-full px-4 pb-32">{children}</main>
+                    <main className="flex-1 max-w-lg mx-auto w-full px-2 pb-30">{children}</main>
                     <BottomNav />
                   </div>
                 </Authenticated>

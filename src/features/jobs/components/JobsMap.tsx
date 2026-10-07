@@ -52,7 +52,7 @@ const DEFAULT_CENTER = { lat: 32.7767, lng: -96.797 };
 
 // Fills the screen under the page header, filter pills and List/Map toggle, and stops above
 // the bottom nav (the page's bottom padding) so the page itself never scrolls
-const MAP_HEIGHT_CLASS = "h-[calc(100dvh-22rem)] min-h-80";
+const MAP_HEIGHT_CLASS = "h-[calc(100dvh-21rem)] min-h-80";
 
 function getCurrentPosition(): Promise<LatLng> {
   return new Promise((resolve, reject) => {

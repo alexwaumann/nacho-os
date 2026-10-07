@@ -35,7 +35,7 @@ export default function BottomNav() {
   return (
     <div
       className={cn(
-        "fixed bottom-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none",
+        "fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-0 right-0 z-50 flex justify-center px-2 pointer-events-none",
         // Above an open job sheet while recording, so he can still stop or discard
         isVoiceActive && "z-60",
       )}
