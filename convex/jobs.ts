@@ -28,6 +28,14 @@ const coordinatesValidator = v.object({
   lng: v.number(),
 });
 
+// One leg of a drive: "12 min" / "4.3 mi" for the screen, seconds and meters for the math
+const routeLegValidator = v.object({
+  duration: v.string(),
+  durationValue: v.number(),
+  distance: v.string(),
+  distanceValue: v.number(),
+});
+
 const weatherDataValidator = v.object({
   tempMax: v.number(),
   precipProb: v.number(),
@@ -375,6 +383,8 @@ export const updateRouteTotals = mutation({
     totalDuration: v.string(),
     totalDistanceValue: v.number(),
     totalDurationValue: v.number(),
+    // The drive from the last stop back home; leave out when there is no home address
+    homeLeg: v.optional(routeLegValidator),
   },
   handler: async (ctx, args) => {
     const userId = await getUserId(ctx);
@@ -384,21 +394,19 @@ export const updateRouteTotals = mutation({
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
       .unique();
 
+    const totals = {
+      totalDistance: args.totalDistance,
+      totalDuration: args.totalDuration,
+      totalDistanceValue: args.totalDistanceValue,
+      totalDurationValue: args.totalDurationValue,
+      // Always written, so a route that lost its home address drops the old leg
+      homeLeg: args.homeLeg,
+    };
+
     if (existingTotals) {
-      await ctx.db.patch(existingTotals._id, {
-        totalDistance: args.totalDistance,
-        totalDuration: args.totalDuration,
-        totalDistanceValue: args.totalDistanceValue,
-        totalDurationValue: args.totalDurationValue,
-      });
+      await ctx.db.patch(existingTotals._id, totals);
     } else {
-      await ctx.db.insert("routeTotals", {
-        userId,
-        totalDistance: args.totalDistance,
-        totalDuration: args.totalDuration,
-        totalDistanceValue: args.totalDistanceValue,
-        totalDurationValue: args.totalDurationValue,
-      });
+      await ctx.db.insert("routeTotals", { userId, ...totals });
     }
 
     return true;

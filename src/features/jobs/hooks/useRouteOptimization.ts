@@ -257,7 +257,8 @@ export function useRouteOptimization() {
 
         await batchUpdateRouteMetrics({ updates: metricsUpdates });
 
-        // Save route totals
+        // Save route totals. The last leg is the drive home, but only when the route really ends
+        // there (with no home address it just loops back to where he is now)
         await updateRouteTotals({
           totalDistance: routeResult.totalDistance,
           totalDuration: routeResult.totalDuration,
@@ -269,6 +270,8 @@ export function useRouteOptimization() {
             (sum: number, m: { durationValue: number }) => sum + m.durationValue,
             0,
           ),
+          homeLeg:
+            currentUser?.homeCoordinates ? routeResult.metrics[orderedJobIds.length] : undefined,
         });
 
         toast.success("Route optimized", {
@@ -300,7 +303,8 @@ export function useRouteOptimization() {
 
   const recalculateRouteMetrics = useCallback(
     async (orderedJobIds: Array<Id<"jobs">>, options?: RecalculateOptions) => {
-      if (orderedJobIds.length < 2) {
+      // One stop still has a drive there and a drive back home
+      if (orderedJobIds.length < 1) {
         return;
       }
 
@@ -325,7 +329,7 @@ export function useRouteOptimization() {
           .map((id) => allPendingJobs.find((job) => job._id === id))
           .filter((job): job is Job => job !== undefined);
 
-        if (orderedJobs.length < 2) {
+        if (orderedJobs.length < 1) {
           setIsOptimizing(false);
           return;
         }
@@ -385,7 +389,7 @@ export function useRouteOptimization() {
         // Now all jobs should have coordinates
         const jobsWithCoords = orderedJobs.filter((job) => job.coordinates);
 
-        if (jobsWithCoords.length < 2) {
+        if (jobsWithCoords.length < 1) {
           setIsOptimizing(false);
           return;
         }
@@ -432,6 +436,7 @@ export function useRouteOptimization() {
           totalDuration: routeResult.totalDuration,
           totalDistanceValue: routeResult.totalDistanceValue,
           totalDurationValue: routeResult.totalDurationValue,
+          homeLeg: routeResult.homeLeg,
         });
 
         if (!options?.quiet) {

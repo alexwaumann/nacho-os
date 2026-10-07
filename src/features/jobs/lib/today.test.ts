@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDriveTime, getStreet, isRouteDone, isStopDone, restoreStop } from "./today";
+import {
+  formatDriveTime,
+  getHomeLegSeconds,
+  getStreet,
+  isRouteDone,
+  isStopDone,
+  restoreStop,
+} from "./today";
 
 type Status = "pending" | "completed" | "paid";
 const stop = (status: Status = "pending") => ({ status });
@@ -62,5 +69,28 @@ describe("formatDriveTime", () => {
 
   it("returns null when the drive time is unknown", () => {
     expect(formatDriveTime(undefined)).toBeNull();
+  });
+});
+
+describe("getHomeLegSeconds", () => {
+  const stops = [{ travelTimeValue: 600 }, { travelTimeValue: 900 }];
+
+  it("uses the saved drive home", () => {
+    const totals = { totalDurationValue: 3000, homeLeg: { durationValue: 1500 } };
+    expect(getHomeLegSeconds(totals, stops)).toBe(1500);
+  });
+
+  it("falls back to what the total has beyond the stops' legs", () => {
+    expect(getHomeLegSeconds({ totalDurationValue: 2700 }, stops)).toBe(1200);
+    expect(getHomeLegSeconds({ totalDurationValue: 2700 }, [{}, { travelTimeValue: 900 }])).toBe(
+      1800,
+    );
+  });
+
+  it("is unknown without totals or when nothing is left for the drive home", () => {
+    expect(getHomeLegSeconds(null, stops)).toBeUndefined();
+    expect(getHomeLegSeconds(undefined, stops)).toBeUndefined();
+    expect(getHomeLegSeconds({ totalDurationValue: 1500 }, stops)).toBeUndefined();
+    expect(getHomeLegSeconds({ totalDurationValue: 1000 }, stops)).toBeUndefined();
   });
 });

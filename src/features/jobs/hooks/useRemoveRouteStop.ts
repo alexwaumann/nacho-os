@@ -64,7 +64,7 @@ export function useRemoveRouteStop({
         });
         return;
       }
-      if (order.length >= 2) {
+      if (order.length >= 1) {
         await recalculateRouteMetrics(order, { quiet: true });
       }
     });
@@ -96,7 +96,7 @@ export function useRemoveRouteStop({
         });
         return;
       }
-      if (remaining.length >= 2) {
+      if (remaining.length >= 1) {
         await recalculateRouteMetrics(remaining, { quiet: true });
       }
     });

@@ -45,3 +45,28 @@ export function formatDriveTime(seconds: number | undefined): string | null {
   if (minutes === 0) return `${hours} hr drive`;
   return `${hours} hr ${minutes} min drive`;
 }
+
+interface RouteTotalsLike {
+  totalDurationValue: number;
+  homeLeg?: { durationValue: number };
+}
+
+interface RouteLegLike {
+  travelTimeValue?: number;
+}
+
+/**
+ * Seconds for the drive from the last stop back home. Uses the saved home leg; for totals saved
+ * before it was stored, whatever the route total has beyond the stops' own legs. Undefined when
+ * the drive home is unknown (no totals, or no time left after the stops).
+ */
+export function getHomeLegSeconds(
+  totals: RouteTotalsLike | null | undefined,
+  stops: ReadonlyArray<RouteLegLike>,
+): number | undefined {
+  if (!totals) return undefined;
+  if (totals.homeLeg) return totals.homeLeg.durationValue;
+  const stopsSeconds = stops.reduce((sum, stop) => sum + (stop.travelTimeValue ?? 0), 0);
+  const remaining = totals.totalDurationValue - stopsSeconds;
+  return remaining > 0 ? remaining : undefined;
+}

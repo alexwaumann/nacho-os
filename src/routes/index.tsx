@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AllStopsDoneCard } from "@/features/jobs/components/AllStopsDoneCard";
 import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
 import { EmptyRouteCard } from "@/features/jobs/components/EmptyRouteCard";
+import { HomeRouteCard } from "@/features/jobs/components/HomeRouteCard";
 import { RouteBriefCard } from "@/features/jobs/components/RouteBriefCard";
 import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
 import { SwipeableRouteCard } from "@/features/jobs/components/SwipeableRouteCard";
@@ -24,7 +25,7 @@ import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobS
 import { useRemoveRouteStop } from "@/features/jobs/hooks/useRemoveRouteStop";
 import { useRouteBrief } from "@/features/jobs/hooks/useRouteBrief";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
-import { isRouteDone, isStopDone } from "@/features/jobs/lib/today";
+import { getHomeLegSeconds, isRouteDone, isStopDone } from "@/features/jobs/lib/today";
 import { ScanActions } from "@/features/scan/components/ScanActions";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
@@ -65,10 +66,15 @@ function TodayPage() {
   const { isOptimizing, optimizeAndSaveRoute, recalculateRouteMetrics, clearRoute } =
     useRouteOptimization();
 
+  // The drive from the last stop back home, only when a home address is set
+  const homeCoordinates = currentUser?.homeCoordinates;
+  const homeLegSeconds = homeCoordinates ? getHomeLegSeconds(routeTotals, selectedJobs) : undefined;
+
   // Daily weather brief for the route, with an optional suggested order
   const routeBrief = useRouteBrief({
     jobs: selectedJobs,
-    homeCoordinates: currentUser?.homeCoordinates,
+    homeCoordinates,
+    homeLegSeconds,
     recalculateRouteMetrics,
   });
 
@@ -113,11 +119,7 @@ function TodayPage() {
   // Handlers
   const handleNavigateRoute = () => {
     // Only the stops still to do; done stops are skipped
-    const url = generateGoogleMapsUrl(
-      pendingStops,
-      true,
-      currentUser?.homeCoordinates ?? undefined,
-    );
+    const url = generateGoogleMapsUrl(pendingStops, true, homeCoordinates ?? undefined);
     if (url) {
       openExternal(url);
     }
@@ -145,7 +147,7 @@ function TodayPage() {
     const originalOrderIds = selectedJobs.map((job) => job._id);
     const orderChanged = localOrder.some((id, index) => id !== originalOrderIds[index]);
 
-    if (orderChanged && localOrder.length >= 2) {
+    if (orderChanged) {
       void recalculateRouteMetrics(localOrder);
     }
   };
@@ -276,6 +278,15 @@ function TodayPage() {
                   />
                 ))}
               </Reorder.Group>
+            )}
+
+            {/* The ride home: always last, never moved, nothing to open */}
+            {orderedJobs.length > 0 && homeCoordinates && (
+              <HomeRouteCard
+                homeCoordinates={homeCoordinates}
+                driveSeconds={homeLegSeconds}
+                arrivalTime={isAllDone ? undefined : routeBrief.homeArrivalTime}
+              />
             )}
           </section>
         </>

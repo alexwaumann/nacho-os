@@ -433,16 +433,18 @@ export const calculateRouteMetrics = createServerFn({ method: "POST" })
     // We want to return metrics for travel TO each waypoint (not including travel to home)
     const allLegs = (route.legs as Array<RouteLeg>).map(normalizeLeg);
 
-    // Calculate metrics for each waypoint (travel TO that waypoint)
-    const waypointMetrics = data.waypoints.map((_wp, index) => {
-      const leg = allLegs[index];
-      return {
-        distance: formatDistance(leg.distanceMeters),
-        duration: formatDuration(leg.duration),
-        distanceValue: leg.distanceMeters,
-        durationValue: parseDuration(leg.duration),
-      };
+    const toMetrics = (leg: ReturnType<typeof normalizeLeg>): RouteMetrics => ({
+      distance: formatDistance(leg.distanceMeters),
+      duration: formatDuration(leg.duration),
+      distanceValue: leg.distanceMeters,
+      durationValue: parseDuration(leg.duration),
     });
+
+    // Calculate metrics for each waypoint (travel TO that waypoint)
+    const waypointMetrics = data.waypoints.map((_wp, index) => toMetrics(allLegs[index]));
+    // The drive from the last stop home, when a home address was given
+    const homeLegRaw = data.destination ? allLegs[data.waypoints.length] : undefined;
+    const homeLeg = homeLegRaw ? toMetrics(homeLegRaw) : undefined;
 
     // Calculate totals for all legs (including travel to home if applicable)
     const totalDistanceMeters = allLegs.reduce((sum, leg) => sum + leg.distanceMeters, 0);
@@ -454,8 +456,7 @@ export const calculateRouteMetrics = createServerFn({ method: "POST" })
       totalDuration: formatDuration(`${totalDurationSeconds}s`),
       totalDistanceValue: totalDistanceMeters,
       totalDurationValue: totalDurationSeconds,
-      // Include whether home was included so UI can display appropriately
-      includesHomeReturn: !!data.destination,
+      homeLeg,
     };
   });
 

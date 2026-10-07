@@ -23,6 +23,8 @@ export interface UseRouteBriefOptions {
   /** Today's route jobs, in route order */
   jobs: Array<Job>;
   homeCoordinates?: Coordinates;
+  /** Seconds for the drive from the last stop back home, when known */
+  homeLegSeconds?: number;
   /** From useRouteOptimization; refreshes drive times after the suggested order is applied */
   recalculateRouteMetrics: (orderedJobIds: Array<Id<"jobs">>) => Promise<void>;
 }
@@ -42,6 +44,8 @@ export interface UseRouteBriefResult {
   siteNotes: Partial<Record<Id<"jobs">, string>>;
   /** Estimated arrival (ms) per job: next full hour (7 AM at the earliest), drive + 90 min a stop */
   arrivalTimes: Partial<Record<Id<"jobs">, number>>;
+  /** Estimated arrival (ms) back home after the last stop; undefined without stops or a drive home */
+  homeArrivalTime: number | undefined;
   /** True when at least one route job has coordinates, so the weather can be checked */
   canRefresh: boolean;
   isGenerating: boolean;
@@ -67,6 +71,7 @@ const errorMessage = (error: unknown) =>
 export function useRouteBrief({
   jobs,
   homeCoordinates,
+  homeLegSeconds,
   recalculateRouteMetrics,
 }: UseRouteBriefOptions): UseRouteBriefResult {
   const hourStart = useCurrentHour();
@@ -234,15 +239,18 @@ export function useRouteBrief({
   const siteNotes: Partial<Record<Id<"jobs">, string>> = {};
   for (const { jobId, note } of brief?.siteNotes ?? []) siteNotes[jobId] = note;
 
-  // From the start of the hour, so it only changes when the hour turns (matches the brief)
-  const arrivals = estimateRouteArrivals(
-    hourStart,
-    jobs.map((job) => job.travelTimeValue),
-  );
+  // From the start of the hour, so it only changes when the hour turns (matches the brief).
+  // Home is one more leg after the last stop (including the time spent there).
+  const hasHomeLeg = jobs.length > 0 && homeLegSeconds !== undefined;
+  const arrivals = estimateRouteArrivals(hourStart, [
+    ...jobs.map((job) => job.travelTimeValue),
+    ...(hasHomeLeg ? [homeLegSeconds] : []),
+  ]);
   const arrivalTimes: Partial<Record<Id<"jobs">, number>> = {};
   jobs.forEach((job, index) => {
     arrivalTimes[job._id] = arrivals[index];
   });
+  const homeArrivalTime = hasHomeLeg ? arrivals[jobs.length] : undefined;
 
   const applySuggestion = async () => {
     if (!brief?.suggestion || applyingRef.current) return;
@@ -278,6 +286,7 @@ export function useRouteBrief({
     suggestion,
     siteNotes,
     arrivalTimes,
+    homeArrivalTime,
     canRefresh: hasSites,
     isGenerating,
     isApplying,
