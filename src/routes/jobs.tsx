@@ -108,7 +108,7 @@ function JobsPage() {
       </div>
 
       {view === "map" ?
-        <JobsMap onOpenJob={jobSheet.openJob} isFilterIgnored={filter !== "pending"} />
+        <JobsMap filter={filter} onOpenJob={jobSheet.openJob} />
       : <JobsList filter={filter} onOpenJob={jobSheet.openJob} />}
     </div>
   );
