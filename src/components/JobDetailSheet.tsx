@@ -44,6 +44,7 @@ import { JobNotesEditor } from "@/features/jobs/components/JobNotesEditor";
 import { useAddReceipt } from "@/features/jobs/hooks/useAddReceipt";
 import { VoiceCommandButton } from "@/features/voice/components/VoiceCommandButton";
 import { useImageViewer } from "@/hooks/useImageViewer";
+import { openExternal } from "@/lib/openExternal";
 import { cn, formatDueDate } from "@/lib/utils";
 
 const TAB_TRIGGER_CLASS =
@@ -324,10 +325,10 @@ export function JobDetailSheet({
   const openInGoogleMaps = () => {
     if (job.coordinates) {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${job.coordinates.lat},${job.coordinates.lng}&travelmode=driving`;
-      window.open(url, "_blank");
+      openExternal(url);
     } else {
       const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`;
-      window.open(url, "_blank");
+      openExternal(url);
     }
   };
 

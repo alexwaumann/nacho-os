@@ -26,6 +26,7 @@ import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization
 import { isStopDone, mergeRestOrder, splitRoute } from "@/features/jobs/lib/today";
 import { ScanActions } from "@/features/scan/components/ScanActions";
 import { cn } from "@/lib/utils";
+import { openExternal } from "@/lib/openExternal";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
 const searchSchema = z.object({
@@ -106,7 +107,7 @@ function TodayPage() {
       currentUser?.homeCoordinates ?? undefined,
     );
     if (url) {
-      window.open(url, "_blank");
+      openExternal(url);
     }
   };
 

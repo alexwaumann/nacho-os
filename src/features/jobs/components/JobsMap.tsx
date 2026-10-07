@@ -11,6 +11,7 @@ import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import { env } from "@/env";
 import { cn } from "@/lib/utils";
+import { openExternal } from "@/lib/openExternal";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
 type LatLng = { lat: number; lng: number };
@@ -98,7 +99,7 @@ export function JobsMap({ onOpenJob, isFilterIgnored = false }: JobsMapProps) {
       !!userLocation,
       homeLocation ?? undefined,
     );
-    if (url) window.open(url, "_blank");
+    if (url) openExternal(url);
   };
 
   const center = jobPoints.length > 0 ? averagePoint(jobPoints) : (homeLocation ?? DEFAULT_CENTER);

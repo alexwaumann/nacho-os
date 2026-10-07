@@ -17,6 +17,7 @@ import type { LucideIcon } from "lucide-react";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { openExternal } from "@/lib/openExternal";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
 type Job = Doc<"jobs">;
@@ -55,7 +56,7 @@ export function NextStopCard({
   const accessCodes = job.accessCodes ?? [];
 
   const handleNavigate = () => {
-    window.open(getDirectionsUrl(job), "_blank");
+    openExternal(getDirectionsUrl(job));
   };
 
   return (
