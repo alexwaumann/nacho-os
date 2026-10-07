@@ -1,16 +1,16 @@
 import { useMutation } from "convex/react";
-import { Camera, Check, Images, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Camera, Images, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
 import { useAddJobPhoto } from "../hooks/useAddJobPhoto";
 import { clearPhotoIntent, usePhotoIntent } from "../store/photoIntent";
+import { PhotoCaptionDialog } from "./PhotoCaptionDialog";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import { ImageViewer } from "@/components/ImageViewer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useImageViewer } from "@/hooks/useImageViewer";
 import { cn } from "@/lib/utils";
 
@@ -22,8 +22,6 @@ interface JobPhotosTabProps {
   photos: Array<JobPhoto> | undefined;
 }
 
-const CAPTION_PLACEHOLDER = "Caption, like Bathroom 2 (optional)";
-
 /**
  * The Photos tab of the job sheet: take or pick photos, which are downsized before upload,
  * caption them if he wants to (to tell Bathroom 1 from Bathroom 2), view them big, delete them.
@@ -31,7 +29,7 @@ const CAPTION_PLACEHOLDER = "Caption, like Bathroom 2 (optional)";
 export function JobPhotosTab({ jobId, photos }: JobPhotosTabProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const libraryInputRef = useRef<HTMLInputElement>(null);
-  // The photo whose caption is being typed; a freshly taken photo opens its caption right away
+  // The photo whose caption is being typed; a freshly taken photo offers its caption right away
   const [editingId, setEditingId] = useState<Id<"jobPhotos"> | null>(null);
 
   const { addPhotos, isUploading } = useAddJobPhoto(jobId);
@@ -48,6 +46,7 @@ export function JobPhotosTab({ jobId, photos }: JobPhotosTabProps) {
     src: photo.imageUrl!,
     caption: photo.caption,
   }));
+  const editingPhoto = newestFirst.find((photo) => photo._id === editingId) ?? null;
 
   const handleFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -177,75 +176,35 @@ export function JobPhotosTab({ jobId, photos }: JobPhotosTabProps) {
                   <Trash2 className="size-5" />
                 </button>
               </div>
-              {editingId === photo._id ?
-                <CaptionInput
-                  initial={photo.caption ?? ""}
-                  onSave={(caption) => void handleSaveCaption(photo, caption)}
-                />
-              : <button
-                  type="button"
-                  onClick={() => setEditingId(photo._id)}
-                  aria-label={photo.caption ? `Edit caption: ${photo.caption}` : "Add caption"}
-                  className="w-full min-h-11 flex items-center gap-2 px-1 text-left"
-                >
-                  {photo.caption ?
-                    <span className="text-base font-bold leading-snug line-clamp-2 flex-1 min-w-0">
-                      {photo.caption}
-                    </span>
-                  : <span className="text-base font-semibold text-muted-foreground flex-1">
-                      Add caption
-                    </span>
-                  }
-                  <Pencil className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                </button>
-              }
+              <button
+                type="button"
+                onClick={() => setEditingId(photo._id)}
+                aria-label={photo.caption ? `Edit caption: ${photo.caption}` : "Add caption"}
+                className="w-full min-h-11 flex items-center gap-2 px-1 text-left"
+              >
+                {photo.caption ?
+                  <span className="text-base font-bold leading-snug line-clamp-2 flex-1 min-w-0">
+                    {photo.caption}
+                  </span>
+                : <span className="text-base font-semibold text-muted-foreground flex-1">
+                    Add caption
+                  </span>
+                }
+                <Pencil className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              </button>
             </li>
           ))}
         </ul>
       )}
 
       <ImageViewer {...viewerProps} />
-    </div>
-  );
-}
-
-interface CaptionInputProps {
-  initial: string;
-  onSave: (caption: string) => void;
-}
-
-// Owns the draft so typing only re-renders this field; saves on Done, Enter or tapping away
-function CaptionInput({ initial, onSave }: CaptionInputProps) {
-  const [draft, setDraft] = useState(initial);
-
-  return (
-    <form
-      className="flex gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSave(draft);
-      }}
-    >
-      <Input
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => onSave(draft)}
-        placeholder={CAPTION_PLACEHOLDER}
-        aria-label="Photo caption"
-        enterKeyHint="done"
-        className="h-12 rounded-2xl text-base md:text-base"
+      <PhotoCaptionDialog
+        open={!!editingPhoto}
+        imageUrl={editingPhoto?.imageUrl ?? null}
+        caption={editingPhoto?.caption ?? ""}
+        onSave={(caption) => editingPhoto && void handleSaveCaption(editingPhoto, caption)}
+        onClose={() => setEditingId(null)}
       />
-      <Button
-        type="submit"
-        size="icon"
-        aria-label="Save caption"
-        className="shrink-0 h-12 w-12 rounded-2xl"
-        // Pressing Done fires blur first, which already saved; this one just needs to not re-save
-        onMouseDown={(e) => e.preventDefault()}
-      >
-        <Check className="size-5" />
-      </Button>
-    </form>
+    </div>
   );
 }
