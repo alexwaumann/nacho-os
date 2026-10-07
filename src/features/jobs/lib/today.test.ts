@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  formatDriveTime,
-  formatTasksLeft,
-  getStreet,
-  isRouteDone,
-  isStopDone,
-  restoreStop,
-} from "./today";
+import { formatDriveTime, getStreet, isRouteDone, isStopDone, restoreStop } from "./today";
 
 type Status = "pending" | "completed" | "paid";
 const stop = (status: Status = "pending") => ({ status });
@@ -69,19 +62,5 @@ describe("formatDriveTime", () => {
 
   it("returns null when the drive time is unknown", () => {
     expect(formatDriveTime(undefined)).toBeNull();
-  });
-});
-
-describe("formatTasksLeft", () => {
-  it("counts the tasks still to do", () => {
-    const tasks = [{ completed: true }, { completed: false }, { completed: false }];
-    expect(formatTasksLeft(tasks)).toBe("2 of 3 tasks left");
-    expect(formatTasksLeft([{ completed: false }])).toBe("1 of 1 task left");
-  });
-
-  it("says when every task is done, and nothing without tasks", () => {
-    expect(formatTasksLeft([{ completed: true }])).toBe("All tasks done");
-    expect(formatTasksLeft([])).toBeNull();
-    expect(formatTasksLeft(undefined)).toBeNull();
   });
 });

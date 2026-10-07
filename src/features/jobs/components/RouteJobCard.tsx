@@ -1,5 +1,5 @@
-import { Car, CloudAlert, KeyRound, ListChecks } from "lucide-react";
-import { formatDriveTime, formatTasksLeft } from "../lib/today";
+import { Car, CloudAlert, KeyRound } from "lucide-react";
+import { formatDriveTime } from "../lib/today";
 import { HourlyForecast } from "./HourlyForecast";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 
@@ -37,7 +37,6 @@ export function RouteJobCard({
   const progressValue = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const accessCodes = showRouteDetails ? (job.accessCodes ?? []) : [];
   const driveTime = showRouteDetails ? formatDriveTime(job.travelTimeValue) : null;
-  const tasksLeft = showRouteDetails ? formatTasksLeft(job.tasks) : null;
 
   return (
     <Card
@@ -65,25 +64,10 @@ export function RouteJobCard({
           </ul>
         )}
 
-        {/* Summary (2 lines max) */}
-        {job.summary && (
-          <p className="line-clamp-2 text-base text-muted-foreground">{job.summary}</p>
-        )}
-
-        {(driveTime || tasksLeft) && (
-          <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base font-semibold text-foreground">
-            {driveTime && (
-              <span className="inline-flex items-center gap-1.5">
-                <Car size={20} className="shrink-0 text-muted-foreground" />
-                {driveTime}
-              </span>
-            )}
-            {tasksLeft && (
-              <span className="inline-flex items-center gap-1.5">
-                <ListChecks size={20} className="shrink-0 text-muted-foreground" />
-                {tasksLeft}
-              </span>
-            )}
+        {driveTime && (
+          <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">
+            <Car size={20} className="shrink-0 text-muted-foreground" />
+            {driveTime}
           </p>
         )}
 
@@ -102,15 +86,13 @@ export function RouteJobCard({
           </p>
         )}
 
-        {/* Progress bar, with the count when there's no tasks-left line */}
+        {/* Progress bar with the done/total count */}
         {totalTasks > 0 && (
-          <div className="flex items-center gap-2">
-            <Progress value={progressValue} className="h-1.5 flex-1 bg-muted" />
-            {!tasksLeft && (
-              <span className="shrink-0 text-xs font-black uppercase tracking-widest text-muted-foreground">
-                {completedTasks}/{totalTasks}
-              </span>
-            )}
+          <div className="flex items-center gap-3">
+            <Progress value={progressValue} className="h-2 flex-1 bg-muted" />
+            <span className="shrink-0 text-base font-bold tabular-nums text-muted-foreground">
+              {completedTasks}/{totalTasks}
+            </span>
           </div>
         )}
       </CardContent>

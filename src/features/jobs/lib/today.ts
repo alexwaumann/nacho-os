@@ -45,13 +45,3 @@ export function formatDriveTime(seconds: number | undefined): string | null {
   if (minutes === 0) return `${hours} hr drive`;
   return `${hours} hr ${minutes} min drive`;
 }
-
-/** "4 of 6 tasks left", "All tasks done"; null when the job has no tasks. */
-export function formatTasksLeft(
-  tasks: ReadonlyArray<{ completed: boolean }> | undefined,
-): string | null {
-  if (!tasks || tasks.length === 0) return null;
-  const left = tasks.filter((task) => !task.completed).length;
-  if (left === 0) return "All tasks done";
-  return `${left} of ${tasks.length} ${tasks.length === 1 ? "task" : "tasks"} left`;
-}
