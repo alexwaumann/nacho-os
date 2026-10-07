@@ -150,10 +150,10 @@ export async function processReceiptFile(file: File): Promise<ImageData> {
   return compressImage(file, 1536, 1536, 0.85);
 }
 
-// Job site photos: 1600px on the long side at 80% JPEG stays sharp when zoomed on a phone and
-// is roughly a tenth the size of what the camera saves
-const JOB_PHOTO_MAX_SIDE = 1600;
-const JOB_PHOTO_QUALITY = 0.8;
+// Job site photos: 1280px on the long side at 75% JPEG looks sharp on a phone screen and comes to
+// about 250KB, roughly a twentieth of what the camera saves (1600px/80% averaged 500KB)
+const JOB_PHOTO_MAX_SIDE = 1280;
+const JOB_PHOTO_QUALITY = 0.75;
 
 /**
  * Downsize a photo taken or picked for a job before it's uploaded, so storage holds a
