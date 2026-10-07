@@ -1,5 +1,5 @@
-import { Banknote, ClipboardList, Loader2, Receipt } from "lucide-react";
-import { useRef, useState } from "react";
+import { Banknote, Loader2, Plus, Receipt } from "lucide-react";
+import { useRef } from "react";
 
 import { useNavigate } from "@tanstack/react-router";
 
@@ -18,26 +18,23 @@ interface ScanActionsProps {
 }
 
 /**
- * The three big "scan" buttons on the home page. Owns the file pickers, the reading
- * (Gemini) hooks and the "found" modals, so the page only has to render <ScanActions />.
- * Must be rendered on the "/" route: the work order flow uses its `new-job` search param.
+ * The three big action buttons on the home page. "Add Job" opens the multi-file add-jobs
+ * modal (work orders are almost always PDFs, often several at once). Receipts and checks
+ * start from taking or picking a photo. Owns the file pickers, the reading (Gemini) hooks
+ * and the "found" modals, so the page only has to render <ScanActions />.
+ * Must be rendered on the "/" route: the add-job flow uses its `new-job` search param.
  */
 export function ScanActions({ className }: ScanActionsProps) {
   // 1. Hooks
   const navigate = useNavigate({ from: "/" });
-  const workOrderInputRef = useRef<HTMLInputElement>(null);
   const receiptInputRef = useRef<HTMLInputElement>(null);
   const checkInputRef = useRef<HTMLInputElement>(null);
-
-  // New key per scan remounts AddJobModal so it starts with the picked files
-  const [workOrderScan, setWorkOrderScan] = useState({ key: 0, files: [] as Array<File> });
 
   const receipt = useScanReceipt();
   const check = useAddCheck();
 
   // 2. Handlers
-  const handleWorkOrderFiles = (files: Array<File>) => {
-    setWorkOrderScan((prev) => ({ key: prev.key + 1, files }));
+  const handleAddJobClick = () => {
     navigate({ search: (prev) => ({ ...prev, "new-job": "true" }) });
   };
 
@@ -54,10 +51,10 @@ export function ScanActions({ className }: ScanActionsProps) {
     <>
       <div className={cn("grid grid-cols-3 gap-3", className)}>
         <ScanButton
-          icon={ClipboardList}
-          label="Scan work order"
+          icon={Plus}
+          label="Add Job"
           iconClassName="bg-primary/10 text-primary"
-          onClick={() => workOrderInputRef.current?.click()}
+          onClick={handleAddJobClick}
         />
         <ScanButton
           icon={Receipt}
@@ -77,14 +74,6 @@ export function ScanActions({ className }: ScanActionsProps) {
 
       {/* Hidden file pickers. No `capture`, so photos and PDFs already on the phone work too. */}
       <input
-        ref={workOrderInputRef}
-        type="file"
-        accept={ACCEPTED_FILES}
-        multiple
-        className="hidden"
-        onChange={handleFileChange(handleWorkOrderFiles)}
-      />
-      <input
         ref={receiptInputRef}
         type="file"
         accept={ACCEPTED_FILES}
@@ -99,7 +88,7 @@ export function ScanActions({ className }: ScanActionsProps) {
         onChange={handleFileChange(([file]) => void check.handleFileSelect(file))}
       />
 
-      <AddJobModal key={workOrderScan.key} initialFiles={workOrderScan.files} />
+      <AddJobModal />
 
       {receipt.receiptData && receipt.imageData && (
         <ReceiptDetectedModal

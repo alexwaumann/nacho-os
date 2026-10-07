@@ -13,10 +13,8 @@ type ProcessedFile = {
   error?: string;
 };
 
-export function useAddJob(initialFiles: Array<File> = []) {
-  const [files, setFiles] = useState<Array<ProcessedFile>>(() =>
-    initialFiles.map((file) => ({ file, status: "pending" })),
-  );
+export function useAddJob() {
+  const [files, setFiles] = useState<Array<ProcessedFile>>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [processedCount, setProcessedCount] = useState(0);
