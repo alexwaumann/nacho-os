@@ -1,17 +1,7 @@
-// Helpers for the Today page: which route stop is next, and plain-words labels for it
+// Helpers for the Today page: route stops, and plain-words labels for them
 
 interface RouteStop {
-  _id: string;
   status: "pending" | "completed" | "paid";
-}
-
-export interface SplitRoute<T> {
-  /** The first stop that is still pending, or null */
-  next: T | null;
-  /** Every other stop, in route order (done stops included) */
-  rest: Array<T>;
-  /** True when the route has stops and none of them are pending */
-  allDone: boolean;
 }
 
 /** A stop counts as done once it is completed or paid. */
@@ -19,34 +9,29 @@ export function isStopDone(job: RouteStop): boolean {
   return job.status !== "pending";
 }
 
-/** The first route stop (in route order) that is still pending, or null. */
-export function pickNextStop<T extends RouteStop>(jobs: ReadonlyArray<T>): T | null {
-  return jobs.find((job) => !isStopDone(job)) ?? null;
-}
-
-/** Splits today's route into the next stop (shown big) and the rest of the list. */
-export function splitRoute<T extends RouteStop>(jobs: ReadonlyArray<T>): SplitRoute<T> {
-  const next = pickNextStop(jobs);
-  return {
-    next,
-    rest: jobs.filter((job) => job !== next),
-    allDone: jobs.length > 0 && next === null,
-  };
+/** True when the route has stops and none of them are still pending. */
+export function isRouteDone(jobs: ReadonlyArray<RouteStop>): boolean {
+  return jobs.length > 0 && jobs.every(isStopDone);
 }
 
 /**
- * Puts a reordered "rest of the route" back into the full route order, keeping the next stop
- * (`pinnedId`) where it was. Returns the full order of ids.
+ * Puts a removed stop back into the route at the position it had (or at the end when the route
+ * got shorter since). Returns the full order of ids.
  */
-export function mergeRestOrder<TId extends string>(
-  fullOrder: ReadonlyArray<TId>,
-  pinnedId: TId | null,
-  restOrder: ReadonlyArray<TId>,
+export function restoreStop<TId extends string>(
+  currentOrder: ReadonlyArray<TId>,
+  id: TId,
+  index: number,
 ): Array<TId> {
-  if (!pinnedId || !fullOrder.includes(pinnedId)) return [...restOrder];
-  const merged = [...restOrder];
-  merged.splice(fullOrder.indexOf(pinnedId), 0, pinnedId);
-  return merged;
+  const order = currentOrder.filter((other) => other !== id);
+  order.splice(Math.min(Math.max(index, 0), order.length), 0, id);
+  return order;
+}
+
+/** The street part of an address ("123 Main St, Springfield, IL" -> "123 Main St"). */
+export function getStreet(address: string): string {
+  const street = address.split(",")[0]?.trim();
+  return street || address.trim();
 }
 
 /** "45 min drive", "1 hr drive", "1 hr 20 min drive"; null when the drive time is unknown. */

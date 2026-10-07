@@ -9,6 +9,11 @@ import { calculateRouteMetrics, geocodeAddress, optimizeRoute } from "@/server/g
 
 type Job = Doc<"jobs">;
 
+interface RecalculateOptions {
+  /** Skip the "Route updated" toast, e.g. when another toast (with Undo) is already showing */
+  quiet?: boolean;
+}
+
 export function useRouteOptimization() {
   const [isOptimizing, setIsOptimizing] = useState(false);
 
@@ -294,7 +299,7 @@ export function useRouteOptimization() {
   );
 
   const recalculateRouteMetrics = useCallback(
-    async (orderedJobIds: Array<Id<"jobs">>) => {
+    async (orderedJobIds: Array<Id<"jobs">>, options?: RecalculateOptions) => {
       if (orderedJobIds.length < 2) {
         return;
       }
@@ -429,7 +434,9 @@ export function useRouteOptimization() {
           totalDurationValue: routeResult.totalDurationValue,
         });
 
-        toast.success("Route updated");
+        if (!options?.quiet) {
+          toast.success("Route updated");
+        }
       } catch (error) {
         console.error("Route recalculation error:", error);
         toast.error("Failed to recalculate route");

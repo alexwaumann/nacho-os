@@ -9,6 +9,7 @@ import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 type Job = Doc<"jobs">;
 
@@ -32,6 +33,8 @@ export function EditRouteModal({ open, onOpenChange, onDone, isOptimizing }: Edi
       setSelectedIds(new Set(alreadySelected));
     }
   }, [open, allPendingJobs]);
+
+  const selectedCount = selectedIds.size;
 
   const handleToggle = (jobId: Id<"jobs">) => {
     setSelectedIds((prev) => {
@@ -64,8 +67,17 @@ export function EditRouteModal({ open, onOpenChange, onDone, isOptimizing }: Edi
         <DialogOverlay />
         <div className="fixed inset-0 z-50 flex flex-col bg-background">
           {/* Sticky Header */}
-          <div className="shrink-0 px-5 py-4 border-b border-border bg-background">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-5 py-4">
             <DialogTitle className="text-xl font-black">Select Stops</DialogTitle>
+            <p
+              aria-live="polite"
+              className={cn(
+                "shrink-0 text-xl font-black tabular-nums",
+                selectedCount === 0 ? "text-muted-foreground" : "text-primary",
+              )}
+            >
+              {selectedCount === 0 ? "No stops" : `${selectedCount} selected`}
+            </p>
           </div>
 
           {/* Scrollable Content */}
