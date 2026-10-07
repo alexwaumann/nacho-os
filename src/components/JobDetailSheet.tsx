@@ -344,9 +344,11 @@ export function JobDetailSheet({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
+      {/* dvh, not vh: on iPhone Safari vh is the height with the toolbar hidden, so with the
+          toolbar showing 90vh is taller than the screen and the sheet covers it all */}
       <DrawerContent
         ref={setDrawerContentEl}
-        className="h-[90vh] data-[vaul-drawer-direction=bottom]:max-h-[90vh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-clip shadow-2xl border-t border-border/50"
+        className="h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-clip shadow-2xl border-t border-border/50"
       >
         <Tabs
           value={tab}
