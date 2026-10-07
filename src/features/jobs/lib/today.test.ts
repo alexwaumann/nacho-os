@@ -3,61 +3,56 @@ import { describe, expect, it } from "vitest";
 import {
   formatDriveTime,
   formatTasksLeft,
-  mergeRestOrder,
-  pickNextStop,
-  splitRoute,
+  getStreet,
+  isRouteDone,
+  isStopDone,
+  restoreStop,
 } from "./today";
 
 type Status = "pending" | "completed" | "paid";
-const stop = (id: string, status: Status = "pending") => ({ _id: id, status });
+const stop = (status: Status = "pending") => ({ status });
 
-describe("pickNextStop", () => {
-  it("picks the first pending stop in route order", () => {
-    const jobs = [stop("a", "completed"), stop("b"), stop("c")];
-    expect(pickNextStop(jobs)?._id).toBe("b");
-  });
-
-  it("treats paid stops as done", () => {
-    expect(pickNextStop([stop("a", "paid"), stop("b")])?._id).toBe("b");
-  });
-
-  it("returns null when nothing is pending or the route is empty", () => {
-    expect(pickNextStop([stop("a", "completed"), stop("b", "paid")])).toBeNull();
-    expect(pickNextStop([])).toBeNull();
+describe("isStopDone", () => {
+  it("treats completed and paid stops as done", () => {
+    expect(isStopDone(stop("completed"))).toBe(true);
+    expect(isStopDone(stop("paid"))).toBe(true);
+    expect(isStopDone(stop())).toBe(false);
   });
 });
 
-describe("splitRoute", () => {
-  it("splits off the next stop and keeps the rest in order", () => {
-    const jobs = [stop("a", "completed"), stop("b"), stop("c")];
-    const { next, rest, allDone } = splitRoute(jobs);
-    expect(next?._id).toBe("b");
-    expect(rest.map((job) => job._id)).toEqual(["a", "c"]);
-    expect(allDone).toBe(false);
+describe("isRouteDone", () => {
+  it("is done when every stop is done", () => {
+    expect(isRouteDone([stop("completed"), stop("paid")])).toBe(true);
+    expect(isRouteDone([stop("completed"), stop()])).toBe(false);
   });
 
-  it("marks the route all done when every stop is done", () => {
-    const jobs = [stop("a", "completed"), stop("b", "paid")];
-    expect(splitRoute(jobs)).toEqual({ next: null, rest: jobs, allDone: true });
-  });
-
-  it("is not all done when there are no stops", () => {
-    expect(splitRoute([])).toEqual({ next: null, rest: [], allDone: false });
+  it("is not done when there are no stops", () => {
+    expect(isRouteDone([])).toBe(false);
   });
 });
 
-describe("mergeRestOrder", () => {
-  it("keeps the next stop at its place in the route", () => {
-    expect(mergeRestOrder(["a", "b", "c", "d"], "b", ["d", "a", "c"])).toEqual([
-      "d",
-      "b",
-      "a",
-      "c",
-    ]);
+describe("restoreStop", () => {
+  it("puts the stop back where it was", () => {
+    expect(restoreStop(["a", "c", "d"], "b", 1)).toEqual(["a", "b", "c", "d"]);
+    expect(restoreStop(["b", "c"], "a", 0)).toEqual(["a", "b", "c"]);
   });
 
-  it("returns the rest as is without a next stop", () => {
-    expect(mergeRestOrder(["a", "b"], null, ["b", "a"])).toEqual(["b", "a"]);
+  it("puts it at the end when the route got shorter", () => {
+    expect(restoreStop(["a"], "d", 3)).toEqual(["a", "d"]);
+  });
+
+  it("doesn't add the stop twice", () => {
+    expect(restoreStop(["a", "b", "c"], "b", 0)).toEqual(["b", "a", "c"]);
+  });
+});
+
+describe("getStreet", () => {
+  it("keeps the part before the first comma", () => {
+    expect(getStreet("123 Main St, Springfield, IL 62701")).toBe("123 Main St");
+  });
+
+  it("returns the whole address without a comma", () => {
+    expect(getStreet("  45 Oak Ave ")).toBe("45 Oak Ave");
   });
 });
 

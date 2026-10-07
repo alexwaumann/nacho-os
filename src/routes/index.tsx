@@ -1,8 +1,8 @@
 import { useMutation } from "convex/react";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
-import { Reorder, useDragControls } from "framer-motion";
-import { AlertCircle, Check, GripVertical, Loader2, Navigation, X } from "lucide-react";
+import { Reorder } from "framer-motion";
+import { AlertCircle, Loader2, Navigation, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
@@ -10,20 +10,21 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../convex/_generated/api";
 
-import type { Doc, Id } from "../../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AllStopsDoneCard } from "@/features/jobs/components/AllStopsDoneCard";
 import { EditRouteModal } from "@/features/jobs/components/EditRouteModal";
 import { EmptyRouteCard } from "@/features/jobs/components/EmptyRouteCard";
-import { AllStopsDoneCard, NextStopCard } from "@/features/jobs/components/NextStopCard";
 import { RouteBriefCard } from "@/features/jobs/components/RouteBriefCard";
-import { RouteJobCard } from "@/features/jobs/components/RouteJobCard";
 import { RouteSummaryCard } from "@/features/jobs/components/RouteSummaryCard";
+import { SwipeableRouteCard } from "@/features/jobs/components/SwipeableRouteCard";
 import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobSheet";
+import { useRemoveRouteStop } from "@/features/jobs/hooks/useRemoveRouteStop";
 import { useRouteBrief } from "@/features/jobs/hooks/useRouteBrief";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
-import { isStopDone, mergeRestOrder, splitRoute } from "@/features/jobs/lib/today";
+import { isRouteDone, isStopDone } from "@/features/jobs/lib/today";
 import { ScanActions } from "@/features/scan/components/ScanActions";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
@@ -39,7 +40,6 @@ export const Route = createFileRoute("/")({
   component: TodayPage,
 });
 
-type Job = Doc<"jobs">;
 type JobId = Id<"jobs">;
 
 function TodayPage() {
@@ -77,6 +77,8 @@ function TodayPage() {
     selectedJobs.map((job) => job._id),
   );
   const prevJobIdsRef = useRef<string>("");
+  // The order on screen, for route changes that finish later (like Undo)
+  const orderRef = useRef(localOrder);
 
   // Sync local order with server data (only when the ids or their order change)
   useEffect(() => {
@@ -87,15 +89,25 @@ function TodayPage() {
     }
   }, [selectedJobs]);
 
+  useEffect(() => {
+    orderRef.current = localOrder;
+  }, [localOrder]);
+
+  const { removeStop } = useRemoveRouteStop({
+    getOrder: () => orderRef.current,
+    setOrder: (order) => {
+      orderRef.current = order;
+      setLocalOrder(order);
+    },
+    recalculateRouteMetrics,
+  });
+
   // Derived values
   const jobsById = new Map(selectedJobs.map((job) => [job._id, job]));
-  const orderedJobs = localOrder
-    .map((id) => jobsById.get(id))
-    .filter((job): job is Job => job !== undefined);
-  // The next stop comes from the saved order, so it doesn't jump around mid-drag
-  const { next: nextStop, allDone } = splitRoute(selectedJobs);
-  const restIds = localOrder.filter((id) => id !== nextStop?._id && jobsById.has(id));
+  const orderedIds = localOrder.filter((id) => jobsById.has(id));
+  const orderedJobs = orderedIds.map((id) => jobsById.get(id)!);
   const pendingStops = orderedJobs.filter((job) => !isStopDone(job));
+  const isAllDone = isRouteDone(orderedJobs);
   const hasRoute = selectedJobs.length > 0;
 
   // Handlers
@@ -126,10 +138,6 @@ function TodayPage() {
     if (window.confirm("Clear today's route? The jobs stay in your job list.")) {
       void clearRoute();
     }
-  };
-
-  const handleRestReorder = (newRestIds: Array<JobId>) => {
-    setLocalOrder((prev) => mergeRestOrder(prev, nextStop?._id ?? null, newRestIds));
   };
 
   const handleReorderEnd = () => {
@@ -207,24 +215,7 @@ function TodayPage() {
       : !hasRoute ?
         <EmptyRouteCard onPlanRoute={() => setEditRouteOpen(true)} onOpenJob={jobSheet.openJob} />
       : <>
-          {/* Next stop */}
-          <section className="space-y-3">
-            {nextStop ?
-              <>
-                <h2 className="text-xl font-bold tracking-tight text-foreground">Next stop</h2>
-                <NextStopCard
-                  job={nextStop}
-                  stopNumber={localOrder.indexOf(nextStop._id) + 1}
-                  totalStops={selectedJobs.length}
-                  arrivalTime={routeBrief.arrivalTimes[nextStop._id]}
-                  weatherNote={routeBrief.siteNotes[nextStop._id]}
-                  onOpen={() => jobSheet.openJob(nextStop._id)}
-                />
-              </>
-            : allDone && <AllStopsDoneCard onPlanTomorrow={() => setEditRouteOpen(true)} />}
-          </section>
-
-          {/* Rest of the route */}
+          {/* Today's route, in order */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold tracking-tight text-foreground">Today's route</h2>
             <div className="grid grid-cols-2 gap-3">
@@ -262,106 +253,33 @@ function TodayPage() {
               </Button>
             )}
 
-            {restIds.length > 0 && (
+            {isAllDone && <AllStopsDoneCard onPlanTomorrow={() => setEditRouteOpen(true)} />}
+
+            {orderedIds.length > 0 && (
               <Reorder.Group
                 axis="y"
-                values={restIds}
-                onReorder={handleRestReorder}
+                values={orderedIds}
+                onReorder={setLocalOrder}
                 className="space-y-3"
               >
-                {restIds.map((id) => {
-                  const job = jobsById.get(id)!;
-                  return (
-                    <DraggableRouteCard
-                      key={id}
-                      job={job}
-                      stopNumber={localOrder.indexOf(id) + 1}
-                      isDone={isStopDone(job)}
-                      onClick={() => jobSheet.openJob(id)}
-                      onDragEnd={handleReorderEnd}
-                      arrivalTime={routeBrief.arrivalTimes[id]}
-                      weatherNote={routeBrief.siteNotes[id]}
-                    />
-                  );
-                })}
+                {orderedJobs.map((job, index) => (
+                  <SwipeableRouteCard
+                    key={job._id}
+                    job={job}
+                    stopNumber={index + 1}
+                    isDone={isStopDone(job)}
+                    arrivalTime={routeBrief.arrivalTimes[job._id]}
+                    weatherNote={routeBrief.siteNotes[job._id]}
+                    onOpen={() => jobSheet.openJob(job._id)}
+                    onReorderEnd={handleReorderEnd}
+                    onRemove={() => void removeStop(job)}
+                  />
+                ))}
               </Reorder.Group>
             )}
           </section>
         </>
       }
     </div>
-  );
-}
-
-// Draggable route card component using framer-motion Reorder
-interface DraggableRouteCardProps {
-  job: Job;
-  stopNumber: number;
-  isDone: boolean;
-  onClick: () => void;
-  onDragEnd: () => void;
-  arrivalTime?: number;
-  weatherNote?: string;
-}
-
-function DraggableRouteCard({
-  job,
-  stopNumber,
-  isDone,
-  onClick,
-  onDragEnd,
-  arrivalTime,
-  weatherNote,
-}: DraggableRouteCardProps) {
-  const dragControls = useDragControls();
-
-  return (
-    <Reorder.Item
-      value={job._id}
-      dragListener={false}
-      dragControls={dragControls}
-      onDragEnd={onDragEnd}
-      className={cn(
-        "flex items-stretch gap-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm",
-        isDone && "bg-muted/40",
-      )}
-      whileDrag={{ scale: 1.02, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
-    >
-      {/* Drag Handle - Touch-friendly area */}
-      <div
-        onPointerDown={(e) => dragControls.start(e)}
-        aria-label={`Drag to move stop ${stopNumber}`}
-        className="flex w-14 cursor-grab touch-none select-none flex-col items-center justify-center bg-muted/30 active:cursor-grabbing"
-      >
-        <GripVertical size={22} className="text-muted-foreground" />
-        <div
-          className={cn(
-            "mt-2 flex size-8 items-center justify-center rounded-full text-base font-bold",
-            isDone ? "bg-emerald-600 text-white" : "bg-primary/10 text-primary",
-          )}
-        >
-          {isDone ?
-            <Check size={18} strokeWidth={3} aria-label="Done" />
-          : stopNumber}
-        </div>
-      </div>
-
-      {/* Card Content - Clickable area */}
-      <div
-        className={cn(
-          "flex-1 cursor-pointer transition-transform active:scale-[0.99]",
-          isDone && "opacity-60",
-        )}
-        onClick={onClick}
-      >
-        <RouteJobCard
-          job={job}
-          className="rounded-none border-0 bg-transparent shadow-none"
-          showForecast={!isDone}
-          arrivalTime={isDone ? undefined : arrivalTime}
-          weatherNote={isDone ? undefined : weatherNote}
-        />
-      </div>
-    </Reorder.Item>
   );
 }
