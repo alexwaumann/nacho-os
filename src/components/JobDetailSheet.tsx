@@ -59,6 +59,19 @@ function splitAccessCode(code: string) {
   return match ? { label: match[1].trim(), value: match[2].trim() } : { label: null, value: code };
 }
 
+const MENU_ITEM_CLASS = "text-lg py-3";
+
+// Every tab leaves room at the end so the floating mic (bottom-right) never covers the last item
+const TAB_CONTENT_CLASS = "m-0 p-5 pb-36 outline-none";
+
+const ALL_TASKS_DONE_TOAST_MS = 15_000;
+
+// Large text and a big "Yes" so the prompt is easy to read and hit
+const PROMPT_TOAST_CLASS_NAMES = {
+  title: "text-lg! font-bold! leading-snug!",
+  actionButton: "h-12! px-5! text-lg! font-black! rounded-xl!",
+};
+
 function formatMoney(amount: number) {
   return `$${amount.toFixed(2)}`;
 }
@@ -290,26 +303,48 @@ export function JobDetailSheet({
   const completedTasks = job.tasks?.filter((t) => t.completed).length ?? 0;
   const totalTasks = job.tasks?.length ?? 0;
   const progressValue = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-  const isAllTasksDone = totalTasks > 0 && completedTasks === totalTasks;
   const accessCodes = job.accessCodes ?? [];
   // On a route day he reads the codes at the door, so they ride in the header
   const hasHeaderCodes = job.selectedForRoute && accessCodes.length > 0;
-  const hasFooter = tab === "tasks" || (tab === "money" && job.status === "completed");
-
-  const handleTaskToggle = (taskId: string, completed: boolean) => {
-    updateTaskMutation.mutate({ jobId: job._id, taskId, completed });
-  };
+  const allTasksDoneToastId = `all-tasks-done-${job._id}`;
 
   const setStatus = (status: "pending" | "completed" | "paid") => {
     updateStatusMutation.mutate({ jobId: job._id, status });
+  };
+
+  const handleTaskToggle = (taskId: string, completed: boolean) => {
+    updateTaskMutation.mutate({ jobId: job._id, taskId, completed });
+    if (!completed) {
+      toast.dismiss(allTasksDoneToastId);
+      return;
+    }
+    // Checking the last open task offers a one-tap finish
+    const isLastOpenTask = job.tasks?.every((t) => t.completed || t.id === taskId) ?? false;
+    if (job.status === "pending" && isLastOpenTask) {
+      toast("All tasks done. Mark job complete?", {
+        id: allTasksDoneToastId,
+        duration: ALL_TASKS_DONE_TOAST_MS,
+        classNames: PROMPT_TOAST_CLASS_NAMES,
+        action: {
+          label: "Yes",
+          onClick: () =>
+            updateStatusMutation.mutate(
+              { jobId: job._id, status: "completed" },
+              { onSuccess: () => toast.success("Job marked complete") },
+            ),
+        },
+      });
+    }
   };
 
   const handleMarkComplete = () => {
     if (confirm("Mark this job as complete?")) setStatus("completed");
   };
 
-  const handleReopen = () => {
-    if (confirm("Reopen this job? It goes back to your pending jobs.")) setStatus("pending");
+  const handleMarkPending = () => {
+    if (confirm("Mark this job as pending? It goes back to your pending jobs.")) {
+      setStatus("pending");
+    }
   };
 
   const handleMarkPaid = () => {
@@ -344,9 +379,11 @@ export function JobDetailSheet({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
+      {/* dvh, not vh: on iPhone Safari vh is the height with the toolbar hidden, so with the
+          toolbar showing 90vh is taller than the screen and the sheet covers it all */}
       <DrawerContent
         ref={setDrawerContentEl}
-        className="h-[90vh] data-[vaul-drawer-direction=bottom]:max-h-[90vh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-clip shadow-2xl border-t border-border/50"
+        className="h-[90dvh] data-[vaul-drawer-direction=bottom]:max-h-[90dvh] max-w-lg mx-auto flex flex-col p-0 before:hidden bg-background rounded-t-[2.5rem] overflow-clip shadow-2xl border-t border-border/50"
       >
         <Tabs
           value={tab}
@@ -394,18 +431,37 @@ export function JobDetailSheet({
                   >
                     <MoreHorizontal className="h-6 w-6" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-60" container={drawerContentEl}>
-                    <DropdownMenuItem onClick={openInGoogleMaps} className="text-base py-3">
+                  <DropdownMenuContent align="end" className="w-64" container={drawerContentEl}>
+                    {job.status === "pending" ?
+                      <DropdownMenuItem onClick={handleMarkComplete} className={MENU_ITEM_CLASS}>
+                        <CheckCircle2 className="mr-2 h-5 w-5 text-primary" />
+                        Mark as complete
+                      </DropdownMenuItem>
+                    : <DropdownMenuItem onClick={handleMarkPending} className={MENU_ITEM_CLASS}>
+                        <RotateCcw className="mr-2 h-5 w-5" />
+                        Mark as pending
+                      </DropdownMenuItem>
+                    }
+                    {job.status === "completed" && (
+                      <DropdownMenuItem onClick={handleMarkPaid} className={MENU_ITEM_CLASS}>
+                        <DollarSign className="mr-2 h-5 w-5 text-emerald-600" />
+                        Mark as paid
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={openInGoogleMaps} className={MENU_ITEM_CLASS}>
                       <ExternalLink className="mr-2 h-5 w-5" />
                       Open in Google Maps
                     </DropdownMenuItem>
                     <Separator className="my-1" />
                     <DropdownMenuItem
                       onClick={handleDelete}
-                      className="text-base py-3 text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20"
+                      className={cn(
+                        MENU_ITEM_CLASS,
+                        "text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20",
+                      )}
                     >
                       <Trash2 className="mr-2 h-5 w-5" />
-                      Delete Job
+                      Delete job
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -426,12 +482,9 @@ export function JobDetailSheet({
             <Separator />
           </div>
 
-          {/* Scrollable Content Area. Without a footer, leave room so the mic doesn't cover the end */}
+          {/* Scrollable content. The mic floats over its bottom-right corner on every tab */}
           <div className="flex-1 overflow-y-auto min-h-0 bg-background">
-            <TabsContent
-              value="tasks"
-              className={cn("m-0 p-5 outline-none space-y-5", hasFooter ? "pb-6" : "pb-32")}
-            >
+            <TabsContent value="tasks" className={cn(TAB_CONTENT_CLASS, "space-y-5")}>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className={SECTION_HEADING_CLASS}>Tasks</h4>
@@ -535,7 +588,7 @@ export function JobDetailSheet({
               </div>
             </TabsContent>
 
-            <TabsContent value="info" className="m-0 p-5 pb-32 space-y-7 outline-none">
+            <TabsContent value="info" className={cn(TAB_CONTENT_CLASS, "space-y-7")}>
               {/* Route Toggle: the whole row is the label, so tapping anywhere flips it */}
               <label className="flex items-center justify-between gap-4 p-5 rounded-3xl bg-muted/30 border border-border/50 cursor-pointer">
                 <span className="space-y-0.5">
@@ -628,10 +681,7 @@ export function JobDetailSheet({
               </p>
             </TabsContent>
 
-            <TabsContent
-              value="money"
-              className={cn("m-0 p-5 space-y-7 outline-none", hasFooter ? "pb-6" : "pb-32")}
-            >
+            <TabsContent value="money" className={cn(TAB_CONTENT_CLASS, "space-y-7")}>
               {/* Where the job stands: finished and paid dates */}
               {job.status === "paid" && (
                 <div className="p-5 rounded-[1.5rem] bg-emerald-500/10 border border-emerald-500/20 space-y-1">
@@ -830,63 +880,6 @@ export function JobDetailSheet({
               </div>
             </TabsContent>
           </div>
-
-          {/* Pinned primary action. Bottom padding keeps it clear of the mic (bottom-right) */}
-          {hasFooter && (
-            <div className="shrink-0 border-t border-border bg-background px-5 pt-4 pb-28 space-y-3">
-              {tab === "tasks" ?
-                job.status === "pending" ?
-                  isAllTasksDone ?
-                    <>
-                      <p role="status" className="text-lg font-bold text-center">
-                        All tasks done. Mark job complete?
-                      </p>
-                      <Button
-                        className="w-full h-16 text-lg font-black rounded-2xl"
-                        onClick={() => setStatus("completed")}
-                      >
-                        <CheckCircle2 className="size-6" />
-                        Yes, mark complete
-                      </Button>
-                    </>
-                  : <Button
-                      className="w-full h-16 text-lg font-black rounded-2xl"
-                      onClick={handleMarkComplete}
-                    >
-                      <CheckCircle2 className="size-6" />
-                      Mark job complete
-                    </Button>
-
-                : <>
-                    <p className="flex items-center justify-center gap-2 text-lg font-bold text-emerald-600">
-                      <CheckCircle2 className="size-6" />
-                      {job.status === "paid" ? "Job done and paid" : "Job done"}
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="w-full h-14 text-lg font-bold rounded-2xl"
-                      onClick={handleReopen}
-                    >
-                      <RotateCcw className="size-5" />
-                      Reopen job
-                    </Button>
-                  </>
-
-              : <Button
-                  className="w-full h-16 px-5 text-lg font-black rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 justify-between"
-                  onClick={handleMarkPaid}
-                >
-                  <span className="flex items-center gap-2">
-                    <DollarSign className="size-6" />
-                    Mark as paid
-                  </span>
-                  {payment && (
-                    <span className="text-xl tabular-nums">{formatMoney(payment.amount)}</span>
-                  )}
-                </Button>
-              }
-            </div>
-          )}
         </Tabs>
         <VoiceCommandButton key={job._id} job={job} isOpen={open} />
         <ImageViewer {...viewerProps} />
