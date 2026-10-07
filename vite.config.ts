@@ -8,6 +8,10 @@ import tailwindcss from "@tailwindcss/vite";
 import netlify from "@netlify/vite-plugin-tanstack-start";
 
 const config = defineConfig({
+  server: {
+    // Allow the Tailscale MagicDNS hostname so `tailscale serve` can proxy to the dev server
+    allowedHosts: [".ts.net"],
+  },
   plugins: [
     // Override the event bus port to run several dev servers side by side (e.g. in worktrees)
     devtools({
