@@ -8,6 +8,7 @@ export default [
       "convex/_generated/**",
       "dist/**",
       "node_modules/**",
+      "ios/**",
       "*.config.js",
       "*.config.ts",
     ],
