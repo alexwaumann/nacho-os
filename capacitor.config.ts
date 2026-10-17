@@ -15,6 +15,9 @@ const config: CapacitorConfig = {
   webDir: "native/www",
   server: {
     url: serverUrl,
+    // Without this a failed load (e.g. no signal at launch) leaves a blank screen. The page is
+    // served from `webDir` and has a "Try again" button back to the site.
+    errorPath: "index.html",
     // Keep Clerk pages (hosted sign-in / account portal redirects) inside the web view. Any other
     // host (e.g. Google Maps links) is handed to iOS by Capacitor and opens outside the app.
     allowNavigation: ["unbiased-cowbird-38.clerk.accounts.dev", "unbiased-cowbird-38.accounts.dev"],

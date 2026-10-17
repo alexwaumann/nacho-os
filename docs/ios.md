@@ -7,12 +7,27 @@ TanStack Start server. A web deploy updates the app instantly; a new native buil
 when `capacitor.config.ts`, `ios/` or the Capacitor packages change.
 
 - `capacitor.config.ts` – app id `com.waumann.nachoos`, `server.url`, allowed navigation hosts.
-- `native/www/` – placeholder page (Capacitor requires a `webDir`).
+- `native/www/` – offline page, shown via `server.errorPath` when the site can't load (no
+  signal). Its "Try again" button goes back to the site.
 - `ios/` – Xcode project; plugins come in via Swift Package Manager (no CocoaPods).
 - `ios/App/App/Info.plist` – display name and camera / microphone / location / photo prompts.
 
 Links to other hosts (e.g. Google Maps directions) are handed to iOS by Capacitor and open in
 Google Maps or Safari, so the app stays on its page. Clerk hosts are allowed to load in the app.
+
+## App icon and splash
+
+`resources/icon.png` and `resources/splash.png` (built by `scripts/generate-icons.mjs`) feed the
+native asset catalog:
+
+```bash
+bunx @capacitor/assets generate --ios
+rm ios/App/App/Assets.xcassets/Splash.imageset/*-dark.png
+node -e 'const f="ios/App/App/Assets.xcassets/Splash.imageset/Contents.json",fs=require("fs"),j=JSON.parse(fs.readFileSync(f));j.images=j.images.filter(i=>!i.appearances);fs.writeFileSync(f,JSON.stringify(j,null,2)+"\n")'
+```
+
+The generator always adds a dark-mode splash (the icon on near-black), so the last two lines
+remove it again and dark mode keeps the blue brand splash.
 
 ## Point the shell at a dev server
 

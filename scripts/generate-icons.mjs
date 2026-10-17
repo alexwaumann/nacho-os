@@ -1,5 +1,5 @@
 // Renders the Nacho OS app icon (the NachoLogo mark from TopBar) into resources/ and public/.
-// Usage: bun scripts/generate-icons.mjs   (needs the sharp package; `bunx --bun sharp` is not enough)
+// Usage: bun scripts/generate-icons.mjs   (sharp is a devDependency)
 
 import sharp from "sharp";
 import { mkdirSync } from "node:fs";
