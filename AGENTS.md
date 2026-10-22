@@ -6,7 +6,7 @@
 - **Backend**: Convex (serverless, real-time database)
 - **Auth**: Clerk
 - **Styling**: Tailwind CSS v4, shadcn/ui (base-ui primitives)
-- **Forms**: TanStack Form with Zod v4 validation
+- **Validation**: Zod v4
 - **State**: TanStack Query (server), Zustand (client)
 - **Package Manager**: Bun
 
