@@ -9,32 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as MapRouteImport } from './routes/map'
-import { Route as JobsRouteImport } from './routes/jobs'
-import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
-import { Route as DemoConvexRouteImport } from './routes/demo/convex'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as JobsRouteImport } from './routes/jobs'
+import { Route as MapRouteImport } from './routes/map'
 import { Route as DemoClerkRouteImport } from './routes/demo/clerk'
-import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
-import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
-import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
-import { Route as DemoFormAddressRouteImport } from './routes/demo/form.address'
-import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
+import { Route as DemoConvexRouteImport } from './routes/demo/convex'
+import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
+import { Route as DemoFormAddressRouteImport } from './routes/demo/form.address'
+import { Route as DemoFormSimpleRouteImport } from './routes/demo/form.simple'
+import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
+import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
-import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
-import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
 import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
+import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
+import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
 
-const MapRoute = MapRouteImport.update({
-  id: '/map',
-  path: '/map',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JobsRoute = JobsRouteImport.update({
-  id: '/jobs',
-  path: '/jobs',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -42,19 +37,14 @@ const AccountRoute = AccountRouteImport.update({
   path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const JobsRoute = JobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
-  id: '/demo/tanstack-query',
-  path: '/demo/tanstack-query',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoConvexRoute = DemoConvexRouteImport.update({
-  id: '/demo/convex',
-  path: '/demo/convex',
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoClerkRoute = DemoClerkRouteImport.update({
@@ -62,29 +52,14 @@ const DemoClerkRoute = DemoClerkRouteImport.update({
   path: '/demo/clerk',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
-  id: '/demo/start/server-funcs',
-  path: '/demo/start/server-funcs',
+const DemoConvexRoute = DemoConvexRouteImport.update({
+  id: '/demo/convex',
+  path: '/demo/convex',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoStartApiRequestRoute = DemoStartApiRequestRouteImport.update({
-  id: '/demo/start/api-request',
-  path: '/demo/start/api-request',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoFormSimpleRoute = DemoFormSimpleRouteImport.update({
-  id: '/demo/form/simple',
-  path: '/demo/form/simple',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoFormAddressRoute = DemoFormAddressRouteImport.update({
-  id: '/demo/form/address',
-  path: '/demo/form/address',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoApiTqTodosRoute = DemoApiTqTodosRouteImport.update({
-  id: '/demo/api/tq-todos',
-  path: '/demo/api/tq-todos',
+const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
+  id: '/demo/tanstack-query',
+  path: '/demo/tanstack-query',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
@@ -92,14 +67,39 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoApiTqTodosRoute = DemoApiTqTodosRouteImport.update({
+  id: '/demo/api/tq-todos',
+  path: '/demo/api/tq-todos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoFormAddressRoute = DemoFormAddressRouteImport.update({
+  id: '/demo/form/address',
+  path: '/demo/form/address',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoFormSimpleRoute = DemoFormSimpleRouteImport.update({
+  id: '/demo/form/simple',
+  path: '/demo/form/simple',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoStartApiRequestRoute = DemoStartApiRequestRouteImport.update({
+  id: '/demo/start/api-request',
+  path: '/demo/start/api-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
+  id: '/demo/start/server-funcs',
+  path: '/demo/start/server-funcs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
   id: '/demo/start/ssr/',
   path: '/demo/start/ssr/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoStartSsrSpaModeRoute = DemoStartSsrSpaModeRouteImport.update({
-  id: '/demo/start/ssr/spa-mode',
-  path: '/demo/start/ssr/spa-mode',
+const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
+  id: '/demo/start/ssr/data-only',
+  path: '/demo/start/ssr/data-only',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoStartSsrFullSsrRoute = DemoStartSsrFullSsrRouteImport.update({
@@ -107,9 +107,9 @@ const DemoStartSsrFullSsrRoute = DemoStartSsrFullSsrRouteImport.update({
   path: '/demo/start/ssr/full-ssr',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
-  id: '/demo/start/ssr/data-only',
-  path: '/demo/start/ssr/data-only',
+const DemoStartSsrSpaModeRoute = DemoStartSsrSpaModeRouteImport.update({
+  id: '/demo/start/ssr/spa-mode',
+  path: '/demo/start/ssr/spa-mode',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -130,7 +130,7 @@ export interface FileRoutesByFullPath {
   '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
   '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
   '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
-  '/demo/start/ssr': typeof DemoStartSsrIndexRoute
+  '/demo/start/ssr/': typeof DemoStartSsrIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -190,7 +190,7 @@ export interface FileRouteTypes {
     | '/demo/start/ssr/data-only'
     | '/demo/start/ssr/full-ssr'
     | '/demo/start/ssr/spa-mode'
-    | '/demo/start/ssr'
+    | '/demo/start/ssr/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -253,18 +253,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/map': {
-      id: '/map'
-      path: '/map'
-      fullPath: '/map'
-      preLoaderRoute: typeof MapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/jobs': {
-      id: '/jobs'
-      path: '/jobs'
-      fullPath: '/jobs'
-      preLoaderRoute: typeof JobsRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -274,25 +267,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/jobs': {
+      id: '/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/tanstack-query': {
-      id: '/demo/tanstack-query'
-      path: '/demo/tanstack-query'
-      fullPath: '/demo/tanstack-query'
-      preLoaderRoute: typeof DemoTanstackQueryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/convex': {
-      id: '/demo/convex'
-      path: '/demo/convex'
-      fullPath: '/demo/convex'
-      preLoaderRoute: typeof DemoConvexRouteImport
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/clerk': {
@@ -302,39 +288,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoClerkRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/server-funcs': {
-      id: '/demo/start/server-funcs'
-      path: '/demo/start/server-funcs'
-      fullPath: '/demo/start/server-funcs'
-      preLoaderRoute: typeof DemoStartServerFuncsRouteImport
+    '/demo/convex': {
+      id: '/demo/convex'
+      path: '/demo/convex'
+      fullPath: '/demo/convex'
+      preLoaderRoute: typeof DemoConvexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/api-request': {
-      id: '/demo/start/api-request'
-      path: '/demo/start/api-request'
-      fullPath: '/demo/start/api-request'
-      preLoaderRoute: typeof DemoStartApiRequestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/form/simple': {
-      id: '/demo/form/simple'
-      path: '/demo/form/simple'
-      fullPath: '/demo/form/simple'
-      preLoaderRoute: typeof DemoFormSimpleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/form/address': {
-      id: '/demo/form/address'
-      path: '/demo/form/address'
-      fullPath: '/demo/form/address'
-      preLoaderRoute: typeof DemoFormAddressRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/api/tq-todos': {
-      id: '/demo/api/tq-todos'
-      path: '/demo/api/tq-todos'
-      fullPath: '/demo/api/tq-todos'
-      preLoaderRoute: typeof DemoApiTqTodosRouteImport
+    '/demo/tanstack-query': {
+      id: '/demo/tanstack-query'
+      path: '/demo/tanstack-query'
+      fullPath: '/demo/tanstack-query'
+      preLoaderRoute: typeof DemoTanstackQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/api/names': {
@@ -344,18 +309,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/api/tq-todos': {
+      id: '/demo/api/tq-todos'
+      path: '/demo/api/tq-todos'
+      fullPath: '/demo/api/tq-todos'
+      preLoaderRoute: typeof DemoApiTqTodosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/form/address': {
+      id: '/demo/form/address'
+      path: '/demo/form/address'
+      fullPath: '/demo/form/address'
+      preLoaderRoute: typeof DemoFormAddressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/form/simple': {
+      id: '/demo/form/simple'
+      path: '/demo/form/simple'
+      fullPath: '/demo/form/simple'
+      preLoaderRoute: typeof DemoFormSimpleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/start/api-request': {
+      id: '/demo/start/api-request'
+      path: '/demo/start/api-request'
+      fullPath: '/demo/start/api-request'
+      preLoaderRoute: typeof DemoStartApiRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/start/server-funcs': {
+      id: '/demo/start/server-funcs'
+      path: '/demo/start/server-funcs'
+      fullPath: '/demo/start/server-funcs'
+      preLoaderRoute: typeof DemoStartServerFuncsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/start/ssr/': {
       id: '/demo/start/ssr/'
       path: '/demo/start/ssr'
-      fullPath: '/demo/start/ssr'
+      fullPath: '/demo/start/ssr/'
       preLoaderRoute: typeof DemoStartSsrIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/ssr/spa-mode': {
-      id: '/demo/start/ssr/spa-mode'
-      path: '/demo/start/ssr/spa-mode'
-      fullPath: '/demo/start/ssr/spa-mode'
-      preLoaderRoute: typeof DemoStartSsrSpaModeRouteImport
+    '/demo/start/ssr/data-only': {
+      id: '/demo/start/ssr/data-only'
+      path: '/demo/start/ssr/data-only'
+      fullPath: '/demo/start/ssr/data-only'
+      preLoaderRoute: typeof DemoStartSsrDataOnlyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/start/ssr/full-ssr': {
@@ -365,11 +365,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoStartSsrFullSsrRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/ssr/data-only': {
-      id: '/demo/start/ssr/data-only'
-      path: '/demo/start/ssr/data-only'
-      fullPath: '/demo/start/ssr/data-only'
-      preLoaderRoute: typeof DemoStartSsrDataOnlyRouteImport
+    '/demo/start/ssr/spa-mode': {
+      id: '/demo/start/ssr/spa-mode'
+      path: '/demo/start/ssr/spa-mode'
+      fullPath: '/demo/start/ssr/spa-mode'
+      preLoaderRoute: typeof DemoStartSsrSpaModeRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
