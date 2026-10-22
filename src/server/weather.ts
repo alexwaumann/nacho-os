@@ -61,7 +61,7 @@ function mapWmoCodeToCondition(wmoCode: number): string {
  * Fetch weather data from Open-Meteo API (no API key required)
  */
 export const fetchWeather = createServerFn({ method: "POST" })
-  .inputValidator((data: { coordinates: Coordinates }) => data)
+  .validator((data: { coordinates: Coordinates }) => data)
   .handler(async ({ data }) => {
     const { coordinates } = data;
 
@@ -96,7 +96,7 @@ export const fetchWeather = createServerFn({ method: "POST" })
  * Fetch extended weather forecast (7 days)
  */
 export const fetchExtendedForecast = createServerFn({ method: "POST" })
-  .inputValidator((data: { coordinates: Coordinates; days?: number }) => data)
+  .validator((data: { coordinates: Coordinates; days?: number }) => data)
   .handler(async ({ data }) => {
     const { coordinates, days = 7 } = data;
 
@@ -163,7 +163,7 @@ function toSlot(
  * Fetch current conditions plus the hourly forecast starting at the current hour
  */
 export const fetchHourlyForecast = createServerFn({ method: "POST" })
-  .inputValidator((data: { coordinates: Coordinates; hours?: number }) => data)
+  .validator((data: { coordinates: Coordinates; hours?: number }) => data)
   .handler(async ({ data }) => {
     const { coordinates, hours = 8 } = data;
 

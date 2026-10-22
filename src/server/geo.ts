@@ -48,7 +48,7 @@ function getApiKey() {
  * Geocode an address to coordinates using Google Geocoding API
  */
 export const geocodeAddress = createServerFn({ method: "POST" })
-  .inputValidator((data: { address: string }) => data)
+  .validator((data: { address: string }) => data)
   .handler(async ({ data }) => {
     const apiKey = getApiKey();
     const encodedAddress = encodeURIComponent(data.address);
@@ -93,7 +93,7 @@ export const geocodeAddress = createServerFn({ method: "POST" })
  * Get place suggestions using Google Places Autocomplete API (New)
  */
 export const getPlaceSuggestions = createServerFn({ method: "POST" })
-  .inputValidator((data: { query: string; userCoordinates?: Coordinates }) => data)
+  .validator((data: { query: string; userCoordinates?: Coordinates }) => data)
   .handler(async ({ data }) => {
     if (!data.query || data.query.length < 2) {
       return [] as Array<PlaceSuggestion>;
@@ -155,7 +155,7 @@ export const getPlaceSuggestions = createServerFn({ method: "POST" })
  * Optimize route using Google Routes API
  */
 export const optimizeRoute = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (data: {
       origin: Coordinates;
       destination: Coordinates;
@@ -266,7 +266,7 @@ export const optimizeRoute = createServerFn({ method: "POST" })
  * Fetch route matrix for distance calculations
  */
 export const fetchRouteMatrix = createServerFn({ method: "POST" })
-  .inputValidator((data: { origins: Array<Coordinates>; destinations: Array<Coordinates> }) => data)
+  .validator((data: { origins: Array<Coordinates>; destinations: Array<Coordinates> }) => data)
   .handler(async ({ data }) => {
     const apiKey = getApiKey();
     const url = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
@@ -334,7 +334,7 @@ function parseDuration(duration: string): number {
  * Route: currentLocation -> waypoints (in order) -> destination (home or last waypoint)
  */
 export const calculateRouteMetrics = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (data: {
       origin: Coordinates;
       waypoints: Array<RouteWaypoint>;

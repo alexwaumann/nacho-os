@@ -77,7 +77,7 @@ function getGeminiClient() {
  * Analyze a receipt image and extract data
  */
 export const analyzeReceipt = createServerFn({ method: "POST" })
-  .inputValidator((data: { image: ImageInput }) => data)
+  .validator((data: { image: ImageInput }) => data)
   .handler(async ({ data }) => {
     const ai = getGeminiClient();
     const result = await ai.models.generateContent({
@@ -116,7 +116,7 @@ export const analyzeReceipt = createServerFn({ method: "POST" })
  * Analyze a check image and extract payment data
  */
 export const analyzeCheck = createServerFn({ method: "POST" })
-  .inputValidator((data: { image: ImageInput }) => data)
+  .validator((data: { image: ImageInput }) => data)
   .handler(async ({ data }) => {
     const ai = getGeminiClient();
     const result = await ai.models.generateContent({
@@ -158,7 +158,7 @@ export const analyzeCheck = createServerFn({ method: "POST" })
  * Analyze weather risk for tasks
  */
 export const analyzeWeatherRisk = createServerFn({ method: "POST" })
-  .inputValidator((data: { tasks: Array<TaskInput>; weather: WeatherData }) => data)
+  .validator((data: { tasks: Array<TaskInput>; weather: WeatherData }) => data)
   .handler(async ({ data }) => {
     const { tasks, weather } = data;
 

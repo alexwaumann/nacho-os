@@ -15,7 +15,7 @@ const MAX_AUDIO_BASE64_LENGTH = 4 * 1024 * 1024;
  * to make and a short reply; the client applies the edits so it can offer undo.
  */
 export const runVoiceCommand = createServerFn({ method: "POST" })
-  .inputValidator((data: VoiceCommandInput) => {
+  .validator((data: VoiceCommandInput) => {
     if (!data.audio.mimeType.startsWith("audio/")) throw new Error("Expected an audio recording");
     if (data.audio.base64.length > MAX_AUDIO_BASE64_LENGTH) throw new Error("Recording too long");
     return data;
@@ -33,7 +33,7 @@ export const runVoiceCommand = createServerFn({ method: "POST" })
  * the transcript, the ops and a short reply; the client applies the ops so it can offer undo.
  */
 export const runGlobalVoiceCommand = createServerFn({ method: "POST" })
-  .inputValidator((data: GlobalVoiceCommandInput) => {
+  .validator((data: GlobalVoiceCommandInput) => {
     if (!data.audio.mimeType.startsWith("audio/")) throw new Error("Expected an audio recording");
     if (data.audio.base64.length > MAX_AUDIO_BASE64_LENGTH) throw new Error("Recording too long");
     return data;

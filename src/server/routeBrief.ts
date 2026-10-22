@@ -46,7 +46,7 @@ const toMiles = (from: Coordinates | undefined, to: Coordinates | undefined) =>
  * Fetches each site's hourly forecast for today on the server.
  */
 export const generateRouteBrief = createServerFn({ method: "POST" })
-  .inputValidator((data: RouteBriefInput) => {
+  .validator((data: RouteBriefInput) => {
     if (data.stops.length === 0) throw new Error("No stops on the route");
     if (data.stops.length > MAX_STOPS) throw new Error("Too many stops on the route");
     // Throws a RangeError for unknown time zones
