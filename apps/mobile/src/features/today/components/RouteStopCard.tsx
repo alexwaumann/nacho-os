@@ -125,106 +125,116 @@ export function RouteStopCard({
       renderRightActions={renderRemoveAction}
       containerStyle={styles.swipeContainer}
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Stop ${stopNumber}, ${job.address}. ${status}`}
-        accessibilityHint="Opens the job. Swipe left to remove it from today's route."
-        accessibilityActions={accessibilityActions}
-        onAccessibilityAction={handleAccessibilityAction}
-        onPress={onOpen}
-        onLongPress={onDrag}
-        delayLongPress={300}
-        disabled={isDragging}
-        style={({ pressed }) => [
+      <View
+        style={[
           styles.card,
           {
             backgroundColor: colors.card,
             borderColor: isDragging ? colors.primary : colors.border,
-            opacity: pressed && !isDragging ? 0.85 : 1,
           },
           isDragging && styles.dragging,
         ]}
       >
-        <View style={styles.header}>
-          <View
-            style={[styles.badge, { backgroundColor: isDone ? colors.success : colors.primary }]}
-          >
-            {isDone ?
-              <SymbolView
-                name="checkmark"
-                size={20}
-                weight="heavy"
-                tintColor={colors.primaryForeground}
-              />
-            : <Text variant="label" tone="onPrimary" maxFontSizeMultiplier={1.4}>
-                {stopNumber}
-              </Text>
-            }
-          </View>
-          <Text variant="heading" style={[styles.address, isDone && styles.doneText]}>
-            {job.address}
-          </Text>
-          <SymbolView name="line.3.horizontal" size={22} tintColor={colors.mutedForeground} />
-        </View>
-
-        {accessCodes.length > 0 ?
-          <View style={styles.codes} accessibilityLabel={`Codes: ${accessCodes.join(", ")}`}>
-            {accessCodes.map((code) => (
-              <View
-                key={code}
-                style={[styles.code, { backgroundColor: colors.muted, borderColor: colors.border }]}
-              >
-                <SymbolView name="key.fill" size={18} tintColor={colors.mutedForeground} />
-                <Text variant="label" style={styles.codeText}>
-                  {code}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Stop ${stopNumber}, ${job.address}. ${status}`}
+          accessibilityHint="Opens the job. Swipe left to remove it from today's route."
+          accessibilityActions={accessibilityActions}
+          onAccessibilityAction={handleAccessibilityAction}
+          onPress={onOpen}
+          onLongPress={onDrag}
+          delayLongPress={300}
+          disabled={isDragging}
+          style={({ pressed }) => [styles.body, { opacity: pressed && !isDragging ? 0.7 : 1 }]}
+        >
+          <View style={styles.header}>
+            <View
+              style={[styles.badge, { backgroundColor: isDone ? colors.success : colors.primary }]}
+            >
+              {isDone ?
+                <SymbolView
+                  name="checkmark"
+                  size={20}
+                  weight="heavy"
+                  tintColor={colors.primaryForeground}
+                />
+              : <Text variant="label" tone="onPrimary" maxFontSizeMultiplier={1.4}>
+                  {stopNumber}
                 </Text>
-              </View>
-            ))}
-          </View>
-        : null}
-
-        {driveTime ?
-          <View style={styles.inline}>
-            <SymbolView name="car.fill" size={20} tintColor={colors.mutedForeground} />
-            <Text variant="label">{driveTime}</Text>
-          </View>
-        : null}
-
-        {isDone ? null : (
-          <HourlyForecastStrip
-            coordinates={job.coordinates}
-            arrivalTime={arrivalTime}
-            arrivalLabel="You get there around"
-          />
-        )}
-
-        {weatherNote && !isDone ?
-          <View style={styles.inline}>
-            <SymbolView name="exclamationmark.triangle.fill" size={20} tintColor={today.warning} />
-            <Text variant="body" style={[styles.flex, { color: today.warning }]}>
-              {weatherNote}
-            </Text>
-          </View>
-        : null}
-
-        {totalTasks > 0 ?
-          <View style={styles.progressRow}>
-            <View style={[styles.track, { backgroundColor: colors.muted }]}>
-              <View
-                style={[
-                  styles.fill,
-                  {
-                    width: `${Math.round(progress * 100)}%`,
-                    backgroundColor: isDone ? colors.success : colors.primary,
-                  },
-                ]}
-              />
+              }
             </View>
-            <Text variant="label" tone="muted">
-              {doneTasks}/{totalTasks}
+            <Text variant="heading" style={[styles.address, isDone && styles.doneText]}>
+              {job.address}
             </Text>
+            <SymbolView name="line.3.horizontal" size={22} tintColor={colors.mutedForeground} />
           </View>
-        : <Text tone="muted">{status}</Text>}
+
+          {accessCodes.length > 0 ?
+            <View style={styles.codes} accessibilityLabel={`Codes: ${accessCodes.join(", ")}`}>
+              {accessCodes.map((code) => (
+                <View
+                  key={code}
+                  style={[
+                    styles.code,
+                    { backgroundColor: colors.muted, borderColor: colors.border },
+                  ]}
+                >
+                  <SymbolView name="key.fill" size={18} tintColor={colors.mutedForeground} />
+                  <Text variant="label" style={styles.codeText}>
+                    {code}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          : null}
+
+          {driveTime ?
+            <View style={styles.inline}>
+              <SymbolView name="car.fill" size={20} tintColor={colors.mutedForeground} />
+              <Text variant="label">{driveTime}</Text>
+            </View>
+          : null}
+
+          {isDone ? null : (
+            <HourlyForecastStrip
+              coordinates={job.coordinates}
+              arrivalTime={arrivalTime}
+              arrivalLabel="You get there around"
+            />
+          )}
+
+          {weatherNote && !isDone ?
+            <View style={styles.inline}>
+              <SymbolView
+                name="exclamationmark.triangle.fill"
+                size={20}
+                tintColor={today.warning}
+              />
+              <Text variant="body" style={[styles.flex, { color: today.warning }]}>
+                {weatherNote}
+              </Text>
+            </View>
+          : null}
+
+          {totalTasks > 0 ?
+            <View style={styles.progressRow}>
+              <View style={[styles.track, { backgroundColor: colors.muted }]}>
+                <View
+                  style={[
+                    styles.fill,
+                    {
+                      width: `${Math.round(progress * 100)}%`,
+                      backgroundColor: isDone ? colors.success : colors.primary,
+                    },
+                  ]}
+                />
+              </View>
+              <Text variant="label" tone="muted">
+                {doneTasks}/{totalTasks}
+              </Text>
+            </View>
+          : <Text tone="muted">{status}</Text>}
+        </Pressable>
 
         {isDone ? null : (
           <ActionButton
@@ -234,7 +244,7 @@ export function RouteStopCard({
             onPress={onDirections}
           />
         )}
-      </Pressable>
+      </View>
     </ReanimatedSwipeable>
   );
 }
@@ -248,6 +258,7 @@ const styles = StyleSheet.create({
     padding: space.lg,
     gap: space.md,
   },
+  body: { gap: space.md },
   dragging: {
     borderWidth: 2,
     shadowColor: "#000",

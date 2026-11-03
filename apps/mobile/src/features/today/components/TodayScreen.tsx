@@ -19,6 +19,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo, openRouteDirections } from "@/lib/directions";
 import { space } from "@/lib/theme";
 
+import { useIsLargeText } from "../hooks/useIsLargeText";
 import { ActionButton } from "./ActionButton";
 import { AllStopsDoneCard } from "./AllStopsDoneCard";
 import { EmptyRouteCard } from "./EmptyRouteCard";
@@ -40,6 +41,7 @@ const showComingSoon = () => toast.info("Coming soon");
  */
 export function TodayScreen() {
   const { colors } = useTheme();
+  const isLargeText = useIsLargeText();
   const { stops, totals, homeCoordinates, homeLegSeconds, isLoaded } = useTodayRoute();
   const { orderedJobs, setOrder, getOrder } = useRouteOrder(stops);
   const { isOptimizing, recalculateRouteMetrics, clearRoute } = useRouteOptimization();
@@ -159,19 +161,19 @@ export function TodayScreen() {
               <ActivityIndicator color={colors.primary} accessibilityLabel="Updating the route" />
             : null}
           </View>
-          <View style={styles.buttonRow}>
+          <View style={[styles.buttonRow, isLargeText && styles.buttonColumn]}>
             <ActionButton
               title="Edit route"
               icon="pencil"
               onPress={handleEditRoute}
-              style={styles.flex}
+              style={isLargeText ? undefined : styles.flex}
             />
             <ActionButton
               title="Clear route"
               icon="xmark"
               variant="destructive"
               onPress={handleClearRoute}
-              style={styles.flex}
+              style={isLargeText ? undefined : styles.flex}
             />
           </View>
 
@@ -240,5 +242,6 @@ const styles = StyleSheet.create({
   header: { gap: space.lg, paddingBottom: space.lg },
   titleRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   buttonRow: { flexDirection: "row", gap: space.md },
+  buttonColumn: { flexDirection: "column" },
   cell: { paddingBottom: space.md },
 });

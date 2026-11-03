@@ -1,15 +1,13 @@
 import { SymbolView } from "expo-symbols";
-import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
+import { useIsLargeText } from "../hooks/useIsLargeText";
 import type { SFSymbol } from "../lib/symbols";
 import { getTodayColors } from "../lib/todayColors";
-
-// From this text size on, three tiles side by side don't fit, so they stack
-const STACK_AT_FONT_SCALE = 1.4;
 
 interface TodayActionsProps {
   onAddJob: () => void;
@@ -21,8 +19,7 @@ interface TodayActionsProps {
 export function TodayActions({ onAddJob, onScanReceipt, onScanCheck }: TodayActionsProps) {
   const { scheme, colors } = useTheme();
   const today = getTodayColors(scheme);
-  const { fontScale } = useWindowDimensions();
-  const isStacked = fontScale >= STACK_AT_FONT_SCALE;
+  const isStacked = useIsLargeText();
 
   return (
     <View style={[styles.row, isStacked && styles.stacked]}>
@@ -91,7 +88,8 @@ function ActionTile({
         variant="label"
         style={isStacked ? styles.labelStacked : styles.label}
         numberOfLines={2}
-        maxFontSizeMultiplier={isStacked ? undefined : 1.3}
+        // Side by side the tiles are narrow; stacked, one line still has to fit
+        maxFontSizeMultiplier={isStacked ? 1.6 : 1.3}
       >
         {label}
       </Text>
