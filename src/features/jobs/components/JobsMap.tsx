@@ -24,8 +24,7 @@ import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import type { LatLng } from "@/lib/geolocation";
 
 import { env } from "@/env";
-import { LOCATION_ERROR, LocationError, getCurrentLocation } from "@/lib/geolocation";
-import { isNativePluginAvailable } from "@/lib/native";
+import { describeLocationError, getCurrentLocation } from "@/lib/geolocation";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
 import { generateGoogleMapsUrl } from "@/server/geo";
@@ -57,22 +56,6 @@ const DEFAULT_CENTER = { lat: 32.7767, lng: -96.797 };
 const MAP_HEIGHT_CLASS = "h-[calc(100dvh-21rem)] min-h-80";
 
 const LOCATION_OPTIONS = { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 };
-
-function getGeolocationErrorMessage(error: unknown) {
-  if (error instanceof LocationError) {
-    if (error.isServicesOff) {
-      return "Turn on Location Services in Settings > Privacy & Security > Location Services.";
-    }
-    if (error.code === LOCATION_ERROR.PERMISSION_DENIED) {
-      return isNativePluginAvailable("Geolocation") ?
-          "Location permission is blocked. Allow it in Settings > Nacho OS > Location."
-        : "Location permission is blocked. Allow it in your browser settings.";
-    }
-    if (error.code === LOCATION_ERROR.TIMEOUT) return "Timed out finding your location.";
-    return "Your location is unavailable right now.";
-  }
-  return error instanceof Error ? error.message : "Unknown error";
-}
 
 interface JobsMapProps {
   // The page's status filter; it picks the plain pins. Route stops always show.
@@ -442,7 +425,7 @@ function MapControls({
     } catch (error) {
       console.error("Geolocation failed:", error);
       toast.error("Couldn't get your location", {
-        description: getGeolocationErrorMessage(error),
+        description: describeLocationError(error),
       });
     } finally {
       setIsLocating(false);

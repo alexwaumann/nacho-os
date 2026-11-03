@@ -64,6 +64,26 @@ function toLocationError(error: unknown): LocationError {
 }
 
 /**
+ * What to tell him when getting his location failed, worded for where he is: the iOS app points at
+ * the Settings app, the browser at its own settings. A timeout or no signal isn't a permission
+ * problem, so it just says to try again.
+ */
+export function describeLocationError(error: unknown): string {
+  if (!(error instanceof LocationError)) {
+    return error instanceof Error ? error.message : "Unknown error";
+  }
+  if (error.isServicesOff) {
+    return "Turn on Location Services in Settings > Privacy & Security > Location Services.";
+  }
+  if (error.code === LOCATION_ERROR.PERMISSION_DENIED) {
+    return isNativePluginAvailable("Geolocation") ?
+        "Allow location in Settings > Nacho OS > Location, then try again."
+      : "Location permission is blocked. Allow it in your browser settings.";
+  }
+  return "Couldn't get your location right now. Please try again.";
+}
+
+/**
  * The iOS plugin ignores `maximumAge` (every call is a fresh fix) and gives up after 5 s when no
  * timeout is passed, which a cold GPS often misses. So the app keeps its own last fix, waits at
  * least this long for a new one, and shares one plugin call between overlapping requests.

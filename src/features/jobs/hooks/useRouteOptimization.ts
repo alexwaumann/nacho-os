@@ -5,11 +5,7 @@ import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import type { Coordinates, RouteWaypoint } from "@/server/geo";
-import {
-  LOCATION_ERROR,
-  LocationError,
-  getCurrentLocation as getDeviceLocation,
-} from "@/lib/geolocation";
+import { describeLocationError, getCurrentLocation as getDeviceLocation } from "@/lib/geolocation";
 import { calculateRouteMetrics, geocodeAddress, optimizeRoute } from "@/server/geo";
 
 type Job = Doc<"jobs">;
@@ -41,20 +37,7 @@ export function useRouteOptimization() {
         maximumAge: 60000,
       });
     } catch (error) {
-      if (!(error instanceof LocationError)) throw error;
-      let message = "Unable to get your location";
-      switch (error.code) {
-        case LOCATION_ERROR.PERMISSION_DENIED:
-          message = "Location access denied. Please enable location permissions.";
-          break;
-        case LOCATION_ERROR.POSITION_UNAVAILABLE:
-          message = "Location information is unavailable.";
-          break;
-        case LOCATION_ERROR.TIMEOUT:
-          message = "Location request timed out.";
-          break;
-      }
-      throw new Error(message);
+      throw new Error(describeLocationError(error));
     }
   }, []);
 

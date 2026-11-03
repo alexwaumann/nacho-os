@@ -4,6 +4,7 @@ import {
   LOCATION_ERROR,
   LocationError,
   NATIVE_MIN_TIMEOUT,
+  describeLocationError,
   getCurrentLocation,
   requestLocationPermission,
   resetNativeLocationCache,
@@ -246,5 +247,73 @@ describe("watchLocationPermission in the app", () => {
     await vi.waitFor(() => expect(onChange).toHaveBeenCalledWith("granted"));
     expect(mocks.addListener).not.toHaveBeenCalled();
     mocks.plugins.add("App");
+  });
+});
+
+describe("describeLocationError", () => {
+  const SETTINGS_APP = "Allow location in Settings > Nacho OS > Location, then try again.";
+  const SERVICES_OFF =
+    "Turn on Location Services in Settings > Privacy & Security > Location Services.";
+  const BROWSER_SETTINGS = "Location permission is blocked. Allow it in your browser settings.";
+  const TRY_AGAIN = "Couldn't get your location right now. Please try again.";
+
+  describe("in the iOS app", () => {
+    it.each([
+      ["OS-PLUG-GLOC-0003", SETTINGS_APP], // denied
+      ["OS-PLUG-GLOC-0008", SETTINGS_APP], // restricted
+      ["OS-PLUG-GLOC-0007", SERVICES_OFF], // Location Services off
+      ["OS-PLUG-GLOC-0010", TRY_AGAIN], // timeout
+      ["OS-PLUG-GLOC-0002", TRY_AGAIN], // anything else: position unavailable
+    ])("explains plugin error %s", async (code, expected) => {
+      mocks.getCurrentPosition.mockRejectedValue({ code, message: "failed" });
+      const error = await getCurrentLocation().catch((e: unknown) => e);
+      expect(describeLocationError(error)).toBe(expected);
+    });
+
+    it.each([
+      [LOCATION_ERROR.PERMISSION_DENIED, SETTINGS_APP],
+      [LOCATION_ERROR.POSITION_UNAVAILABLE, TRY_AGAIN],
+      [LOCATION_ERROR.TIMEOUT, TRY_AGAIN],
+    ])("explains code %i", (code, expected) => {
+      expect(describeLocationError(new LocationError(code, "failed"))).toBe(expected);
+    });
+  });
+
+  describe("in the browser", () => {
+    beforeEach(() => {
+      mocks.isNative = false;
+    });
+
+    it.each([
+      [LOCATION_ERROR.PERMISSION_DENIED, BROWSER_SETTINGS],
+      [LOCATION_ERROR.POSITION_UNAVAILABLE, TRY_AGAIN],
+      [LOCATION_ERROR.TIMEOUT, TRY_AGAIN],
+    ])("explains browser code %i", async (code, expected) => {
+      vi.stubGlobal("navigator", {
+        geolocation: {
+          getCurrentPosition: (_: PositionCallback, reject: PositionErrorCallback) =>
+            reject({ code, message: "failed" } as GeolocationPositionError),
+        },
+      });
+      const error = await getCurrentLocation().catch((e: unknown) => e);
+      expect(describeLocationError(error)).toBe(expected);
+    });
+  });
+
+  it("uses the app's denied wording only when the Geolocation plugin is there", () => {
+    mocks.plugins.delete("Geolocation");
+    try {
+      const error = new LocationError(LOCATION_ERROR.PERMISSION_DENIED, "failed");
+      expect(describeLocationError(error)).toBe(BROWSER_SETTINGS);
+    } finally {
+      mocks.plugins.add("Geolocation");
+    }
+  });
+
+  it("passes other errors through", () => {
+    expect(describeLocationError(new Error("Geolocation is not supported by your browser"))).toBe(
+      "Geolocation is not supported by your browser",
+    );
+    expect(describeLocationError("nope")).toBe("Unknown error");
   });
 });
