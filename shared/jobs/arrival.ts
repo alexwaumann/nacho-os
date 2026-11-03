@@ -1,4 +1,4 @@
-import { ON_SITE_MINUTES } from "../../../../convex/lib/routeTiming";
+import { ON_SITE_MINUTES } from "../../convex/lib/routeTiming";
 
 // Rough arrival times for the stops on today's route, in the device's local time
 

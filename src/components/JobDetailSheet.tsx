@@ -20,6 +20,7 @@ import {
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../convex/_generated/api";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
 
@@ -47,7 +48,6 @@ import { JobPhotosTab } from "@/features/photos/components/JobPhotosTab";
 import { clearPhotoIntent, usePhotoIntent } from "@/features/photos/store/photoIntent";
 import { VoiceCommandButton } from "@/features/voice/components/VoiceCommandButton";
 import { useImageViewer } from "@/hooks/useImageViewer";
-import { getErrorMessage } from "@/lib/errors";
 import { openExternal } from "@/lib/openExternal";
 import { cn, formatDueDate } from "@/lib/utils";
 

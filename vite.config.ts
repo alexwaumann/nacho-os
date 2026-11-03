@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -10,6 +11,10 @@ const config = defineConfig({
   resolve: {
     // Resolve the `@/*` alias from tsconfig.json natively (replaces vite-tsconfig-paths)
     tsconfigPaths: true,
+  },
+  test: {
+    // The Expo app (apps/mobile) is a separate project; shared/ tests run from here
+    exclude: ["**/node_modules/**", "**/.git/**", "apps/**"],
   },
   server: {
     // Allow the Tailscale MagicDNS hostname so `tailscale serve` can proxy to the dev server

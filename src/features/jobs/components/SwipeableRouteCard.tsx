@@ -9,10 +9,15 @@ import {
 } from "framer-motion";
 import { Check, CircleMinus, GripVertical } from "lucide-react";
 import { useRef, useState } from "react";
-import { getPointerVelocity, getSwipeCommit, getSwipeReveal, isSwipeArmed } from "../lib/swipe";
+import {
+  getPointerVelocity,
+  getSwipeCommit,
+  getSwipeReveal,
+  isSwipeArmed,
+} from "@shared/jobs/swipe";
 import { RouteJobCard } from "./RouteJobCard";
 import type { MotionValue, PanInfo } from "framer-motion";
-import type { PointerSample } from "../lib/swipe";
+import type { PointerSample } from "@shared/jobs/swipe";
 
 import type { Doc } from "../../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";

@@ -2,12 +2,12 @@ import { useMutation } from "convex/react";
 import { useRef } from "react";
 import { toast } from "sonner";
 
+import { getStreet, restoreStop } from "@shared/jobs/today";
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
-import { getStreet, restoreStop } from "../lib/today";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import { toastClassNames } from "@/features/voice/lib/voiceClient";
-import { getErrorMessage } from "@/lib/errors";
 
 type JobId = Id<"jobs">;
 

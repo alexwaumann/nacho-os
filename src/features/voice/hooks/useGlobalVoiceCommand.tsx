@@ -6,6 +6,9 @@ import { toast } from "sonner";
 
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 
+import { estimateRouteArrivals } from "@shared/jobs/arrival";
+import { buildJobSetKey, toLocalDateKey } from "@shared/jobs/routeBrief";
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
 import { VoiceResultDetails } from "../components/VoiceResultDetails";
 import {
@@ -41,9 +44,6 @@ import {
   useCurrentHour,
 } from "@/features/jobs/hooks/useHourlyForecast";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
-import { estimateRouteArrivals } from "@/features/jobs/lib/arrival";
-import { buildJobSetKey, toLocalDateKey } from "@/features/jobs/lib/routeBrief";
-import { getErrorMessage } from "@/lib/errors";
 
 type Job = Doc<"jobs">;
 type JobId = Id<"jobs">;

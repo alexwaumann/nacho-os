@@ -1,6 +1,6 @@
 import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { findNearestSlotIndex } from "../lib/arrival";
+import { findNearestSlotIndex } from "@shared/jobs/arrival";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Coordinates, HourlyForecastSlot } from "../../../../convex/lib/weather";

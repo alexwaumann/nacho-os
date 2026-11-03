@@ -5,8 +5,9 @@ import { Loader2, Receipt } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { getDefaultReceiptJobId, rankJobsForReceipt } from "@shared/receipts/rankJobs";
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
-import { getDefaultReceiptJobId, rankJobsForReceipt } from "../lib/rankJobs";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 import type { ImageData } from "@/lib/pdf";
@@ -21,7 +22,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUploadImage } from "@/hooks/useUploadImage";
-import { getErrorMessage } from "@/lib/errors";
 import { formatCurrency, formatDueDate } from "@/lib/utils";
 
 interface ReceiptDetectedModalProps {

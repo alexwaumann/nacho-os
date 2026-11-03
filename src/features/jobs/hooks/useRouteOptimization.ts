@@ -2,10 +2,10 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import type { Coordinates, RouteWaypoint } from "../../../../convex/lib/routing";
-import { getErrorMessage } from "@/lib/errors";
 import { describeLocationError, getCurrentLocation as getDeviceLocation } from "@/lib/geolocation";
 
 type Job = Doc<"jobs">;

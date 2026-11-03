@@ -2,11 +2,11 @@ import { useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 import { useUploadImage } from "@/hooks/useUploadImage";
-import { getErrorMessage } from "@/lib/errors";
 import { processJobPhoto } from "@/lib/pdf";
 
 /**

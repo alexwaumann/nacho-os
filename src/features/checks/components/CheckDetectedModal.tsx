@@ -5,6 +5,8 @@ import { Banknote, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { findBestAddressMatch } from "@shared/address";
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
@@ -20,8 +22,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUploadImage } from "@/hooks/useUploadImage";
-import { findBestAddressMatch } from "@/lib/address";
-import { getErrorMessage } from "@/lib/errors";
 import { formatCurrency } from "@/lib/utils";
 
 interface CheckDetectedModalProps {

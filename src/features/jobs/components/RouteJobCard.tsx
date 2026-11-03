@@ -1,5 +1,5 @@
 import { Car, CloudAlert, KeyRound } from "lucide-react";
-import { formatDriveTime } from "../lib/today";
+import { formatDriveTime } from "@shared/jobs/today";
 import { HourlyForecast } from "./HourlyForecast";
 import type { Doc } from "../../../../convex/_generated/dataModel";
 

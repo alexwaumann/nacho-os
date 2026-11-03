@@ -4,6 +4,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
 import { VoiceResultDetails } from "../components/VoiceResultDetails";
 import {
@@ -27,7 +28,6 @@ import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import type { VoiceFollowUp, VoiceJobState } from "../../../../convex/lib/voice/ops";
 import { requestPhoto } from "@/features/photos/store/photoIntent";
-import { getErrorMessage } from "@/lib/errors";
 
 type JobPhotos = Array<Doc<"jobPhotos">>;
 
