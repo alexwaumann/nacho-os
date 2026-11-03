@@ -200,6 +200,18 @@ messages, route/today/due-date math, receipt job ranking). Import it with `@shar
 - Tests sit next to the code (`*.test.ts`) and run from the repo root: `bun run test`.
 - The web app imports the same files through the same alias.
 
+## App helpers (use these, don't re-create them)
+
+- **Toasts:** `toast.success/error/info(title, { description, action: { label: "Undo", onPress }, duration, id })`
+  and `toastError(title, error)` from `@/components/ui/toast`. `toastError` shows a plain message via
+  `getErrorMessage`. `<Toaster />` is mounted once in `src/app/_layout.tsx` and draws above sheets.
+- **Location:** `getCurrentLocation()` from `@/lib/location` asks for permission and returns
+  `{ lat, lng }`, or throws a `LocationError` with a plain message (`describeLocationError`).
+  `isLocationSettingsError` tells you when to offer `Linking.openSettings()`.
+- **Directions:** `openDirectionsTo(address)` and `openRouteDirections(stops, homeCoordinates)`
+  from `@/lib/directions` open Google Maps links (in the Google Maps app when it's installed),
+  built by `@shared/googleMaps`, the same as the web app.
+
 ## Native modules
 
 Every native module the app needs is already installed and in the dev client build, so feature

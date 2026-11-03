@@ -1,4 +1,4 @@
-import type { Coordinates } from "../../convex/lib/routing";
+import type { Coordinates } from "../convex/lib/routing";
 
 /**
  * Generate a Google Maps navigation URL
@@ -67,4 +67,12 @@ export function generateGoogleMapsUrl(
   }
 
   return url;
+}
+
+/**
+ * Google Maps driving directions from the current location to one address. Used for a single
+ * stop's "Directions" button, where the address text is what he'd type into Google Maps himself.
+ */
+export function generateGoogleMapsDirectionsUrl(destination: string): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=driving`;
 }
