@@ -7,6 +7,7 @@ import { getDueBadge } from "@shared/jobs/dueDate";
 import { getStatusActions, splitAccessCode, STATUS_LABELS } from "@shared/jobs/jobSheet";
 import { Text } from "@/components/ui/text";
 import { toastError } from "@/components/ui/toast";
+import { JobVoiceButton } from "@/features/voice/components/JobVoiceButton";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo } from "@/lib/directions";
 import { minTapSize, radius, space } from "@/lib/theme";
@@ -64,7 +65,7 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
         <Text variant="title" style={styles.address} selectable>
           {job.address}
         </Text>
-        {/* VOICE: the per-job mic button goes here, next to More (a later PR) */}
+        <JobVoiceButton job={job} />
         <IconButton icon="ellipsis" accessibilityLabel="More actions" onPress={handleMore} />
       </View>
 

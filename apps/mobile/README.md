@@ -139,8 +139,9 @@ apps/mobile/
   signed-in `Stack.Protected` in `src/app/_layout.tsx`.
 - **Open a job** with `router.push({ pathname: "/job/[id]", params: { id } })` or
   `<Link href={{ pathname: "/job/[id]", params: { id } }} asChild>`.
-- **Voice mic** (later PR): goes in `<NativeTabs.BottomAccessory>` in `src/app/(tabs)/_layout.tsx`
-  (iOS 26 glass accessory above the tab bar, on every tab).
+- **Voice** (`src/features/voice/`): the global mic is `<NativeTabs.BottomAccessory>` in
+  `src/app/(tabs)/_layout.tsx` (its state lives in the layout: iOS draws the accessory twice), the
+  job mic sits in the job sheet's header. See "Testing voice in the Simulator" below.
 - **Naming** follows the root AGENTS.md: components PascalCase, hooks `useX`, UI primitives
   kebab-case, `handle*` event handlers, `is*`/`has*` booleans, `@/` imports after relative Convex
   ones.
@@ -240,6 +241,26 @@ installed, fall back to `https://www.google.com/maps/dir/?api=1&destination=<add
 at `~/.t3/nacho-devclient/NachoOS.app` (outside the repo). With JS-only changes, install that
 (`xcrun simctl install <udid> ~/.t3/nacho-devclient/NachoOS.app`) and run Metro from your worktree
 (`bun run start -- --port <port>`), so you don't need your own Xcode build.
+
+## Testing voice in the Simulator
+
+The Simulator's microphone is the Mac's, which hears nothing useful (and macOS may first ask
+whether "SimulatorTrampoline" may use the microphone; until that's answered, starting the mic
+times out with "The microphone didn't start"). In development builds a prepared clip can stand in
+for the microphone:
+
+```bash
+mkdir -p /tmp/voice-clips && cd /tmp/voice-clips      # outside the repo; don't commit clips
+say -o route.m4a --data-format=aac "What's on my route today?"
+python3 -m http.server 8765 --bind 127.0.0.1
+```
+
+Then open `nachoos://?voiceClip=http%3A%2F%2Flocalhost%3A8765%2Froute.m4a` on the Simulator (e.g.
+`agent-device open com.waumann.nachoos.native "<link>"`). It opens Today and arms the clip; the
+next tap on either mic runs the normal Listening → Send flow without touching the microphone and
+sends the clip. Add `&voiceMime=text%2Fplain` to make the server reject it (error + Try again).
+The link is ignored in release builds (`__DEV__`). Undo every change a test makes: the data is
+shared with the live website.
 
 ## Metro (why `metro.config.js` exists)
 
