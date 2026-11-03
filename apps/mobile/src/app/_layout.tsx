@@ -59,6 +59,16 @@ function RootNavigator() {
             }}
           />
           <Stack.Screen
+            name="add-job"
+            options={{
+              presentation: "formSheet",
+              sheetAllowedDetents: [0.75, 1],
+              sheetGrabberVisible: true,
+              sheetCornerRadius: 28,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          />
+          <Stack.Screen
             name="image-viewer"
             options={{ presentation: "fullScreenModal", animation: "fade" }}
           />
