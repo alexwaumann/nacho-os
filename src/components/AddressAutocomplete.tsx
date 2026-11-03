@@ -1,10 +1,10 @@
+import { useAction } from "convex/react";
 import { Check, Loader2, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import type { PlaceSuggestion } from "@/server/geo";
-
+import { api } from "../../convex/_generated/api";
+import type { PlaceSuggestion } from "../../convex/lib/routing";
 import { cn } from "@/lib/utils";
-import { getPlaceSuggestions } from "@/server/geo";
 
 interface AddressAutocompleteProps {
   value?: string;
@@ -23,6 +23,7 @@ export function AddressAutocomplete({
   userCoordinates,
   autoFocus,
 }: AddressAutocompleteProps) {
+  const getPlaceSuggestions = useAction(api.maps.getPlaceSuggestions);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value ?? "");
   const [suggestions, setSuggestions] = useState<Array<PlaceSuggestion>>([]);
@@ -53,9 +54,7 @@ export function AddressAutocomplete({
     const timeout = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const results = await getPlaceSuggestions({
-          data: { query, userCoordinates },
-        });
+        const results = await getPlaceSuggestions({ query, userCoordinates });
         setSuggestions(results);
       } catch (error) {
         console.error("Failed to fetch suggestions:", error);
@@ -66,7 +65,7 @@ export function AddressAutocomplete({
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [query, userCoordinates]);
+  }, [query, userCoordinates, getPlaceSuggestions]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
