@@ -58,6 +58,10 @@ function RootNavigator() {
               contentStyle: { backgroundColor: colors.background },
             }}
           />
+          <Stack.Screen
+            name="image-viewer"
+            options={{ presentation: "fullScreenModal", animation: "fade" }}
+          />
         </Stack.Protected>
 
         <Stack.Protected guard={!isSignedIn}>
