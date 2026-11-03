@@ -1,39 +1,14 @@
-import { useQuery } from "convex/react";
 import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, ScrollView, StyleSheet } from "react-native";
 
-import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { Text } from "@/components/ui/text";
-import { space } from "@/lib/theme";
+import { JobDetailSheet } from "@/features/job-detail/components/JobDetailSheet";
 
 /**
  * Job detail, presented as a native sheet (see the root layout: formSheet with detents).
- * Placeholder until the Job detail sheet PR. Open it with `router.push("/job/<id>")` or
- * `<Link href={{ pathname: "/job/[id]", params: { id } }}>`.
+ * Open it with `router.push({ pathname: "/job/[id]", params: { id } })`; add `tab` ("tasks",
+ * "info", "money", "photos") to open a specific tab instead of the job's default one.
  */
 export default function JobSheet() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const job = useQuery(api.jobs.get, { jobId: id as Id<"jobs"> });
-
-  return (
-    <ScrollView contentContainerStyle={styles.content}>
-      {job === undefined ?
-        <ActivityIndicator size="large" />
-      : job === null ?
-        <Text variant="heading">Job not found</Text>
-      : <>
-          <Text variant="title">{job.address}</Text>
-          {job.summary ?
-            <Text>{job.summary}</Text>
-          : null}
-          <Text tone="muted">Job details are coming soon.</Text>
-        </>
-      }
-    </ScrollView>
-  );
+  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
+  return <JobDetailSheet key={id} jobId={id as Id<"jobs">} initialTab={tab} />;
 }
-
-const styles = StyleSheet.create({
-  content: { padding: space.xl, paddingTop: space.xxl, gap: space.md },
-});
