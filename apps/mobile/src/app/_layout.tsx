@@ -58,6 +58,7 @@ function RootNavigator() {
               contentStyle: { backgroundColor: colors.background },
             }}
           />
+          <Stack.Screen name="edit-route" options={{ presentation: "modal" }} />
         </Stack.Protected>
 
         <Stack.Protected guard={!isSignedIn}>

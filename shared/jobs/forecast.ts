@@ -1,7 +1,7 @@
 // Picking which hourly forecast slots to show on a route card
 
-import type { HourlyForecast, HourlyForecastSlot } from "../../convex/lib/weather";
 import { findNearestSlotIndex } from "./arrival";
+import type { HourlyForecast, HourlyForecastSlot } from "../../convex/lib/weather";
 
 const HOUR = 60 * 60 * 1000;
 
