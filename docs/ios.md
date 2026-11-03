@@ -1,5 +1,8 @@
 # iOS app (Capacitor shell)
 
+> A native rewrite is under way in [`apps/mobile`](../apps/mobile/README.md) (Expo, bundle id
+> `com.waumann.nachoos.native`, installs next to this app). This shell stays until cutover.
+
 The iOS app is a thin [Capacitor 8](https://capacitorjs.com) wrapper: a native WKWebView that
 loads the live site at <https://nacho-os.netlify.app>. Nothing from `dist/` is bundled: the site is
 static files on Netlify and everything else (Gemini, voice, weather, geo, route brief) runs in
