@@ -10,6 +10,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getErrorMessage } from "@/lib/errors";
 import { cn, formatDueDate } from "@/lib/utils";
 
 type Job = Doc<"jobs">;
@@ -39,7 +40,7 @@ export function EmptyRouteCard({ onPlanRoute, onOpenJob }: EmptyRouteCardProps) 
     } catch (error) {
       console.error("Add to route failed:", error);
       toast.error("Couldn't add it to the route", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     } finally {
       setAddingJobId(null);

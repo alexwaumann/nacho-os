@@ -7,6 +7,7 @@ import { getStreet, restoreStop } from "../lib/today";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import { toastClassNames } from "@/features/voice/lib/voiceClient";
+import { getErrorMessage } from "@/lib/errors";
 
 type JobId = Id<"jobs">;
 
@@ -59,7 +60,7 @@ export function useRemoveRouteStop({
         console.error("Undo remove from route failed:", error);
         setOrder(getOrder().filter((id) => id !== jobId));
         toast.error("Couldn't put the stop back", {
-          description: error instanceof Error ? error.message : "Unknown error",
+          description: getErrorMessage(error),
           classNames: toastClassNames,
         });
         return;
@@ -91,7 +92,7 @@ export function useRemoveRouteStop({
         toast.dismiss(toastId);
         setOrder(restoreStop(getOrder(), job._id, index));
         toast.error("Couldn't remove the stop", {
-          description: error instanceof Error ? error.message : "Unknown error",
+          description: getErrorMessage(error),
           classNames: toastClassNames,
         });
         return;

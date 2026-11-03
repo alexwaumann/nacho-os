@@ -43,6 +43,7 @@ import {
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
 import { estimateRouteArrivals } from "@/features/jobs/lib/arrival";
 import { buildJobSetKey, toLocalDateKey } from "@/features/jobs/lib/routeBrief";
+import { getErrorMessage } from "@/lib/errors";
 
 type Job = Doc<"jobs">;
 type JobId = Id<"jobs">;
@@ -180,7 +181,7 @@ export function useGlobalVoiceCommand() {
     } catch (error) {
       console.error("Voice undo failed:", error);
       toast.error("Couldn't undo", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     }
   };
@@ -307,7 +308,7 @@ export function useGlobalVoiceCommand() {
     } catch (error) {
       console.error("Saving voice changes failed:", error);
       toast.error("Couldn't save the changes", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsProcessing(false);

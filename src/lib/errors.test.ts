@@ -20,6 +20,6 @@ describe("getErrorMessage", () => {
   });
 
   it("falls back for anything else", () => {
-    expect(getErrorMessage("nope")).toBe("Something went wrong");
+    expect(getErrorMessage("nope")).toBe("Something went wrong. Please try again.");
   });
 });
