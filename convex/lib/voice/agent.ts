@@ -1,4 +1,5 @@
 import { ThinkingLevel } from "@google/genai";
+import { ConvexError } from "convex/values";
 import * as z from "zod";
 import { voiceResponseSchema } from "./ops";
 import type { GoogleGenAI } from "@google/genai";
@@ -146,7 +147,7 @@ export async function interpretVoiceCommand(
     parsed = voiceResponseSchema.parse(JSON.parse(text));
   } catch (error) {
     console.error("Failed to parse voice command JSON:", text, error);
-    throw new Error("Couldn't understand the response. Please try again.");
+    throw new ConvexError("Couldn't understand the response. Please try again.");
   }
 
   return {

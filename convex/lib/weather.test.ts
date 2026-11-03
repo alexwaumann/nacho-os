@@ -71,13 +71,11 @@ describe("fetchHourlyForecast", () => {
   it("throws when Open-Meteo fails", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: false,
-          statusText: "Bad Gateway",
-          json: () => Promise.resolve({}),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        statusText: "Bad Gateway",
+        json: () => Promise.resolve({}),
+      }),
     );
 
     await expect(fetchHourlyForecast({ lat: 0, lng: 0 })).rejects.toThrow(

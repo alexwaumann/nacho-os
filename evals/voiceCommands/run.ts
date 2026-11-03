@@ -13,14 +13,10 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-import { interpretVoiceCommand } from "../../src/features/voice/lib/agent";
-import {
-  applyVoiceOps,
-  buildVoiceContext,
-  getVoiceJobState,
-} from "../../src/features/voice/lib/ops";
+import { interpretVoiceCommand } from "../../convex/lib/voice/agent";
+import { applyVoiceOps, buildVoiceContext, getVoiceJobState } from "../../convex/lib/voice/ops";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { VoiceFollowUp, VoiceJobState } from "../../src/features/voice/lib/ops";
+import type { VoiceFollowUp, VoiceJobState } from "../../convex/lib/voice/ops";
 
 const { values: args } = parseArgs({
   options: {

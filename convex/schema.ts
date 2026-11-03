@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 // Reusable validators
-const coordinatesValidator = v.object({
+export const coordinatesValidator = v.object({
   lat: v.number(),
   lng: v.number(),
 });
@@ -15,7 +15,7 @@ const routeLegValidator = v.object({
   distanceValue: v.number(),
 });
 
-const taskValidator = v.object({
+export const taskValidator = v.object({
   id: v.string(),
   category: v.string(),
   taskName: v.string(),
@@ -41,7 +41,7 @@ const weatherDataValidator = v.object({
   code: v.number(),
 });
 
-const weatherRiskValidator = v.object({
+export const weatherRiskValidator = v.object({
   hasRisk: v.boolean(),
   reason: v.optional(v.string()),
 });

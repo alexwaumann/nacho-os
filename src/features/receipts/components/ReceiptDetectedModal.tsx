@@ -9,7 +9,7 @@ import { api } from "../../../../convex/_generated/api";
 import { getDefaultReceiptJobId, rankJobsForReceipt } from "../lib/rankJobs";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
-import type { ImageInput } from "@/server/gemini";
+import type { ImageData } from "@/lib/pdf";
 import type { ProcessedReceiptData } from "../hooks/useScanReceipt";
 import { JobPicker } from "@/components/JobPicker";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ interface ReceiptDetectedModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receiptData: ProcessedReceiptData;
-  imageData: ImageInput;
+  imageData: ImageData;
   onCancel: () => void;
 }
 

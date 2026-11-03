@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import * as z from "zod";
 import { VOICE_MODEL, VOICE_THINKING, omitEmpty } from "./agent";
 import { globalVoiceResponseSchema } from "./globalOps";
@@ -151,7 +152,7 @@ export async function interpretGlobalVoiceCommand(
     parsed = globalVoiceResponseSchema.parse(JSON.parse(text));
   } catch (error) {
     console.error("Failed to parse global voice command JSON:", text, error);
-    throw new Error("Couldn't understand the response. Please try again.");
+    throw new ConvexError("Couldn't understand the response. Please try again.");
   }
 
   return {

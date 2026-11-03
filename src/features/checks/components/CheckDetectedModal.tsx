@@ -9,7 +9,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 import type { ProcessedCheckData } from "../hooks/useAddCheck";
-import type { ImageInput } from "@/server/gemini";
+import type { ImageData } from "@/lib/pdf";
 import { JobPicker } from "@/components/JobPicker";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,7 @@ interface CheckDetectedModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   checkData: ProcessedCheckData;
-  imageData: ImageInput;
+  imageData: ImageData;
   onCancel: () => void;
 }
 

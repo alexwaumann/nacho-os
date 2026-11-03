@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 type Task = NonNullable<Doc<"jobs">["tasks"]>[number];
 type JobStatus = "pending" | "completed";

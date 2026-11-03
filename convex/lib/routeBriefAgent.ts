@@ -1,9 +1,10 @@
 import * as z from "zod";
-import { VOICE_MODEL, VOICE_THINKING } from "../../voice/lib/agent";
-import { ON_SITE_MINUTES } from "./arrival";
+import { ConvexError } from "convex/values";
+import { ON_SITE_MINUTES } from "./routeTiming";
+import { VOICE_MODEL, VOICE_THINKING } from "./voice/agent";
 import type { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-import type { WorkdayForecastSlot } from "@/server/weather";
+import type { WorkdayForecastSlot } from "./weather";
 
 // Server-only: writes the daily weather brief for the route with Gemini
 
@@ -258,7 +259,7 @@ export function sanitizeRouteBrief(
   miles?: RouteBriefAgentInput["miles"],
 ): RouteBrief {
   const headline = response.headline.trim();
-  if (!headline) throw new Error("The weather brief came back empty");
+  if (!headline) throw new ConvexError("The weather brief came back empty");
 
   const seen = new Set<number>();
   const siteNotes = response.siteNotes
@@ -322,7 +323,7 @@ export async function requestRouteBrief(
     parsed = routeBriefResponseSchema.parse(JSON.parse(text));
   } catch (error) {
     console.error("Failed to parse route brief JSON:", text, error);
-    throw new Error("Couldn't read the weather brief. Please try again.");
+    throw new ConvexError("Couldn't read the weather brief. Please try again.");
   }
 
   return {
