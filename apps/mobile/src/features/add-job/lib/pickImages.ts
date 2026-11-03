@@ -1,6 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
 import DocumentScanner, { ResponseType } from "react-native-document-scanner-plugin";
 
+import { clearToastsBeforePresenting } from "@/components/ui/toast";
+
 /** A picture on the phone, ready to upload */
 export interface PickedImage {
   uri: string;
@@ -34,6 +36,7 @@ const toPicked = (assets: ImagePicker.ImagePickerAsset[]): PickedImage[] =>
  * several pages). Returns the pages in order, or null if he cancelled.
  */
 export async function scanPaperwork(): Promise<PickedImage[] | null> {
+  await clearToastsBeforePresenting();
   let result;
   try {
     result = await DocumentScanner.scanDocument({
@@ -53,6 +56,7 @@ export async function scanPaperwork(): Promise<PickedImage[] | null> {
 
 /** Take one photo with the camera. Returns null if he cancelled. */
 export async function takePhoto(): Promise<PickedImage[] | null> {
+  await clearToastsBeforePresenting();
   const permission = await ImagePicker.requestCameraPermissionsAsync();
   if (!permission.granted) {
     throw new PickImagesError(
@@ -76,6 +80,7 @@ export async function takePhoto(): Promise<PickedImage[] | null> {
 export async function choosePhotos({ isMultiple = true }: { isMultiple?: boolean } = {}): Promise<
   PickedImage[] | null
 > {
+  await clearToastsBeforePresenting();
   try {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],

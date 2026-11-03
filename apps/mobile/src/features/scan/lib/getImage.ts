@@ -7,8 +7,7 @@ import type { CaptureSource, CapturedImage } from "./capture";
 
 // iOS ignores a new screen (scanner, camera, photo picker) presented while an action sheet or
 // alert is still animating away, and the picker's promise then never settles. Wait it out.
-// The same happens while a toast is up: its overlay window becomes the key window, which the
-// pickers present from. So toasts are cleared first, and are gone after the wait.
+// Toasts are cleared first too (see clearToastsBeforePresenting); they're gone after the wait.
 const DISMISS_ANIMATION_MS = 450;
 const waitForDismiss = () => new Promise((resolve) => setTimeout(resolve, DISMISS_ANIMATION_MS));
 

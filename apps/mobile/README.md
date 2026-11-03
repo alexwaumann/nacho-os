@@ -205,6 +205,8 @@ messages, route/today/due-date math, receipt job ranking). Import it with `@shar
 - **Toasts:** `toast.success/error/info(title, { description, action: { label: "Undo", onPress }, duration, id })`
   and `toastError(title, error)` from `@/components/ui/toast`. `toastError` shows a plain message via
   `getErrorMessage`. `<Toaster />` is mounted once in `src/app/_layout.tsx` and draws above sheets.
+  Call `await clearToastsBeforePresenting()` before opening a photo picker, camera or scanner:
+  iOS ignores those while a toast's overlay window is up.
 - **Location:** `getCurrentLocation()` from `@/lib/location` asks for permission and returns
   `{ lat, lng }`, or throws a `LocationError` with a plain message (`describeLocationError`).
   `isLocationSettingsError` tells you when to offer `Linking.openSettings()`.

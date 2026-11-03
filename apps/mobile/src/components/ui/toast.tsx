@@ -77,6 +77,21 @@ export const toast = {
   dismiss,
 };
 
+// How long the toast overlay window takes to go away after the last toast is dismissed
+const OVERLAY_CLOSE_MS = 450;
+
+/**
+ * Call before presenting a system screen (photo picker, camera, document scanner). While a toast
+ * is up, its overlay window is the key window, and iOS silently ignores screens presented from
+ * it, so the picker never opens. Clears the toasts and waits for the overlay to close; does
+ * nothing (and doesn't wait) when no toast is showing.
+ */
+export async function clearToastsBeforePresenting() {
+  if (toasts.length === 0) return;
+  dismiss();
+  await new Promise((resolve) => setTimeout(resolve, OVERLAY_CLOSE_MS));
+}
+
 /**
  * An error toast whose description is a plain message for `error` (Convex server errors become
  * "Something went wrong. Please try again."). Logs the full error for debugging.
