@@ -6,9 +6,11 @@ import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { isPdf } from "@convex/lib/media";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { openImageViewer } from "@/features/job-detail/lib/imageViewer";
+import { openPdfViewer } from "@/features/job-detail/lib/pdfViewer";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -81,9 +83,34 @@ export function FooterButtons({ children }: { children: ReactNode }) {
   return <View style={styles.footerButtons}>{children}</View>;
 }
 
-/** The photo being read; tap to see it full screen */
+/** The photo (or PDF) being read; tap to see it full screen */
 export function PhotoPreview({ image, caption }: { image: CapturedImage; caption: string }) {
   const { colors } = useTheme();
+  if (isPdf(image.mimeType)) {
+    const name = image.name ?? "PDF";
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${caption}: ${name}. Tap to open it.`}
+        onPress={() => openPdfViewer({ uri: image.uri, title: name })}
+        style={({ pressed }) => [
+          styles.pdf,
+          { borderColor: colors.border, backgroundColor: colors.muted, opacity: pressed ? 0.8 : 1 },
+        ]}
+      >
+        <SymbolView name="doc.richtext" size={40} tintColor={colors.primary} />
+        <View style={styles.flex}>
+          <Text variant="label" numberOfLines={2}>
+            {name}
+          </Text>
+          <Text variant="caption" tone="muted">
+            PDF · Tap to open it
+          </Text>
+        </View>
+        <SymbolView name="chevron.right" size={20} tintColor={colors.mutedForeground} />
+      </Pressable>
+    );
+  }
   return (
     <Pressable
       accessibilityRole="imagebutton"
@@ -191,6 +218,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   previewImage: { width: "100%", height: 320 },
+  pdf: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    padding: space.lg,
+    minHeight: 88,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: radius.lg,
+    borderCurve: "continuous",
+  },
   state: { gap: space.lg },
   readingRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   errorBox: { borderWidth: 1, borderRadius: radius.lg, padding: space.lg, gap: space.sm },

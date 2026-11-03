@@ -6,14 +6,18 @@ import DocumentScanner, {
   ScanDocumentResponseStatus,
 } from "react-native-document-scanner-plugin";
 
-/** Where a receipt or check photo comes from */
-export type CaptureSource = "scanner" | "camera" | "library";
+import { assertFileSize, ChooseFileError, chooseFiles, MAX_SCAN_FILE_BYTES } from "./chooseFile";
 
-/** A photo on the phone, ready to read and upload */
+/** Where a receipt or check photo comes from ("file": a PDF or picture in the Files app) */
+export type CaptureSource = "scanner" | "camera" | "library" | "file";
+
+/** A photo (or a PDF from Files) on the phone, ready to read and upload */
 export interface CapturedImage {
   /** file:// URI in the app's cache */
   uri: string;
   mimeType: string;
+  /** The file's name, for one chosen in Files */
+  name?: string;
 }
 
 /** Why a capture failed, with a plain message to show him */
@@ -40,8 +44,9 @@ const SOURCE_LABELS: Record<CaptureSource, string> = {
   scanner: "Scan it",
   camera: "Take a photo",
   library: "Choose from Photos",
+  file: "Choose a file",
 };
-const SOURCES: CaptureSource[] = ["scanner", "camera", "library"];
+const SOURCES: CaptureSource[] = ["scanner", "camera", "library", "file"];
 
 /**
  * Ask where the photo comes from with the native action sheet. Resolves to null if he cancels.
@@ -123,6 +128,26 @@ async function choosePhoto(): Promise<CapturedImage | null> {
   );
 }
 
+/** A PDF or picture from Files, small enough for the reading action (about 3 MB) */
+async function chooseFile(): Promise<CapturedImage | null> {
+  let files;
+  try {
+    files = await chooseFiles();
+  } catch (error) {
+    if (error instanceof ChooseFileError) throw new CaptureError(error.message);
+    throw error;
+  }
+  const file = files?.[0];
+  if (!file) return null;
+  try {
+    assertFileSize(file, MAX_SCAN_FILE_BYTES, "Try a photo of it instead.");
+  } catch (error) {
+    if (error instanceof ChooseFileError) throw new CaptureError(error.message);
+    throw error;
+  }
+  return { uri: file.uri, mimeType: file.mimeType, name: file.name };
+}
+
 function toCapturedImage(result: ImagePicker.ImagePickerResult): CapturedImage | null {
   if (result.canceled) return null;
   const asset = result.assets[0];
@@ -132,8 +157,9 @@ function toCapturedImage(result: ImagePicker.ImagePickerResult): CapturedImage |
 }
 
 /**
- * Get one photo from the document scanner, the camera or the photo library. Resolves to null if
- * he backs out, and throws a CaptureError with a plain message when it can't.
+ * Get one photo from the document scanner, the camera or the photo library, or a PDF or picture
+ * from Files. Resolves to null if he backs out, and throws a CaptureError with a plain message
+ * when it can't.
  */
 export async function captureImage(source: CaptureSource): Promise<CapturedImage | null> {
   try {
@@ -144,6 +170,8 @@ export async function captureImage(source: CaptureSource): Promise<CapturedImage
         return await takePhoto();
       case "library":
         return await choosePhoto();
+      case "file":
+        return await chooseFile();
     }
   } catch (error) {
     if (error instanceof CaptureError) throw error;

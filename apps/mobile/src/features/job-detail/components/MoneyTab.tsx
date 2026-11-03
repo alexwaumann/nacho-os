@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
+import { isPdf } from "@convex/lib/media";
 import { formatIsoDate } from "@shared/calendar";
 import { formatMoney, getJobMoneySummary } from "@shared/jobs/jobSheet";
 import { Card } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
 import { openImageViewer } from "../lib/imageViewer";
+import { openPdfViewer } from "../lib/pdfViewer";
 import { ActionButton, EmptyNote, Section, WARNING } from "./SheetParts";
 
 type Receipts = FunctionReturnType<typeof api.receipts.listByJob>;
@@ -36,7 +38,10 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
   const dismissQueueItem = useMutation(api.receipts.dismissQueueItem);
   const summary = getJobMoneySummary(receipts, payment);
 
-  const receiptsWithImages = (receipts ?? []).filter((receipt) => receipt.imageUrl);
+  // PDF receipts open in the PDF viewer; the rest swipe through together in the image viewer
+  const receiptsWithImages = (receipts ?? []).filter(
+    (receipt) => receipt.imageUrl && !isPdf(receipt.imageContentType),
+  );
   const receiptImages = receiptsWithImages.map((receipt) => ({
     uri: receipt.imageUrl!,
     caption: `${receipt.storeName} · ${formatMoney(receipt.total)}`,
@@ -157,16 +162,16 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
               {payment.imageUrl ?
                 <ActionButton
                   title="View check"
-                  icon="photo"
+                  icon={isPdf(payment.imageContentType) ? "doc.richtext" : "photo"}
                   style={styles.flex}
-                  onPress={() =>
-                    openImageViewer([
-                      {
-                        uri: payment.imageUrl!,
-                        caption: `Check from ${payment.payerName || "Unknown"}`,
-                      },
-                    ])
-                  }
+                  onPress={() => {
+                    const caption = `Check from ${payment.payerName || "Unknown"}`;
+                    if (isPdf(payment.imageContentType)) {
+                      openPdfViewer({ uri: payment.imageUrl!, title: caption });
+                    } else {
+                      openImageViewer([{ uri: payment.imageUrl!, caption }]);
+                    }
+                  }}
                 />
               : null}
               <ActionButton
@@ -241,14 +246,19 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
                 {receipt.imageUrl ?
                   <ActionButton
                     title="View"
-                    icon="photo"
+                    icon={isPdf(receipt.imageContentType) ? "doc.richtext" : "photo"}
                     style={styles.flex}
                     accessibilityLabel={`View ${receipt.storeName} receipt`}
                     onPress={() =>
-                      openImageViewer(
-                        receiptImages,
-                        receiptsWithImages.findIndex((r) => r._id === receipt._id),
-                      )
+                      isPdf(receipt.imageContentType) ?
+                        openPdfViewer({
+                          uri: receipt.imageUrl!,
+                          title: `${receipt.storeName} · ${formatMoney(receipt.total)}`,
+                        })
+                      : openImageViewer(
+                          receiptImages,
+                          receiptsWithImages.findIndex((r) => r._id === receipt._id),
+                        )
                     }
                   />
                 : null}

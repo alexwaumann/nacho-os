@@ -44,6 +44,7 @@ export function JobDetailSheet({ jobId, initialTab }: JobDetailSheetProps) {
   const args = isAuthenticated ? { jobId } : "skip";
   const job = useQuery(api.jobs.get, args);
   const sourceImages = useQuery(api.jobs.getSourceImageUrls, args);
+  const sourceFile = useQuery(api.jobs.getSourceFileUrl, args);
   const receipts = useQuery(api.receipts.listByJob, args);
   const payment = useQuery(api.payments.getByJob, args);
   const receiptQueue = useQuery(api.receipts.listQueueByJob, args);
@@ -123,7 +124,12 @@ export function JobDetailSheet({ jobId, initialTab }: JobDetailSheetProps) {
         {activeTab === "tasks" ?
           <TasksTab job={job} mutations={mutations} />
         : activeTab === "info" ?
-          <InfoTab job={job} sourceImages={sourceImages} mutations={mutations} />
+          <InfoTab
+            job={job}
+            sourceImages={sourceImages}
+            sourceFile={sourceFile}
+            mutations={mutations}
+          />
         : activeTab === "money" ?
           <MoneyTab job={job} receipts={receipts} payment={payment} receiptQueue={receiptQueue} />
         : <PhotosTab jobId={jobId} photos={photos} />}

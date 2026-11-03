@@ -2,9 +2,11 @@ import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
+import type { FunctionReturnType } from "convex/server";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import type { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
 import { formatIsoDate } from "@shared/calendar";
 import { getDueBadge } from "@shared/jobs/dueDate";
@@ -16,21 +18,25 @@ import { minTapSize, radius, space } from "@/lib/theme";
 
 import type { useJobMutations } from "../hooks/useJobMutations";
 import { openImageViewer } from "../lib/imageViewer";
+import { openPdfViewer } from "../lib/pdfViewer";
 import { DatePickerModal } from "./DatePickerModal";
 import { TextEditModal } from "./EditModal";
 import { ActionButton, IconButton, Section, WARNING } from "./SheetParts";
 import { StatusSection } from "./StatusSection";
 
 type Mutations = ReturnType<typeof useJobMutations>;
+type SourceFile = FunctionReturnType<typeof api.jobs.getSourceFileUrl>;
 
 interface InfoTabProps {
   job: Doc<"jobs">;
   sourceImages: string[] | undefined;
+  /** The work order PDF, for a job sent from this app as a PDF */
+  sourceFile?: SourceFile;
   mutations: Mutations;
 }
 
 /** Everything about the job that isn't tasks or money */
-export function InfoTab({ job, sourceImages, mutations }: InfoTabProps) {
+export function InfoTab({ job, sourceImages, sourceFile, mutations }: InfoTabProps) {
   return (
     <View style={styles.tab}>
       <StatusSection job={job} mutations={mutations} />
@@ -49,7 +55,7 @@ export function InfoTab({ job, sourceImages, mutations }: InfoTabProps) {
 
       <NotesSection notes={job.notes ?? ""} onSave={mutations.setNotes} />
 
-      <WorkOrderSection images={sourceImages} />
+      <WorkOrderSection images={sourceImages} pdf={sourceFile} />
 
       <Text variant="caption" tone="muted">
         Added{" "}
@@ -255,9 +261,24 @@ function NotesSection({ notes, onSave }: { notes: string; onSave: Mutations["set
   );
 }
 
-/** The work order's pages (PDFs are stored as one image per page); tap one to see it big */
-function WorkOrderSection({ images }: { images: string[] | undefined }) {
+/**
+ * The work order: its pages (the website stores a PDF as one image per page; tap one to see it
+ * big), or the PDF itself when it was sent from this app
+ */
+function WorkOrderSection({ images, pdf }: { images: string[] | undefined; pdf?: SourceFile }) {
   const { colors } = useTheme();
+  if (pdf && (!images || images.length === 0)) {
+    return (
+      <Section title="Work order">
+        <ActionButton
+          title="Open the work order PDF"
+          icon="doc.richtext"
+          onPress={() => openPdfViewer({ uri: pdf.url, title: "Work order" })}
+          style={styles.leftButton}
+        />
+      </Section>
+    );
+  }
   if (!images || images.length === 0) return null;
 
   const viewerImages = images.map((uri, i) => ({
