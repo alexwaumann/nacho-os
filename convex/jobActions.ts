@@ -6,10 +6,10 @@ import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { extractJob } from "./lib/jobExtraction";
 import { geocodeAddress } from "./lib/geo";
+import { env } from "./env";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import type { AccessCode, SourceFile } from "./lib/jobExtraction";
-import { env } from "@/env";
 
 // Keep inline Gemini requests well under the 20MB request limit
 const MAX_SOURCE_FILE_BYTES = 15 * 1024 * 1024;
