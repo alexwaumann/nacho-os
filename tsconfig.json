@@ -2,12 +2,13 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "shared/**/*.ts",
     "convex/**/*.ts",
     "evals/**/*.ts",
     "*.config.js",
     "*.config.ts"
   ],
-  "exclude": ["old_src/**", "convex/_generated/**", "node_modules/**", "dist/**"],
+  "exclude": ["apps/**", "old_src/**", "convex/_generated/**", "node_modules/**", "dist/**"],
 
   "compilerOptions": {
     "target": "ES2022",
@@ -31,7 +32,8 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./shared/*"]
     }
   }
 }

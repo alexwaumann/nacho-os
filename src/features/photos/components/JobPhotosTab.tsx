@@ -3,6 +3,7 @@ import { Camera, Images, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
 import { useAddJobPhoto } from "../hooks/useAddJobPhoto";
 import { clearPhotoIntent, usePhotoIntent } from "../store/photoIntent";
@@ -12,7 +13,6 @@ import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { ImageViewer } from "@/components/ImageViewer";
 import { Button } from "@/components/ui/button";
 import { useImageViewer } from "@/hooks/useImageViewer";
-import { getErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 
 export type JobPhoto = Doc<"jobPhotos"> & { imageUrl: string | null };

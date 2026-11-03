@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { Link, createFileRoute } from "@tanstack/react-router";
 
+import { sortJobsByDueDate } from "@shared/jobs/dueDate";
 import { api } from "../../convex/_generated/api";
 
 import type { Id } from "../../convex/_generated/dataModel";
@@ -15,7 +16,6 @@ import { JobDetailSheet } from "@/components/JobDetailSheet";
 import { Input } from "@/components/ui/input";
 import { JobsMap } from "@/features/jobs/components/JobsMap";
 import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobSheet";
-import { sortJobsByDueDate } from "@/features/jobs/lib/dueDate";
 import { cn } from "@/lib/utils";
 
 const jobsSearchSchema = z.object({

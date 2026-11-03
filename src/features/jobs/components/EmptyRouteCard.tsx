@@ -4,13 +4,13 @@ import { convexQuery } from "@convex-dev/react-query";
 import { Loader2, MapPinned, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { getDueBadge, sortJobsByDueDate } from "../lib/dueDate";
+import { getDueBadge, sortJobsByDueDate } from "@shared/jobs/dueDate";
 
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getErrorMessage } from "@/lib/errors";
 import { cn, formatDueDate } from "@/lib/utils";
 
 type Job = Doc<"jobs">;

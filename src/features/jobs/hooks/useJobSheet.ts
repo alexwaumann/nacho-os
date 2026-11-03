@@ -5,12 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { convexQuery } from "@convex-dev/react-query";
 
+import { getDefaultJobSheetTab } from "@shared/jobs/jobSheetTab";
 import { api } from "../../../../convex/_generated/api";
-import { getDefaultJobSheetTab, jobSheetTabSchema } from "../lib/jobSheetTab";
+import { jobSheetTabSchema } from "../lib/jobSheetTab";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import type { JobSheetTab } from "../lib/jobSheetTab";
 
-export type { JobSheetTab } from "../lib/jobSheetTab";
+import type { JobSheetTab } from "@shared/jobs/jobSheetTab";
+
+export type { JobSheetTab } from "@shared/jobs/jobSheetTab";
 
 // Search params for the job detail sheet; spread into a route's search schema
 export const jobSheetSearchSchema = {

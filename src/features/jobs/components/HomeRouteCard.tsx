@@ -1,6 +1,6 @@
 import { Car, House } from "lucide-react";
-import { formatArrivalTime } from "../lib/arrival";
-import { formatDriveTime } from "../lib/today";
+import { formatArrivalTime } from "@shared/jobs/arrival";
+import { formatDriveTime } from "@shared/jobs/today";
 import { HourlyForecast } from "./HourlyForecast";
 
 import type { Coordinates } from "../../../../convex/lib/routing";

@@ -7,12 +7,12 @@ import {
   Route as RouteIcon,
 } from "lucide-react";
 
+import { getDueBadge } from "@shared/jobs/dueDate";
 import type { Doc } from "../../convex/_generated/dataModel";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { getDueBadge } from "@/features/jobs/lib/dueDate";
 import { cn, formatDueDate } from "@/lib/utils";
 
 type Job = Doc<"jobs">;

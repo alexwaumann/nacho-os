@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getDefaultReceiptJobId, rankJobsForReceipt } from "./rankJobs";
-import type { Doc } from "../../../../convex/_generated/dataModel";
+import type { Doc } from "../../convex/_generated/dataModel";
 
 const makeJob = (id: string, createdAt: number, extra: Partial<Doc<"jobs">> = {}): Doc<"jobs"> =>
   ({

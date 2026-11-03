@@ -11,8 +11,8 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
+import { formatArrivalTime } from "@shared/jobs/arrival";
 import { useHourlyForecast } from "../hooks/useHourlyForecast";
-import { formatArrivalTime } from "../lib/arrival";
 import type { LucideIcon } from "lucide-react";
 
 import type { Coordinates, HourlyForecastSlot } from "../../../../convex/lib/weather";

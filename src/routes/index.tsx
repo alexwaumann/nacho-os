@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { createFileRoute } from "@tanstack/react-router";
 
+import { getHomeLegSeconds, isRouteDone, isStopDone } from "@shared/jobs/today";
 import { api } from "../../convex/_generated/api";
 
 import type { Id } from "../../convex/_generated/dataModel";
@@ -25,7 +26,6 @@ import { jobSheetSearchSchema, useJobSheet } from "@/features/jobs/hooks/useJobS
 import { useRemoveRouteStop } from "@/features/jobs/hooks/useRemoveRouteStop";
 import { useRouteBrief } from "@/features/jobs/hooks/useRouteBrief";
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
-import { getHomeLegSeconds, isRouteDone, isStopDone } from "@/features/jobs/lib/today";
 import { ScanActions } from "@/features/scan/components/ScanActions";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";

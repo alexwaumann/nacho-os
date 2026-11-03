@@ -19,12 +19,12 @@ import { toast } from "sonner";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { getErrorMessage } from "@shared/errors";
 import { api } from "../../convex/_generated/api";
 import type { LocationPermission } from "@/lib/geolocation";
 import type { Theme } from "@/lib/theme";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
-import { getErrorMessage } from "@/lib/errors";
 import { useTheme } from "@/lib/theme";
 import { requestLocationPermission, watchLocationPermission } from "@/lib/geolocation";
 import { Label } from "@/components/ui/label";
