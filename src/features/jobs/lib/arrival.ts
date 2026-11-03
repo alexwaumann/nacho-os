@@ -1,4 +1,8 @@
+import { ON_SITE_MINUTES } from "../../../../convex/lib/routeTiming";
+
 // Rough arrival times for the stops on today's route, in the device's local time
+
+export { ON_SITE_MINUTES };
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -10,9 +14,6 @@ export function formatArrivalTime(time: number): string {
   const rounded = Math.round(time / QUARTER_HOUR) * QUARTER_HOUR;
   return new Date(rounded).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
-
-/** Time assumed at each stop when we don't know better */
-export const ON_SITE_MINUTES = 90;
 
 /** The work day doesn't start before this hour, even if the app is opened earlier */
 export const DAY_START_HOUR = 7;

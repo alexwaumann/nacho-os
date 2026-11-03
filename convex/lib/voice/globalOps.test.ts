@@ -8,7 +8,7 @@ import {
   planGlobalOps,
   summarizeForecastHour,
 } from "./globalOps";
-import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import type { GlobalState, GlobalVoiceOp } from "./globalOps";
 
 const task = (id: string, taskName: string, completed = false) => ({

@@ -1,4 +1,4 @@
-import { useMutation as useConvexMutationHook } from "convex/react";
+import { useAction, useMutation as useConvexMutationHook } from "convex/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { useEffect, useState } from "react";
@@ -14,7 +14,7 @@ import {
   formatHour,
   planGlobalOps,
   summarizeForecastHour,
-} from "../lib/globalOps";
+} from "../../../../convex/lib/voice/globalOps";
 import {
   FOLLOW_UP_MS,
   RESULT_TOAST_MS,
@@ -24,12 +24,17 @@ import {
   toVoiceAudio,
   toastClassNames,
 } from "../lib/voiceClient";
-import { splitVoiceChanges } from "../lib/ops";
+import { splitVoiceChanges } from "../../../../convex/lib/voice/ops";
 import { useSpokenReplies } from "./useSpokenReplies";
+import type { FunctionReturnType } from "convex/server";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
-import type { GlobalJobSheetTab, GlobalPlan, StopWeatherInput } from "../lib/globalOps";
-import type { VoiceFollowUp } from "../lib/ops";
+import type {
+  GlobalJobSheetTab,
+  GlobalPlan,
+  StopWeatherInput,
+} from "../../../../convex/lib/voice/globalOps";
+import type { VoiceFollowUp } from "../../../../convex/lib/voice/ops";
 import { requestPhoto } from "@/features/photos/store/photoIntent";
 import {
   hourlyForecastQueryOptions,
@@ -38,7 +43,6 @@ import {
 import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization";
 import { estimateRouteArrivals } from "@/features/jobs/lib/arrival";
 import { buildJobSetKey, toLocalDateKey } from "@/features/jobs/lib/routeBrief";
-import { runGlobalVoiceCommand } from "@/server/voice";
 
 type Job = Doc<"jobs">;
 type JobId = Id<"jobs">;
@@ -88,6 +92,7 @@ export function useGlobalVoiceCommand() {
     ),
   );
 
+  const runGlobalVoiceCommand = useAction(api.voice.runGlobalVoiceCommand);
   const updateJob = useConvexMutationHook(api.jobs.update);
   const updateStatus = useConvexMutationHook(api.jobs.updateStatus);
   const batchUpdateRouteSelection = useConvexMutationHook(api.jobs.batchUpdateRouteSelection);
@@ -197,7 +202,7 @@ export function useGlobalVoiceCommand() {
     ];
     setIsProcessing(true);
 
-    let result: Awaited<ReturnType<typeof runGlobalVoiceCommand>>;
+    let result: FunctionReturnType<typeof api.voice.runGlobalVoiceCommand>;
     let refs: ReturnType<typeof buildGlobalContext>["refs"];
     try {
       const [voiceAudio, stops] = await Promise.all([
@@ -212,7 +217,10 @@ export function useGlobalVoiceCommand() {
       });
       refs = built.refs;
       result = await runGlobalVoiceCommand({
-        data: { audio: voiceAudio, context: built.context, today: describeNow(), previous },
+        audio: voiceAudio,
+        context: built.context,
+        today: describeNow(),
+        previous,
       });
     } catch (error) {
       console.error("Global voice command failed:", error);

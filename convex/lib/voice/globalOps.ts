@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 import { applyVoiceOps, buildVoiceContext, getVoiceJobState, voiceOpSchema } from "./ops";
-import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import type { AppliedVoiceOps, VoiceFollowUp, VoiceOp } from "./ops";
 
 // The job-less voice agent: talks about all open jobs and today's route at once

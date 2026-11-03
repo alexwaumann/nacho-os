@@ -9,6 +9,10 @@ export type ImageInput = {
   mimeType: string;
 };
 
+export function createGeminiClient() {
+  return new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+}
+
 // Receipt extraction types
 export type ExtractedReceipt = {
   storeName: string;
@@ -22,7 +26,7 @@ export type ExtractedReceipt = {
  * Extract receipt data from an image using Gemini
  */
 export async function extractReceiptFromImage(image: ImageInput): Promise<ExtractedReceipt> {
-  const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+  const ai = createGeminiClient();
   const config: GenerateContentConfig = {
     responseMimeType: "application/json",
     responseSchema: {
@@ -98,5 +102,97 @@ Return ONLY valid JSON matching the schema.
   } catch (error) {
     console.error("Failed to parse receipt Gemini JSON:", text);
     throw new Error("Failed to parse receipt extraction response");
+  }
+}
+
+// Quick reads of a receipt or check photo before it's tied to a job ("scan first, pick the job
+// second"). Every field is optional: the client decides what's missing.
+
+export type ReceiptData = {
+  storeName?: string;
+  storeLocation?: string;
+  summary?: string;
+  total?: number;
+  date?: string;
+};
+
+export type CheckData = {
+  amount?: number;
+  payerName?: string;
+  date?: string;
+  detectedAddress?: string;
+};
+
+/**
+ * Read the store, total and date off a receipt image
+ */
+export async function scanReceiptImage(image: ImageInput): Promise<ReceiptData> {
+  const result = await createGeminiClient().models.generateContent({
+    model: "gemini-3.5-flash-lite",
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          storeName: { type: Type.STRING },
+          storeLocation: { type: Type.STRING },
+          summary: { type: Type.STRING },
+          total: { type: Type.NUMBER },
+          date: { type: Type.STRING },
+        },
+      },
+    },
+    contents: [
+      {
+        text: "Analyze this receipt image. Extract the Store Name. Look carefully at the header or footer for the Store Address (Street, City, State, Zip). Also extract a short summary of items, the Total amount, and the Date (MM/DD/YYYY).",
+      },
+      { inlineData: { data: image.base64, mimeType: image.mimeType } },
+    ],
+  });
+
+  const text = result.text ?? "";
+  try {
+    return JSON.parse(text) as ReceiptData;
+  } catch {
+    console.error("Failed to parse receipt JSON:", text);
+    return {};
+  }
+}
+
+/**
+ * Read the amount, payer, date and job address off a check image
+ */
+export async function scanCheckImage(image: ImageInput): Promise<CheckData> {
+  const result = await createGeminiClient().models.generateContent({
+    model: "gemini-3.5-flash-lite",
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          amount: { type: Type.NUMBER },
+          payerName: { type: Type.STRING },
+          date: { type: Type.STRING },
+          detectedAddress: {
+            type: Type.STRING,
+            description: "Address found in memo or address fields related to the service location.",
+          },
+        },
+      },
+    },
+    contents: [
+      {
+        text: "Analyze this bank check. Extract the written Amount (as a number), the Payer Name (top left), the Date written on the check (MM/DD/YYYY), and any Address found in the Memo line or on the check that indicates what job this is for.",
+      },
+      { inlineData: { data: image.base64, mimeType: image.mimeType } },
+    ],
+  });
+
+  const text = result.text ?? "";
+  try {
+    return JSON.parse(text) as CheckData;
+  } catch {
+    console.error("Failed to parse check JSON:", text);
+    return {};
   }
 }

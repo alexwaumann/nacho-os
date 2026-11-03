@@ -1,4 +1,4 @@
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,8 +14,8 @@ import { api } from "../../../../convex/_generated/api";
 import { useCurrentHour } from "./useHourlyForecast";
 
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
-import type { Coordinates } from "@/server/weather";
-import { generateRouteBrief } from "@/server/routeBrief";
+import type { Coordinates } from "../../../../convex/lib/workdayForecast";
+import { getErrorMessage } from "@/lib/errors";
 
 type Job = Doc<"jobs">;
 
@@ -60,8 +60,7 @@ export interface UseRouteBriefResult {
   dismissSuggestion: () => Promise<void>;
 }
 
-const errorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : "Something went wrong";
+const errorMessage = (error: unknown) => getErrorMessage(error);
 
 /**
  * Today's weather brief for the route. Generates it on its own once per day and set of route
@@ -86,6 +85,7 @@ export function useRouteBrief({
   const briefQuery = useQuery(
     convexQuery(api.routeBriefs.getForToday, hasSites ? { date, jobSetKey } : "skip"),
   );
+  const generateRouteBrief = useAction(api.routeBriefActions.generate);
   const saveBrief = useMutation(api.routeBriefs.save);
   const dismissSuggestionMutation = useMutation(api.routeBriefs.dismissSuggestion);
   const markSuggestionApplied = useMutation(api.routeBriefs.markSuggestionApplied);
@@ -137,34 +137,32 @@ export function useRouteBrief({
 
     try {
       const result = await generateRouteBrief({
-        data: {
-          today: new Date(now).toLocaleString("en-US", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          }),
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          startTime: getRouteStartTime(now),
-          homeCoordinates,
-          stops: routeJobs.map((job, index) => ({
-            address: job.address,
-            coordinates: job.coordinates,
-            legSeconds: job.travelTimeValue,
-            arrivalTime: arrivals[index],
-            pendingTasks: (job.tasks ?? [])
-              .filter((task) => !task.completed)
-              .map((task) => ({
-                taskName: task.taskName,
-                category: task.category,
-                area: task.area,
-                specificInstructions: task.specificInstructions,
-              })),
-            weatherRisk: job.weatherRisk,
-          })),
-        },
+        today: new Date(now).toLocaleString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        startTime: getRouteStartTime(now),
+        homeCoordinates,
+        stops: routeJobs.map((job, index) => ({
+          address: job.address,
+          coordinates: job.coordinates,
+          legSeconds: job.travelTimeValue,
+          arrivalTime: arrivals[index],
+          pendingTasks: (job.tasks ?? [])
+            .filter((task) => !task.completed)
+            .map((task) => ({
+              taskName: task.taskName,
+              category: task.category,
+              area: task.area,
+              specificInstructions: task.specificInstructions,
+            })),
+          weatherRisk: job.weatherRisk,
+        })),
       });
 
       await saveBrief({
@@ -192,7 +190,7 @@ export function useRouteBrief({
       inFlightRef.current = false;
       setIsGenerating(false);
     }
-  }, [jobs, homeCoordinates, saveBrief]);
+  }, [jobs, homeCoordinates, generateRouteBrief, saveBrief]);
 
   useEffect(() => {
     if (action === "generate") {

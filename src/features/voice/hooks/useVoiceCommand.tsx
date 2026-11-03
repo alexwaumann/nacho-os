@@ -1,4 +1,4 @@
-import { useMutation as useConvexMutationHook } from "convex/react";
+import { useAction, useMutation as useConvexMutationHook } from "convex/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { useEffect, useState } from "react";
@@ -6,7 +6,12 @@ import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
 import { VoiceResultDetails } from "../components/VoiceResultDetails";
-import { applyVoiceOps, buildVoiceContext, getVoiceJobState, splitVoiceChanges } from "../lib/ops";
+import {
+  applyVoiceOps,
+  buildVoiceContext,
+  getVoiceJobState,
+  splitVoiceChanges,
+} from "../../../../convex/lib/voice/ops";
 import {
   FOLLOW_UP_MS,
   RESULT_TOAST_MS,
@@ -17,11 +22,11 @@ import {
   toastClassNames,
 } from "../lib/voiceClient";
 import { useSpokenReplies } from "./useSpokenReplies";
+import type { FunctionReturnType } from "convex/server";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
-import type { VoiceFollowUp, VoiceJobState } from "../lib/ops";
+import type { VoiceFollowUp, VoiceJobState } from "../../../../convex/lib/voice/ops";
 import { requestPhoto } from "@/features/photos/store/photoIntent";
-import { runVoiceCommand } from "@/server/voice";
 
 type JobPhotos = Array<Doc<"jobPhotos">>;
 
@@ -43,6 +48,7 @@ interface PendingFollowUp extends VoiceFollowUp {
  */
 export function useVoiceCommand(job: Doc<"jobs"> | null | undefined) {
   const queryClient = useQueryClient();
+  const runVoiceCommand = useAction(api.voice.runVoiceCommand);
   const updateJob = useConvexMutationHook(api.jobs.update);
   const updateStatus = useConvexMutationHook(api.jobs.updateStatus);
   const setCaptions = useConvexMutationHook(api.jobPhotos.setCaptions);
@@ -105,15 +111,13 @@ export function useVoiceCommand(job: Doc<"jobs"> | null | undefined) {
         }
       : undefined;
     setIsProcessing(true);
-    let result: Awaited<ReturnType<typeof runVoiceCommand>>;
+    let result: FunctionReturnType<typeof api.voice.runVoiceCommand>;
     try {
       result = await runVoiceCommand({
-        data: {
-          audio: await toVoiceAudio(audio),
-          job: context,
-          today: describeToday(),
-          previous,
-        },
+        audio: await toVoiceAudio(audio),
+        job: context,
+        today: describeToday(),
+        previous,
       });
     } catch (error) {
       console.error("Voice command failed:", error);

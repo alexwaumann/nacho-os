@@ -13,14 +13,10 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { GoogleGenAI } from "@google/genai";
 
-import { interpretGlobalVoiceCommand } from "../../src/features/voice/lib/globalAgent";
-import { buildGlobalContext, planGlobalOps } from "../../src/features/voice/lib/globalOps";
+import { interpretGlobalVoiceCommand } from "../../convex/lib/voice/globalAgent";
+import { buildGlobalContext, planGlobalOps } from "../../convex/lib/voice/globalOps";
 import type { Doc, Id } from "../../convex/_generated/dataModel";
-import type {
-  GlobalFollowUp,
-  GlobalPlan,
-  GlobalVoiceOp,
-} from "../../src/features/voice/lib/globalOps";
+import type { GlobalFollowUp, GlobalPlan, GlobalVoiceOp } from "../../convex/lib/voice/globalOps";
 
 const { values: args } = parseArgs({
   options: {

@@ -1,9 +1,12 @@
+import { useAction } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import type { ImageInput } from "@/server/gemini";
-import { analyzeReceipt } from "@/server/gemini";
+import { api } from "../../../../convex/_generated/api";
+
+import type { ImageData } from "@/lib/pdf";
 import { toIsoDate } from "@/lib/date";
+import { getErrorMessage } from "@/lib/errors";
 import { processReceiptFile } from "@/lib/pdf";
 
 const RETRY_TOAST_MS = 30_000;
@@ -26,9 +29,10 @@ export type ProcessedReceiptData = {
  * Read a receipt photo or PDF before it is tied to a job ("scan first, pick the job second").
  */
 export function useScanReceipt() {
+  const analyzeReceipt = useAction(api.ai.analyzeReceipt);
   const [isProcessing, setIsProcessing] = useState(false);
   const [receiptData, setReceiptData] = useState<ProcessedReceiptData | null>(null);
-  const [imageData, setImageData] = useState<ImageInput | null>(null);
+  const [imageData, setImageData] = useState<ImageData | null>(null);
 
   const handleFileSelect = async (file: File) => {
     setIsProcessing(true);
@@ -40,7 +44,7 @@ export function useScanReceipt() {
       const image = await processReceiptFile(file);
 
       // 2. Read the receipt with Gemini
-      const result = await analyzeReceipt({ data: { image } });
+      const result = await analyzeReceipt({ image });
 
       if (!result.total) {
         throw new Error("Could not read the total. Try a closer, flatter photo.");
@@ -57,7 +61,7 @@ export function useScanReceipt() {
     } catch (error) {
       console.error("Failed to read receipt:", error);
       toast.error("Couldn't read the receipt", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error, "Something went wrong. Please try again."),
         duration: RETRY_TOAST_MS,
         classNames: toastClassNames,
         action: { label: "Try again", onClick: () => void handleFileSelect(file) },

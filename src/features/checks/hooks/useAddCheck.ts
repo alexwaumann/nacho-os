@@ -1,9 +1,12 @@
+import { useAction } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import type { ImageInput } from "@/server/gemini";
-import { analyzeCheck } from "@/server/gemini";
+import { api } from "../../../../convex/_generated/api";
+
+import type { ImageData } from "@/lib/pdf";
 import { toIsoDate } from "@/lib/date";
+import { getErrorMessage } from "@/lib/errors";
 import { processReceiptFile } from "@/lib/pdf";
 
 export type ProcessedCheckData = {
@@ -14,9 +17,10 @@ export type ProcessedCheckData = {
 };
 
 export function useAddCheck() {
+  const analyzeCheck = useAction(api.ai.analyzeCheck);
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkData, setCheckData] = useState<ProcessedCheckData | null>(null);
-  const [imageData, setImageData] = useState<ImageInput | null>(null);
+  const [imageData, setImageData] = useState<ImageData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileSelect = async (file: File) => {
@@ -28,8 +32,8 @@ export function useAddCheck() {
       const image = await processReceiptFile(file);
       setImageData(image);
 
-      // 2. Call server function to analyze check with Gemini
-      const result = await analyzeCheck({ data: { image } });
+      // 2. Read the check with Gemini
+      const result = await analyzeCheck({ image });
 
       if (!result.amount) {
         throw new Error("Could not extract amount from check");
@@ -46,7 +50,7 @@ export function useAddCheck() {
       setCheckData(processed);
     } catch (err) {
       console.error("Failed to process check:", err);
-      const message = err instanceof Error ? err.message : "Failed to process check";
+      const message = getErrorMessage(err, "Failed to process check");
       setError(message);
       toast.error("Failed to process check", {
         description: message,

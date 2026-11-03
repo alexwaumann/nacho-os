@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyVoiceOps, buildVoiceContext, voiceResponseSchema } from "./ops";
-import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import type { VoiceJobState, VoiceOp, VoicePhoto } from "./ops";
 
 const task = (id: string, taskName: string, completed = false) => ({
