@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.waumann.nachoos.native",
       "supportsTablet": false,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": ["comgooglemaps"]
       }
     },
     "plugins": [
@@ -23,6 +24,31 @@
           "backgroundColor": "#0085c8",
           "image": "./assets/splash-logo.png",
           "imageWidth": 400
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Nacho OS uses your location to plan today's route from where you are and to show you on the map."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Nacho OS lets you pick work orders, receipts, checks and job photos from your photo library.",
+          "cameraPermission": "Nacho OS uses the camera to photograph work orders, receipts, checks and job photos."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Nacho OS listens when you tap the mic so you can update jobs and your route by voice."
+        }
+      ],
+      [
+        "react-native-document-scanner-plugin",
+        {
+          "cameraPermission": "Nacho OS uses the camera to photograph work orders, receipts, checks and job photos."
         }
       ]
     ],

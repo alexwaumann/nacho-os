@@ -200,6 +200,35 @@ messages, route/today/due-date math, receipt job ranking). Import it with `@shar
 - Tests sit next to the code (`*.test.ts`) and run from the repo root: `bun run test`.
 - The web app imports the same files through the same alias.
 
+## Native modules
+
+Every native module the app needs is already installed and in the dev client build, so feature
+work is JavaScript-only. A rebuild is only needed after adding a native module or changing `app.json`:
+
+| Need                                 | Package                                               |
+| ------------------------------------ | ----------------------------------------------------- |
+| Apple Maps (in-app map)              | `react-native-maps` (default provider; no Google SDK) |
+| Current location                     | `expo-location`                                       |
+| Camera / photo library               | `expo-image-picker`                                   |
+| PDFs and other files                 | `expo-document-picker`, `expo-file-system`            |
+| Scanning receipts, checks, paperwork | `react-native-document-scanner-plugin` (VisionKit)    |
+| Showing images / PDFs                | `expo-image`, `react-native-webview`                  |
+| Voice recording / reading replies    | `expo-audio`, `expo-speech`                           |
+| Haptics, share sheet, clipboard      | `expo-haptics`, `expo-sharing`, `expo-clipboard`      |
+| Liquid Glass surfaces                | `expo-glass-effect`                                   |
+
+Versions are pinned to the newest releases that both pass Bun's 7-day minimum release age and
+are no newer than the installed `expo-modules-core`. Newer precompiled modules can crash at launch
+(see Gotchas). `app.json` holds the permission prompts and lists `comgooglemaps` in
+`LSApplicationQueriesSchemes`, so "Directions" can check whether the Google Maps app is installed.
+To open a place there, use `comgooglemaps://?daddr=<address>&directionsmode=driving`; if it isn't
+installed, fall back to `https://www.google.com/maps/dir/?api=1&destination=<address>`.
+
+**Prebuilt dev client for parallel work:** a simulator build of the current native setup is kept
+at `~/.t3/nacho-devclient/NachoOS.app` (outside the repo). With JS-only changes, install that
+(`xcrun simctl install <udid> ~/.t3/nacho-devclient/NachoOS.app`) and run Metro from your worktree
+(`bun run start -- --port <port>`), so you don't need your own Xcode build.
+
 ## Metro (why `metro.config.js` exists)
 
 The app imports `../../convex` and `../../shared`, which are outside the project, so they're in
