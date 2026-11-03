@@ -126,7 +126,7 @@ export function JobDetailSheet({ jobId, initialTab }: JobDetailSheetProps) {
           <InfoTab job={job} sourceImages={sourceImages} mutations={mutations} />
         : activeTab === "money" ?
           <MoneyTab job={job} receipts={receipts} payment={payment} receiptQueue={receiptQueue} />
-        : <PhotosTab photos={photos} />}
+        : <PhotosTab jobId={jobId} photos={photos} />}
       </View>
     </ScrollView>
   );
