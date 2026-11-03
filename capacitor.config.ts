@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * Native iOS shell for Nacho OS. The app is not bundled: the web view loads the deployed site
- * (server functions need the TanStack Start server), so `webDir` is only a placeholder page.
+ * Native iOS shell for Nacho OS. The app is not bundled: the web view loads the deployed site, so
+ * a web deploy reaches the app without a new native build, and `webDir` is only the offline page.
  *
  * Point the shell at a dev server with e.g.
  * `CAP_SERVER_URL=https://alex-macbook-pro.tailf22ce6.ts.net:3000 bun run ios:sync`.

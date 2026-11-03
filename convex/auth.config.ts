@@ -1,5 +1,5 @@
+import { env } from "./env";
 import type { AuthConfig } from "convex/server";
-import { env } from "@/env";
 
 export default {
   providers: [

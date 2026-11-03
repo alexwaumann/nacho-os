@@ -1,3 +1,4 @@
+import { env } from "../env";
 import { formatDistance, formatDuration, resolveWaypointOrder, toRouteMetrics } from "./routing";
 import type {
   CalculatedRouteMetrics,
@@ -8,7 +9,6 @@ import type {
   RouteMetrics,
   RouteWaypoint,
 } from "./routing";
-import { env } from "@/env";
 
 export type { Coordinates } from "./routing";
 

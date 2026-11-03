@@ -155,7 +155,7 @@ describe("getCurrentLocation in the browser", () => {
   });
 
   it("passes the caller's options straight to navigator.geolocation", async () => {
-    const browserGetPosition = vi.fn((resolve: PositionCallback) =>
+    const browserGetPosition = vi.fn<Geolocation["getCurrentPosition"]>((resolve) =>
       resolve(position(WACO.lat, WACO.lng) as unknown as GeolocationPosition),
     );
     vi.stubGlobal("navigator", { geolocation: { getCurrentPosition: browserGetPosition } });

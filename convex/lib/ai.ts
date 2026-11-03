@@ -1,7 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { env } from "../env";
 import type { GenerateContentConfig } from "@google/genai";
-
-import { env } from "@/env";
 
 // Type definitions
 export type ImageInput = {

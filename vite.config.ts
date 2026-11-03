@@ -5,7 +5,6 @@ import viteReact, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import tailwindcss from "@tailwindcss/vite";
-import netlify from "@netlify/vite-plugin-tanstack-start";
 
 const config = defineConfig({
   resolve: {
@@ -21,10 +20,11 @@ const config = defineConfig({
     devtools({
       eventBusConfig: { port: Number(process.env.DEVTOOLS_EVENT_BUS_PORT) || undefined },
     }),
-    process.env.NODE_ENV === "production" ? netlify() : null,
     // HTTPS=1 serves over HTTPS with a self-signed cert, since iOS only allows the mic on HTTPS
     process.env.HTTPS ? basicSsl() : null,
     tailwindcss(),
+    // SPA mode prerenders a single shell (`dist/client/_shell.html`) at build time. Netlify serves
+    // `dist/client` as static files and rewrites every other path to the shell (`public/_redirects`).
     tanstackStart({
       spa: { enabled: true },
     }),
