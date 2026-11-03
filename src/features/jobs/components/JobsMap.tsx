@@ -60,6 +60,9 @@ const LOCATION_OPTIONS = { enableHighAccuracy: true, timeout: 10000, maximumAge:
 
 function getGeolocationErrorMessage(error: unknown) {
   if (error instanceof LocationError) {
+    if (error.isServicesOff) {
+      return "Turn on Location Services in Settings > Privacy & Security > Location Services.";
+    }
     if (error.code === LOCATION_ERROR.PERMISSION_DENIED) {
       return isNativePluginAvailable("Geolocation") ?
           "Location permission is blocked. Allow it in Settings > Nacho OS > Location."
