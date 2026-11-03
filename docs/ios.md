@@ -24,10 +24,19 @@ native asset catalog:
 bunx @capacitor/assets generate --ios
 rm ios/App/App/Assets.xcassets/Splash.imageset/*-dark.png
 node -e 'const f="ios/App/App/Assets.xcassets/Splash.imageset/Contents.json",fs=require("fs"),j=JSON.parse(fs.readFileSync(f));j.images=j.images.filter(i=>!i.appearances);fs.writeFileSync(f,JSON.stringify(j,null,2)+"\n")'
+cd ios/App/App/Assets.xcassets/Splash.imageset
+sips -z 800 800 Default@1x~universal~anyany.png && sips -z 1600 1600 Default@2x~universal~anyany.png
+sips -z 2400 2400 Default@3x~universal~anyany.png && cd -
 ```
 
-The generator always adds a dark-mode splash (the icon on near-black), so the last two lines
-remove it again and dark mode keeps the blue brand splash.
+The generator always adds a dark-mode splash (the icon on near-black), so the `rm` and `node`
+lines remove it again and dark mode keeps the blue brand splash.
+
+The generator also writes the same 2732×2732 image for every scale. iOS refuses to draw a launch
+screen it estimates at over 25 MB of memory, and 2732² pixels is about 30 MB, so the phone shows a
+black screen instead of the splash. The `sips` lines shrink each scale to 800 / 1600 / 2400 px
+(fine with the aspect-fill image view). iOS remembers a bad launch screen until the app is
+updated, so on a simulator that already showed black, erase it or use a fresh one.
 
 ## Point the shell at a dev server
 
