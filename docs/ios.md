@@ -27,14 +27,20 @@ the plugin the site keeps its web behaviour.
   "… would like to use your current location" alert (which came back on every launch). Errors are
   mapped onto the browser's `GeolocationPositionError` codes. Apple wants
   `NSLocationAlwaysAndWhenInUseUsageDescription` in `Info.plist` for the library it uses, even
-  though the app only asks for "while using".
+  though the app only asks for "while using". The plugin ignores `maximumAge` (every call is a
+  fresh fix) and times out after 5 s by default, so `geolocation.ts` keeps the last fix and
+  returns it within the caller's `maximumAge`, waits at least 15 s for a new one, and shares one
+  plugin call between overlapping requests (e.g. the map and "Optimize route"). The account page
+  asks with `requestPermissions()` (the iOS prompt itself), re-checks when the app comes back to
+  the foreground (`@capacitor/app`; iOS sends no event when he changes it in Settings) and tells
+  him to turn Location Services on when it is off for the whole phone.
 - `@capacitor/splash-screen` – keeps the launch screen up until the site has rendered, instead of a
   blank white web view while it loads. `HideNativeSplash` (in `src/routes/__root.tsx`) calls
   `SplashScreen.hide()` once Clerk knows whether he is signed in, and the offline page calls it
   through `window.Capacitor.Plugins`. **Safety net:** the plugin can't wait for `hide()` with a
-  maximum, so `launchAutoHide` stays on with `launchShowDuration: 10000`; a site that never calls
-  `hide()` (an old deploy, a crash) shows after at most 10 s. Install a new app build only after
-  the site with the `hide()` call is deployed, or every launch waits the full 10 s.
+  maximum, so `launchAutoHide` stays on with `launchShowDuration: 6000`; a site that never calls
+  `hide()` (an old deploy, a crash) shows after at most 6 s. Install a new app build only after
+  the site with the `hide()` call is deployed, or every launch waits the full 6 s.
 
 After adding a plugin run `bun run ios:sync` (it registers it in `ios/App/CapApp-SPM/Package.swift`)
 and rebuild the app.
@@ -45,8 +51,10 @@ With `contentInset: "always"` the page scrolls clear of the status bar and home 
 WebKit still lays out `position: fixed` down to the bottom screen edge and reports
 `env(safe-area-inset-bottom)` as 0 (the top is fine: fixed elements start below the status bar).
 An inline script in `src/routes/__root.tsx` sets `data-native-shell` on `<html>` and
-`--native-safe-bottom: 34px` on Face ID iPhones when running in the app; it is `0px` everywhere
-else. Bottom-anchored UI adds it: the bottom nav, the job sheet's mic and padding, the image
+`--native-safe-bottom: 34px` on devices with a home indicator when running in the app; it is
+`0px` everywhere else. It tells them apart by the status bar height (screen height minus
+`innerHeight`): over 20 pt means Face ID (iPhones 44 pt+, iPads 24 pt), 20 pt a home button. It
+is checked again on `resize` and `pageshow`. Bottom-anchored UI adds it: the bottom nav, the job sheet's mic and padding, the image
 viewer controls and the Edit route footer. Use it for any new fixed bottom element.
 
 ## App icon and splash
