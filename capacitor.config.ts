@@ -36,9 +36,9 @@ const config: CapacitorConfig = {
       // `SplashScreen.hide()` once it has rendered (see `src/lib/native.ts`), instead of showing
       // a blank web view while it loads. The plugin has no "wait for hide()" with a maximum, so
       // auto-hide stays on with a long duration as the safety net: a site build without the
-      // hide() call, or a launch that never gets that far, still shows the page after 10 s.
+      // hide() call, or a launch that never gets that far, still shows the page after 6 s.
       launchAutoHide: true,
-      launchShowDuration: 10000,
+      launchShowDuration: 6000,
       backgroundColor: "#0085c8",
       showSpinner: false,
     },

@@ -12,7 +12,7 @@ export function isNativePluginAvailable(name: string) {
 
 /**
  * Hides the native launch screen once the site has painted (capacitor.config.ts keeps it up
- * until then, with a 10 s auto-hide as the safety net). Does nothing outside the shell.
+ * until then, with a 6 s auto-hide as the safety net). Does nothing outside the shell.
  */
 export function hideNativeSplash() {
   if (!isNativePluginAvailable("SplashScreen")) return;
