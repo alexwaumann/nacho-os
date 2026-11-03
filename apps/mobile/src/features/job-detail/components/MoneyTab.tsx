@@ -10,6 +10,7 @@ import { formatMoney, getJobMoneySummary } from "@shared/jobs/jobSheet";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
+import { AddReceiptButton } from "@/features/receipts/components/AddReceiptButton";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -188,7 +189,7 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
           </Text>
         }
       >
-        {/* ADD RECEIPT: the scan / pick a receipt button goes here (a later PR) */}
+        <AddReceiptButton jobId={job._id} />
 
         {(receiptQueue ?? []).map((item) => (
           <Card key={item._id} style={styles.queueItem}>
