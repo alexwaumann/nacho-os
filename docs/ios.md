@@ -15,6 +15,40 @@ when `capacitor.config.ts`, `ios/` or the Capacitor packages change.
 Links to other hosts (e.g. Google Maps directions) are handed to iOS by Capacitor and open in
 Google Maps or Safari, so the app stays on its page. Clerk hosts are allowed to load in the app.
 
+## Native plugins
+
+Every plugin call in the site is guarded with `Capacitor.isNativePlatform()` and
+`Capacitor.isPluginAvailable()` (`isNativePluginAvailable` in `src/lib/native.ts`), because the same
+site also serves browsers, the installed PWA and older app builds without newer plugins. Without
+the plugin the site keeps its web behaviour.
+
+- `@capacitor/geolocation` – `src/lib/geolocation.ts` uses it in the app instead of
+  `navigator.geolocation`, so iOS asks for location once and WebKit never adds its own
+  "… would like to use your current location" alert (which came back on every launch). Errors are
+  mapped onto the browser's `GeolocationPositionError` codes. Apple wants
+  `NSLocationAlwaysAndWhenInUseUsageDescription` in `Info.plist` for the library it uses, even
+  though the app only asks for "while using".
+- `@capacitor/splash-screen` – keeps the launch screen up until the site has rendered, instead of a
+  blank white web view while it loads. `HideNativeSplash` (in `src/routes/__root.tsx`) calls
+  `SplashScreen.hide()` once Clerk knows whether he is signed in, and the offline page calls it
+  through `window.Capacitor.Plugins`. **Safety net:** the plugin can't wait for `hide()` with a
+  maximum, so `launchAutoHide` stays on with `launchShowDuration: 10000`; a site that never calls
+  `hide()` (an old deploy, a crash) shows after at most 10 s. Install a new app build only after
+  the site with the `hide()` call is deployed, or every launch waits the full 10 s.
+
+After adding a plugin run `bun run ios:sync` (it registers it in `ios/App/CapApp-SPM/Package.swift`)
+and rebuild the app.
+
+## Home indicator and fixed elements
+
+With `contentInset: "always"` the page scrolls clear of the status bar and home indicator, but
+WebKit still lays out `position: fixed` down to the bottom screen edge and reports
+`env(safe-area-inset-bottom)` as 0 (the top is fine: fixed elements start below the status bar).
+An inline script in `src/routes/__root.tsx` sets `data-native-shell` on `<html>` and
+`--native-safe-bottom: 34px` on Face ID iPhones when running in the app; it is `0px` everywhere
+else. Bottom-anchored UI adds it: the bottom nav, the job sheet's mic and padding, the image
+viewer controls and the Edit route footer. Use it for any new fixed bottom element.
+
 ## App icon and splash
 
 `resources/icon.png` and `resources/splash.png` (built by `scripts/generate-icons.mjs`) feed the
@@ -40,14 +74,26 @@ updated, so on a simulator that already showed black, erase it or use a fresh on
 
 ## Point the shell at a dev server
 
-`server.url` is read when you sync, so set `CAP_SERVER_URL` on the sync command:
+The app loads the live site, so site changes only reach it once merged to `main` and deployed by
+Netlify. To test them first, point the shell at a dev server. WKWebView needs a trusted HTTPS
+origin for location and the mic, so serve it over Tailscale (use another port if a second worktree
+already runs on 3000):
 
 ```bash
-tailscale serve --https=3000 http://localhost:3000   # if not already serving
-CAP_SERVER_URL=https://alex-macbook-pro.tailf22ce6.ts.net:3000 bun run ios:sync
+DEVTOOLS_EVENT_BUS_PORT=42070 bun --bun vite dev --port 3001 --strictPort   # in the background
+tailscale serve --bg --https=3001 http://localhost:3001
+CAP_SERVER_URL=https://alex-macbook-pro.tailf22ce6.ts.net:3001 bun run ios:sync
 ```
 
-Run `bun run ios:sync` again without the variable to go back to production before archiving.
+`server.url` is baked in at sync time, so rebuild and reinstall the app afterwards. Sign in again
+(each origin has its own session); the Clerk dev instance accepts the Tailscale origin. The
+offline page's "Try again" always links to production, so it leaves the app while testing.
+
+When done: stop the dev server, `tailscale serve --https=3001 off`, then run `bun run ios:sync`
+again without the variable, rebuild and reinstall to go back to production (always before
+archiving).
+
+To test the offline page, sync with `CAP_SERVER_URL=https://127.0.0.1:9`.
 
 ## First run (needs Xcode)
 
@@ -58,8 +104,10 @@ Run `bun run ios:sync` again without the variable to go back to production befor
 4. Target **App** → _Signing & Capabilities_: pick your team (a free Apple ID works for the
    simulator and your own phone for 7 days).
 5. Choose an iPhone simulator (e.g. iPhone 15 Pro Max) and press Run.
-6. Check: sign-in, camera/photo pickers, microphone (voice commands), location on the map,
-   and that "Directions" opens Google Maps and the app is still there when you come back.
+6. Check: the splash goes straight to the site (no white screen), sign-in, camera/photo pickers,
+   microphone (voice commands), location on the map (one iOS prompt, no second WebKit one), the
+   bottom nav clear of the home indicator, and that "Directions" opens Google Maps and the app is
+   still there when you come back.
 
 ## Ad hoc distribution (dad's iPhone)
 
