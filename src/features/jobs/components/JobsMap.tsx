@@ -21,13 +21,15 @@ import { api } from "../../../../convex/_generated/api";
 import type { MapCameraChangedEvent } from "@vis.gl/react-google-maps";
 import type { ReactNode } from "react";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
+import type { LatLng } from "@/lib/geolocation";
 
 import { env } from "@/env";
+import { LOCATION_ERROR, LocationError, getCurrentLocation } from "@/lib/geolocation";
+import { isNativePluginAvailable } from "@/lib/native";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
 import { generateGoogleMapsUrl } from "@/server/geo";
 
-type LatLng = { lat: number; lng: number };
 type JobStatus = "pending" | "completed" | "paid";
 
 interface JobPin {
@@ -54,26 +56,16 @@ const DEFAULT_CENTER = { lat: 32.7767, lng: -96.797 };
 // the bottom nav (the page's bottom padding) so the page itself never scrolls
 const MAP_HEIGHT_CLASS = "h-[calc(100dvh-21rem)] min-h-80";
 
-function getCurrentPosition(): Promise<LatLng> {
-  return new Promise((resolve, reject) => {
-    if (!("geolocation" in navigator)) {
-      reject(new Error("Geolocation is not supported by this browser"));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      reject,
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
-    );
-  });
-}
+const LOCATION_OPTIONS = { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 };
 
 function getGeolocationErrorMessage(error: unknown) {
-  if (error instanceof GeolocationPositionError) {
-    if (error.code === error.PERMISSION_DENIED) {
-      return "Location permission is blocked. Allow it in your browser settings.";
+  if (error instanceof LocationError) {
+    if (error.code === LOCATION_ERROR.PERMISSION_DENIED) {
+      return isNativePluginAvailable("Geolocation") ?
+          "Location permission is blocked. Allow it in Settings > Nacho OS > Location."
+        : "Location permission is blocked. Allow it in your browser settings.";
     }
-    if (error.code === error.TIMEOUT) return "Timed out finding your location.";
+    if (error.code === LOCATION_ERROR.TIMEOUT) return "Timed out finding your location.";
     return "Your location is unavailable right now.";
   }
   return error instanceof Error ? error.message : "Unknown error";
@@ -101,7 +93,7 @@ export function JobsMap({ filter, onOpenJob }: JobsMapProps) {
   const cameraRef = useRef<MapCamera | null>(null);
 
   useEffect(() => {
-    getCurrentPosition()
+    getCurrentLocation(LOCATION_OPTIONS)
       .then(setUserLocation)
       .catch((err) => console.warn("Geolocation error:", err));
   }, []);
@@ -440,7 +432,7 @@ function MapControls({
     if (userLocation) map.panTo(userLocation);
     setIsLocating(true);
     try {
-      const location = await getCurrentPosition();
+      const location = await getCurrentLocation(LOCATION_OPTIONS);
       onUserLocationChange(location);
       map.panTo(location);
       map.setZoom(Math.max(map.getZoom() ?? 0, LOCATE_ZOOM));

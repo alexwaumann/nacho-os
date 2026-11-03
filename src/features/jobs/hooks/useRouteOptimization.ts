@@ -5,6 +5,11 @@ import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import type { Coordinates, RouteWaypoint } from "@/server/geo";
+import {
+  LOCATION_ERROR,
+  LocationError,
+  getCurrentLocation as getDeviceLocation,
+} from "@/lib/geolocation";
 import { calculateRouteMetrics, geocodeAddress, optimizeRoute } from "@/server/geo";
 
 type Job = Doc<"jobs">;
@@ -28,44 +33,29 @@ export function useRouteOptimization() {
   const allPendingJobs = useQuery(api.jobs.list, { status: "pending" }) ?? [];
   const currentUser = useQuery(api.users.getCurrentUser);
 
-  const getCurrentLocation = useCallback((): Promise<Coordinates> => {
-    return new Promise((resolve, reject) => {
-      // Check for geolocation support (defensive check for older browsers/environments)
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (!navigator.geolocation) {
-        reject(new Error("Geolocation is not supported by your browser"));
-        return;
+  const getCurrentLocation = useCallback(async (): Promise<Coordinates> => {
+    try {
+      return await getDeviceLocation({
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      });
+    } catch (error) {
+      if (!(error instanceof LocationError)) throw error;
+      let message = "Unable to get your location";
+      switch (error.code) {
+        case LOCATION_ERROR.PERMISSION_DENIED:
+          message = "Location access denied. Please enable location permissions.";
+          break;
+        case LOCATION_ERROR.POSITION_UNAVAILABLE:
+          message = "Location information is unavailable.";
+          break;
+        case LOCATION_ERROR.TIMEOUT:
+          message = "Location request timed out.";
+          break;
       }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          let message = "Unable to get your location";
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              message = "Location access denied. Please enable location permissions.";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              message = "Location information is unavailable.";
-              break;
-            case error.TIMEOUT:
-              message = "Location request timed out.";
-              break;
-          }
-          reject(new Error(message));
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000,
-        },
-      );
-    });
+      throw new Error(message);
+    }
   }, []);
 
   const optimizeAndSaveRoute = useCallback(

@@ -24,6 +24,7 @@ import type { Theme } from "@/lib/theme";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
+import { getCurrentLocation, watchLocationPermission } from "@/lib/geolocation";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { geocodeAddress } from "@/server/geo";
@@ -65,13 +66,7 @@ function AccountPage() {
 
   // Check geolocation permission on mount
   useEffect(() => {
-    navigator.permissions.query({ name: "geolocation" }).then((status) => {
-      setGeolocationStatus(status.state);
-
-      status.addEventListener("change", () => {
-        setGeolocationStatus(status.state);
-      });
-    });
+    return watchLocationPermission(setGeolocationStatus);
   }, []);
 
   const handleAddressSelect = async (address: string, _placeId: string) => {
@@ -111,16 +106,12 @@ function AccountPage() {
   const requestGeolocation = () => {
     setGeolocationStatus("requesting");
 
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        setGeolocationStatus("granted");
-      },
-      (err) => {
+    getCurrentLocation({ enableHighAccuracy: true })
+      .then(() => setGeolocationStatus("granted"))
+      .catch((err: unknown) => {
         console.warn("Geolocation error:", err);
         setGeolocationStatus("denied");
-      },
-      { enableHighAccuracy: true },
-    );
+      });
   };
 
   return (
