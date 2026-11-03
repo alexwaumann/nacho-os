@@ -30,14 +30,17 @@ export interface JobSubmission {
   name: string;
   stage: "uploading" | "sent" | "uploadFailed";
   queueId?: Id<"jobProcessingQueue">;
-  /** The uploaded page images; the finished job lists them as its `sourceImageIds` */
+  /**
+   * The uploaded page images; the finished job lists them as its `sourceImageIds`. For a PDF
+   * it's the PDF alone, which the finished job keeps as its `sourceFileId`.
+   */
   storageIds?: Array<Id<"_storage">>;
   /** Why the upload failed (stage "uploadFailed") */
   error?: string;
 }
 
 export type QueueItem = Pick<Doc<"jobProcessingQueue">, "_id" | "fileName" | "status" | "error">;
-export type NewJob = Pick<Doc<"jobs">, "_id" | "address" | "sourceImageIds">;
+export type NewJob = Pick<Doc<"jobs">, "_id" | "address" | "sourceImageIds" | "sourceFileId">;
 
 interface RowBase {
   key: string;
@@ -75,8 +78,8 @@ export function describeQueueError(error: string | undefined): string {
  * The rows of the "Reading work orders" list: this phone's submissions (in the order given,
  * newest first) and then anything else still in the server's queue (sent earlier, or from the
  * website). The server deletes a queue item once its job is made, so a sent submission whose
- * item is gone is done when the job made from its pages turns up in `jobs`. Pass undefined while
- * a query loads.
+ * item is gone is done when the job made from its pages (or its PDF) turns up in `jobs`. Pass
+ * undefined while a query loads.
  */
 export function getAddJobRows(
   submissions: ReadonlyArray<JobSubmission>,
@@ -110,7 +113,9 @@ export function getAddJobRows(
     // Gone from the queue: done once its job shows up (the two queries update separately)
     const firstPage = submission.storageIds?.[0];
     const job =
-      queue && firstPage ? jobs?.find((j) => j.sourceImageIds?.includes(firstPage)) : undefined;
+      queue && firstPage ?
+        jobs?.find((j) => j.sourceImageIds?.includes(firstPage) || j.sourceFileId === firstPage)
+      : undefined;
     rows.push(
       job ?
         { ...base, kind: "done", jobId: job._id, address: job.address }

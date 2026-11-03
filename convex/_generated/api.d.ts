@@ -18,6 +18,7 @@ import type * as lib_ai from "../lib/ai.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_geo from "../lib/geo.js";
 import type * as lib_jobExtraction from "../lib/jobExtraction.js";
+import type * as lib_jobSource from "../lib/jobSource.js";
 import type * as lib_media from "../lib/media.js";
 import type * as lib_routeBriefAgent from "../lib/routeBriefAgent.js";
 import type * as lib_routeTiming from "../lib/routeTiming.js";
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/geo": typeof lib_geo;
   "lib/jobExtraction": typeof lib_jobExtraction;
+  "lib/jobSource": typeof lib_jobSource;
   "lib/media": typeof lib_media;
   "lib/routeBriefAgent": typeof lib_routeBriefAgent;
   "lib/routeTiming": typeof lib_routeTiming;

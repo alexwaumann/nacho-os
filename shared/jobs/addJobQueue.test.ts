@@ -118,6 +118,20 @@ describe("getAddJobRows", () => {
     ]);
   });
 
+  it("is done when the job made from its PDF exists (kept as the job's source file)", () => {
+    const jobs: Array<NewJob> = [
+      { _id: jobId("j0"), address: "1 Other St", sourceImageIds: [storageId("x")] },
+      {
+        _id: jobId("j1"),
+        address: "123 Claude Test Ln",
+        sourceImageIds: [],
+        sourceFileId: storageId("pdf"),
+      },
+    ];
+    const [row] = getAddJobRows([sent("a", "q1", ["pdf"])], [], jobs);
+    expect(row).toMatchObject({ kind: "done", jobId: "j1", address: "123 Claude Test Ln" });
+  });
+
   it("keeps processing until the new job shows up, or while the queue loads", () => {
     expect(getAddJobRows([sent("a", "q1", ["s1"])], [], [])[0].kind).toBe("processing");
     const jobs: Array<NewJob> = [

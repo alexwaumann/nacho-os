@@ -5,9 +5,10 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
 import { extractReceiptFromImage } from "./lib/ai";
+import { MAX_DOCUMENT_BYTES } from "./lib/media";
 
 /**
- * Background action to process a receipt image using Gemini
+ * Background action to process a receipt image (or PDF) using Gemini
  */
 export const processReceiptAction = internalAction({
   args: {
@@ -30,6 +31,9 @@ export const processReceiptAction = internalAction({
       // 3. Fetch image from storage
       const blob = await ctx.storage.get(queueItem.imageStorageId);
       if (!blob) throw new Error("Image not found in storage");
+      if (blob.size > MAX_DOCUMENT_BYTES) {
+        throw new Error("This file is too large to read (over 15 MB).");
+      }
 
       const arrayBuffer = await blob.arrayBuffer();
       const base64 = Buffer.from(arrayBuffer).toString("base64");
