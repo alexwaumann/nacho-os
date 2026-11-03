@@ -424,7 +424,7 @@ function MapControls({
       map.setZoom(Math.max(map.getZoom() ?? 0, LOCATE_ZOOM));
     } catch (error) {
       console.error("Geolocation failed:", error);
-      toast.error("Couldn't get your location", {
+      toast.error("Location problem", {
         description: describeLocationError(error),
       });
     } finally {
