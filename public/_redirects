@@ -1,3 +1,3 @@
-/_serverFn/* /_serverFn/:splat 200
-/api/* /api/:splat 200
+# Static SPA: any path without a file (e.g. /jobs, /account) gets the prerendered shell, and the
+# client router takes over. Not forced, so real files (/assets/*, /manifest.json, ...) still win.
 /* /_shell.html 200

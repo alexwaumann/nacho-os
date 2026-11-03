@@ -1,6 +1,6 @@
 /**
- * Load pdf.js on demand. A top-level import would also load it on the server, where it
- * crashes at startup (it needs browser APIs like DOMMatrix) and takes every server function down.
+ * Load pdf.js on demand. A top-level import would also load it while the build prerenders the
+ * SPA shell, where it crashes (it needs browser APIs like DOMMatrix).
  */
 async function loadPdfjs() {
   const pdfjs = await import("pdfjs-dist");

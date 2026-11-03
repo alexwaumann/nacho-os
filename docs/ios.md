@@ -1,10 +1,10 @@
 # iOS app (Capacitor shell)
 
 The iOS app is a thin [Capacitor 8](https://capacitorjs.com) wrapper: a native WKWebView that
-loads the live site at <https://nacho-os.netlify.app>. Nothing from `dist/` is bundled, because
-the server functions in `src/server/` (Gemini, voice, weather, geo, route brief) need the
-TanStack Start server. A web deploy updates the app instantly; a new native build is only needed
-when `capacitor.config.ts`, `ios/` or the Capacitor packages change.
+loads the live site at <https://nacho-os.netlify.app>. Nothing from `dist/` is bundled: the site is
+static files on Netlify and everything else (Gemini, voice, weather, geo, route brief) runs in
+Convex, so loading it by URL means a web deploy updates the app instantly. A new native build is
+only needed when `capacitor.config.ts`, `ios/` or the Capacitor packages change.
 
 - `capacitor.config.ts` – app id `com.waumann.nachoos`, `server.url`, allowed navigation hosts.
 - `native/www/` – offline page, shown via `server.errorPath` when the site can't load (no

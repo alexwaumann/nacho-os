@@ -2,8 +2,9 @@
 
 ## Tech Stack
 
-- **Frontend**: React 19, TanStack Router/Start (SSR/SPA hybrid)
-- **Backend**: Convex (serverless, real-time database)
+- **Frontend**: React 19, TanStack Router/Start in SPA mode (no app server)
+- **Backend**: Convex (real-time database, plus actions for Gemini, Google Maps and weather)
+- **Hosting**: Netlify serves `dist/client` as static files (`public/_redirects` = SPA fallback)
 - **Auth**: Clerk
 - **Styling**: Tailwind CSS v4, shadcn/ui (base-ui primitives)
 - **Validation**: Zod v4
@@ -158,7 +159,6 @@ src/
   integrations/     # Third-party providers (clerk/, convex/, tanstack-query/)
   lib/              # Utilities (utils.ts, theme.tsx)
   routes/           # TanStack Router file-based routes
-  server/           # Server functions
 
 convex/
   _generated/       # Auto-generated (DO NOT EDIT)
