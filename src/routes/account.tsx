@@ -20,11 +20,14 @@ import { SignOutButton, useUser } from "@clerk/clerk-react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { api } from "../../convex/_generated/api";
+import type { LocationPermission } from "@/lib/geolocation";
 import type { Theme } from "@/lib/theme";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
+import { requestLocationPermission, watchLocationPermission } from "@/lib/geolocation";
 import { Label } from "@/components/ui/label";
+import { isNativePluginAvailable } from "@/lib/native";
 import { cn } from "@/lib/utils";
 import { geocodeAddress } from "@/server/geo";
 
@@ -52,8 +55,10 @@ function AccountPage() {
   const [homeAddress, setHomeAddress] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  // "unavailable": he asked, but no answer came back (e.g. no fix in time); says nothing about
+  // the permission, so he can just try again
   const [geolocationStatus, setGeolocationStatus] = useState<
-    "prompt" | "requesting" | "granted" | "denied"
+    LocationPermission | "requesting" | "unavailable"
   >("prompt");
 
   // Load home address from Convex user
@@ -63,15 +68,9 @@ function AccountPage() {
     }
   }, [convexUser]);
 
-  // Check geolocation permission on mount
+  // Check geolocation permission on mount (and, in the app, whenever it comes back from Settings)
   useEffect(() => {
-    navigator.permissions.query({ name: "geolocation" }).then((status) => {
-      setGeolocationStatus(status.state);
-
-      status.addEventListener("change", () => {
-        setGeolocationStatus(status.state);
-      });
-    });
+    return watchLocationPermission(setGeolocationStatus);
   }, []);
 
   const handleAddressSelect = async (address: string, _placeId: string) => {
@@ -111,17 +110,15 @@ function AccountPage() {
   const requestGeolocation = () => {
     setGeolocationStatus("requesting");
 
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        setGeolocationStatus("granted");
-      },
-      (err) => {
+    requestLocationPermission()
+      .then(setGeolocationStatus)
+      .catch((err: unknown) => {
         console.warn("Geolocation error:", err);
-        setGeolocationStatus("denied");
-      },
-      { enableHighAccuracy: true },
-    );
+        setGeolocationStatus("unavailable");
+      });
   };
+
+  const isInApp = isNativePluginAvailable("Geolocation");
 
   return (
     <div className="space-y-8">
@@ -270,31 +267,43 @@ function AccountPage() {
           {/* Location Access - only show if not granted */}
           {geolocationStatus !== "granted" && (
             <div className="pt-4 border-t border-border/50">
-              {geolocationStatus === "denied" ?
+              {geolocationStatus === "denied" || geolocationStatus === "services-off" ?
                 <div className="space-y-2">
-                  <Label className="text-sm font-black text-foreground">
-                    Location Access Denied
+                  <Label className="text-lg font-black text-foreground">
+                    {geolocationStatus === "services-off" ?
+                      "Location Services Is Off"
+                    : "Location Access Denied"}
                   </Label>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Location access was denied. To enable it, please reset the permission in your
-                    browser settings and reload this page.
+                  <p className="text-base text-muted-foreground leading-relaxed">
+                    {geolocationStatus === "services-off" ?
+                      "Turn on Location Services in Settings > Privacy & Security > Location Services."
+                    : isInApp ?
+                      "To turn it on, open Settings > Nacho OS > Location and pick While Using the App."
+                    : "Location access was denied. To enable it, please reset the permission in your browser settings and reload this page."
+                    }
                   </p>
                 </div>
-              : <div className="flex items-center justify-between">
+              : <div className="space-y-3">
                   <div className="space-y-1">
-                    <Label className="text-sm font-black text-foreground">Geolocation</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Allow access to your current location for nearby job detection.
+                    <Label className="text-lg font-black text-foreground">Geolocation</Label>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      {geolocationStatus === "unavailable" ?
+                        "Couldn't get your location right now. Please try again."
+                      : "Allow access to your current location for nearby job detection."}
                     </p>
                   </div>
                   <Button
                     variant="outline"
                     onClick={requestGeolocation}
                     disabled={geolocationStatus === "requesting"}
-                    className="shrink-0"
+                    className="h-12 px-5 text-base"
                   >
-                    <Navigation size={16} className="mr-2" />
-                    {geolocationStatus === "requesting" ? "Requesting..." : "Request Access"}
+                    <Navigation size={18} className="mr-2" />
+                    {geolocationStatus === "requesting" ?
+                      "Requesting..."
+                    : geolocationStatus === "unavailable" ?
+                      "Try Again"
+                    : "Request Access"}
                   </Button>
                 </div>
               }

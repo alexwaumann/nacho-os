@@ -6,6 +6,7 @@ import { Authenticated, Unauthenticated } from "convex/react";
 
 import TopBar from "../components/TopBar";
 import BottomNav from "../components/BottomNav";
+import { HideNativeSplash } from "../components/HideNativeSplash";
 
 import ClerkProvider from "../integrations/clerk/provider";
 import ConvexProvider from "../integrations/convex/provider";
@@ -40,6 +41,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "manifest",
+        href: "/manifest.json",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/apple-touch-icon.png",
+      },
     ],
   }),
 
@@ -63,6 +72,38 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 var isBlankText = node.nodeType === Node.TEXT_NODE && !node.textContent.trim();
                 if (isComment || isBlankText) node.remove();
               });
+            `,
+          }}
+        />
+        {/*
+          In the iOS app shell (Capacitor injects window.Capacitor before any page script), mark
+          <html> and reserve room for the home indicator. With contentInset "always" the page
+          scrolls clear of it, but WebKit still lays out position:fixed down to the screen's
+          bottom edge and env(safe-area-inset-bottom) is 0. The fixed layout viewport does start
+          below the status bar, so the screen's height (in the current orientation; iOS reports
+          screen size in portrait) minus innerHeight is the top inset. Home-button iPhones and
+          iPads have a 20pt status bar and no home indicator; Face ID iPhones (44pt+) and iPads
+          (24pt) have one, so over 20pt gets the 34pt portrait gap. Checked again on resize
+          (iPad rotation, Split View) and pageshow (back/forward cache).
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var cap = window.Capacitor;
+                if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return;
+                var root = document.documentElement;
+                root.setAttribute('data-native-shell', cap.getPlatform());
+                function update() {
+                  var w = screen.width, h = screen.height, landscape = innerWidth > innerHeight;
+                  var top = (landscape ? Math.min(w, h) : Math.max(w, h)) - innerHeight;
+                  if (top > 20) root.style.setProperty('--native-safe-bottom', '34px');
+                  else root.style.removeProperty('--native-safe-bottom');
+                }
+                update();
+                addEventListener('resize', update);
+                addEventListener('pageshow', update);
+              })();
             `,
           }}
         />
@@ -94,6 +135,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                     <main className="flex-1 max-w-lg mx-auto w-full px-2 pb-30">{children}</main>
                     <BottomNav />
                   </div>
+                  <HideNativeSplash />
                 </Authenticated>
                 <Unauthenticated>
                   <div className="min-h-screen flex items-center justify-center bg-muted p-4">
@@ -106,6 +148,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                       }}
                     />
                   </div>
+                  <HideNativeSplash />
                 </Unauthenticated>
                 <TanStackDevtools
                   config={{
