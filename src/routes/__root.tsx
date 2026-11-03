@@ -80,8 +80,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <html> and reserve room for the home indicator. With contentInset "always" the page
           scrolls clear of it, but WebKit still lays out position:fixed down to the screen's
           bottom edge and env(safe-area-inset-bottom) is 0. The fixed layout viewport does start
-          below the status bar, so screen height minus innerHeight is the top inset: over 24pt
-          means a Face ID iPhone, whose home indicator needs 34pt in portrait.
+          below the status bar, so the screen's height (in the current orientation; iOS reports
+          screen size in portrait) minus innerHeight is the top inset. Home-button iPhones and
+          iPads have a 20pt status bar and no home indicator; Face ID iPhones (44pt+) and iPads
+          (24pt) have one, so over 20pt gets the 34pt portrait gap. Checked again on resize
+          (iPad rotation, Split View) and pageshow (back/forward cache).
         */}
         <script
           dangerouslySetInnerHTML={{
@@ -91,9 +94,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return;
                 var root = document.documentElement;
                 root.setAttribute('data-native-shell', cap.getPlatform());
-                if (screen.height - window.innerHeight > 24) {
-                  root.style.setProperty('--native-safe-bottom', '34px');
+                function update() {
+                  var w = screen.width, h = screen.height, landscape = innerWidth > innerHeight;
+                  var top = (landscape ? Math.min(w, h) : Math.max(w, h)) - innerHeight;
+                  if (top > 20) root.style.setProperty('--native-safe-bottom', '34px');
+                  else root.style.removeProperty('--native-safe-bottom');
                 }
+                update();
+                addEventListener('resize', update);
+                addEventListener('pageshow', update);
               })();
             `,
           }}
