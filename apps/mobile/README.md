@@ -14,10 +14,15 @@ Run every command in this README from `apps/mobile`.
 Needs Xcode (with an iOS Simulator runtime), CocoaPods (`brew install cocoapods`) and Bun.
 
 ```bash
+bun install                  # in the repo root first: typecheck follows the API types into convex/
 cd apps/mobile
 bun install
 cp .env.example .env.local   # then fill it in (below)
 ```
+
+The root install is only for `bun run typecheck`: the Convex API types point at the functions in
+`convex/`, which import the web app's packages (`@google/genai`, `zod`, …). The app bundle itself
+uses only `apps/mobile/node_modules`.
 
 `.env.local` (git-ignored) holds the same values as the web app's `VITE_*` ones in the repo root
 `.env.local`:

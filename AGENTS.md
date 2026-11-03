@@ -196,6 +196,7 @@ It is a **standalone project** with its own `package.json`, `bun.lock` and `node
 workspace), so run its commands from `apps/mobile`:
 
 ```bash
+bun install            # root first (mobile typecheck reads convex/, which uses root packages)
 cd apps/mobile
 bun install
 bun run typecheck && bun run lint && bun run format
