@@ -74,6 +74,29 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             `,
           }}
         />
+        {/*
+          In the iOS app shell (Capacitor injects window.Capacitor before any page script), mark
+          <html> and reserve room for the home indicator. With contentInset "always" the page
+          scrolls clear of it, but WebKit still lays out position:fixed down to the screen's
+          bottom edge and env(safe-area-inset-bottom) is 0. The fixed layout viewport does start
+          below the status bar, so screen height minus innerHeight is the top inset: over 24pt
+          means a Face ID iPhone, whose home indicator needs 34pt in portrait.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var cap = window.Capacitor;
+                if (!cap || !cap.isNativePlatform || !cap.isNativePlatform()) return;
+                var root = document.documentElement;
+                root.setAttribute('data-native-shell', cap.getPlatform());
+                if (screen.height - window.innerHeight > 24) {
+                  root.style.setProperty('--native-safe-bottom', '34px');
+                }
+              })();
+            `,
+          }}
+        />
         {/* Prevent flash of wrong theme */}
         <script
           dangerouslySetInnerHTML={{

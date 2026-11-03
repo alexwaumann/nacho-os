@@ -376,7 +376,7 @@ function ImageViewerBody({ images, startIndex, onClose }: ImageViewerBodyProps) 
       )}
 
       {/* Bottom bar: zoom controls */}
-      <div className="absolute inset-x-0 bottom-0 flex justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+      <div className="absolute inset-x-0 bottom-0 flex justify-center px-4 pb-[calc(max(1.5rem,env(safe-area-inset-bottom))+var(--native-safe-bottom))] pt-8 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
         <div className="flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md p-1.5 pointer-events-auto">
           <ViewerButton
             label="Zoom out"

@@ -28,7 +28,7 @@ export function VoiceCommandButton({ job, isOpen }: VoiceCommandButtonProps) {
   }, [isOpen]);
 
   return (
-    <div className="pointer-events-none absolute bottom-6 right-5 z-30 flex flex-col items-end gap-3">
+    <div className="pointer-events-none absolute bottom-[calc(1.5rem+var(--native-safe-bottom))] right-5 z-30 flex flex-col items-end gap-3">
       <VoiceMicStatus
         mic={mic}
         processingLabel="Updating job…"

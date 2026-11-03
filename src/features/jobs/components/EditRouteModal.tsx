@@ -100,7 +100,7 @@ export function EditRouteModal({ open, onOpenChange, onDone, isOptimizing }: Edi
           </div>
 
           {/* Sticky Footer */}
-          <div className="shrink-0 p-5 border-t border-border bg-background safe-area-inset-bottom">
+          <div className="shrink-0 p-5 pb-[calc(1.25rem+var(--native-safe-bottom))] border-t border-border bg-background">
             <Button
               onClick={handleDone}
               disabled={isOptimizing}

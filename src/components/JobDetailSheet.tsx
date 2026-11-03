@@ -65,7 +65,7 @@ function splitAccessCode(code: string) {
 const MENU_ITEM_CLASS = "text-lg py-3";
 
 // Every tab leaves room at the end so the floating mic (bottom-right) never covers the last item
-const TAB_CONTENT_CLASS = "m-0 p-5 pb-36 outline-none";
+const TAB_CONTENT_CLASS = "m-0 p-5 pb-[calc(9rem+var(--native-safe-bottom))] outline-none";
 
 const ALL_TASKS_DONE_TOAST_MS = 15_000;
 
