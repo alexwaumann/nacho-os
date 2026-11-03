@@ -18,6 +18,8 @@
     "@base-ui/react": "^1.0.0",
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
+    "@capacitor/geolocation": "8.2.4",
+    "@capacitor/splash-screen": "8.0.2",
     "@clerk/clerk-react": "5.61.10",
     "@convex-dev/react-query": "0.0.0-alpha.11",
     "@fontsource-variable/outfit": "^5.2.8",
