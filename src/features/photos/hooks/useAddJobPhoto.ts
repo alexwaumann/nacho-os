@@ -6,6 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
 import { useUploadImage } from "@/hooks/useUploadImage";
+import { getErrorMessage } from "@/lib/errors";
 import { processJobPhoto } from "@/lib/pdf";
 
 /**
@@ -31,7 +32,7 @@ export function useAddJobPhoto(jobId: Id<"jobs"> | null) {
     } catch (error) {
       console.error("Failed to add photo:", error);
       toast.error(added.length > 0 ? "Some photos didn't make it" : "Couldn't add the photo", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsUploading(false);

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
+import { getErrorMessage } from "@/lib/errors";
 import { processReceiptFile } from "@/lib/pdf";
 
 export function useAddReceipt(jobId: Id<"jobs"> | null) {
@@ -51,7 +52,7 @@ export function useAddReceipt(jobId: Id<"jobs"> | null) {
     } catch (error) {
       console.error("Failed to add receipt:", error);
       toast.error("Failed to add receipt", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsUploading(false);

@@ -24,6 +24,7 @@ import type { LocationPermission } from "@/lib/geolocation";
 import type { Theme } from "@/lib/theme";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "@/lib/errors";
 import { useTheme } from "@/lib/theme";
 import { requestLocationPermission, watchLocationPermission } from "@/lib/geolocation";
 import { Label } from "@/components/ui/label";
@@ -102,7 +103,7 @@ function AccountPage() {
     } catch (error) {
       console.error("Saving the read-aloud setting failed:", error);
       toast.error("Couldn't save the setting", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     }
   };

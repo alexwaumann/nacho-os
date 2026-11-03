@@ -47,6 +47,7 @@ import { JobPhotosTab } from "@/features/photos/components/JobPhotosTab";
 import { clearPhotoIntent, usePhotoIntent } from "@/features/photos/store/photoIntent";
 import { VoiceCommandButton } from "@/features/voice/components/VoiceCommandButton";
 import { useImageViewer } from "@/hooks/useImageViewer";
+import { getErrorMessage } from "@/lib/errors";
 import { openExternal } from "@/lib/openExternal";
 import { cn, formatDueDate } from "@/lib/utils";
 
@@ -195,7 +196,7 @@ export function JobDetailSheet({
       if (context?.previousJob && jobQueryKey) {
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
-      toast.error("Failed to update task", { description: String(err) });
+      toast.error("Failed to update task", { description: getErrorMessage(err) });
     },
   });
 
@@ -216,7 +217,7 @@ export function JobDetailSheet({
       if (context?.previousJob && jobQueryKey) {
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
-      toast.error("Failed to save notes", { description: String(err) });
+      toast.error("Failed to save notes", { description: getErrorMessage(err) });
     },
   });
 
@@ -238,7 +239,7 @@ export function JobDetailSheet({
       if (context?.previousJob && jobQueryKey) {
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
-      toast.error("Failed to update access codes", { description: String(err) });
+      toast.error("Failed to update access codes", { description: getErrorMessage(err) });
     },
   });
 
@@ -260,7 +261,7 @@ export function JobDetailSheet({
       if (context?.previousJob && jobQueryKey) {
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
-      toast.error("Failed to update due date", { description: String(err) });
+      toast.error("Failed to update due date", { description: getErrorMessage(err) });
     },
   });
 
@@ -288,7 +289,7 @@ export function JobDetailSheet({
       if (context?.previousJob && jobQueryKey) {
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
-      toast.error("Failed to update status", { description: String(err) });
+      toast.error("Failed to update status", { description: getErrorMessage(err) });
     },
   });
 
@@ -310,7 +311,7 @@ export function JobDetailSheet({
       if (context?.previousJob && jobQueryKey) {
         queryClient.setQueryData(jobQueryKey, context.previousJob);
       }
-      toast.error("Failed to update route selection", { description: String(err) });
+      toast.error("Failed to update route selection", { description: getErrorMessage(err) });
     },
   });
 
@@ -321,7 +322,7 @@ export function JobDetailSheet({
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error("Failed to delete job", { description: String(err) });
+      toast.error("Failed to delete job", { description: getErrorMessage(err) });
     },
   });
 

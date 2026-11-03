@@ -257,7 +257,7 @@ export function useRouteOptimization() {
       } catch (error) {
         console.error("Route optimization error:", error);
         toast.error("Failed to optimize route", {
-          description: getErrorMessage(error, "Something went wrong. Please try again."),
+          description: getErrorMessage(error),
         });
         setIsOptimizing(false);
         return false;

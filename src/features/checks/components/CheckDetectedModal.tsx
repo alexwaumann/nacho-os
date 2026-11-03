@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { useUploadImage } from "@/hooks/useUploadImage";
 import { findBestAddressMatch } from "@/lib/address";
+import { getErrorMessage } from "@/lib/errors";
 import { formatCurrency } from "@/lib/utils";
 
 interface CheckDetectedModalProps {
@@ -83,7 +84,7 @@ export function CheckDetectedModal({
     } catch (error) {
       console.error("Failed to save check:", error);
       toast.error("Failed to save check", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsSaving(false);

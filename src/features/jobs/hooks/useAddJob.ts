@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 
+import { getErrorMessage } from "@/lib/errors";
 import { processFileToImages } from "@/lib/pdf";
 
 type ProcessedFile = {
@@ -106,7 +107,7 @@ export function useAddJob() {
           return true;
         } catch (error) {
           console.error(`Error processing file ${file.name}:`, error);
-          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          const errorMessage = getErrorMessage(error);
           toast.error(`Failed to process ${file.name}: ${errorMessage}`);
           setFiles((prev) =>
             prev.map((f, idx) =>

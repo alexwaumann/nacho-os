@@ -12,6 +12,7 @@ import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import { ImageViewer } from "@/components/ImageViewer";
 import { Button } from "@/components/ui/button";
 import { useImageViewer } from "@/hooks/useImageViewer";
+import { getErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
 
 export type JobPhoto = Doc<"jobPhotos"> & { imageUrl: string | null };
@@ -65,7 +66,7 @@ export function JobPhotosTab({ jobId, photos }: JobPhotosTabProps) {
     } catch (error) {
       console.error("Failed to save caption:", error);
       toast.error("Couldn't save the caption", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     }
   };
@@ -78,7 +79,7 @@ export function JobPhotosTab({ jobId, photos }: JobPhotosTabProps) {
     } catch (error) {
       console.error("Failed to delete photo:", error);
       toast.error("Couldn't delete the photo", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     }
   };

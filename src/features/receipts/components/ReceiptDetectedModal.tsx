@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUploadImage } from "@/hooks/useUploadImage";
+import { getErrorMessage } from "@/lib/errors";
 import { formatCurrency, formatDueDate } from "@/lib/utils";
 
 interface ReceiptDetectedModalProps {
@@ -77,7 +78,7 @@ export function ReceiptDetectedModal({
     } catch (error) {
       console.error("Failed to save receipt:", error);
       toast.error("Failed to save receipt", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsSaving(false);
