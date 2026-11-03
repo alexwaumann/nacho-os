@@ -16,11 +16,15 @@ import type * as jobs from "../jobs.js";
 import type * as lib_ai from "../lib/ai.js";
 import type * as lib_geo from "../lib/geo.js";
 import type * as lib_jobExtraction from "../lib/jobExtraction.js";
+import type * as lib_routing from "../lib/routing.js";
+import type * as lib_weather from "../lib/weather.js";
+import type * as maps from "../maps.js";
 import type * as payments from "../payments.js";
 import type * as receiptActions from "../receiptActions.js";
 import type * as receipts from "../receipts.js";
 import type * as routeBriefs from "../routeBriefs.js";
 import type * as users from "../users.js";
+import type * as weather from "../weather.js";
 
 import type {
   ApiFromModules,
@@ -37,11 +41,15 @@ declare const fullApi: ApiFromModules<{
   "lib/ai": typeof lib_ai;
   "lib/geo": typeof lib_geo;
   "lib/jobExtraction": typeof lib_jobExtraction;
+  "lib/routing": typeof lib_routing;
+  "lib/weather": typeof lib_weather;
+  maps: typeof maps;
   payments: typeof payments;
   receiptActions: typeof receiptActions;
   receipts: typeof receipts;
   routeBriefs: typeof routeBriefs;
   users: typeof users;
+  weather: typeof weather;
 }>;
 
 /**

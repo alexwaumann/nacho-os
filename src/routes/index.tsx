@@ -29,7 +29,7 @@ import { getHomeLegSeconds, isRouteDone, isStopDone } from "@/features/jobs/lib/
 import { ScanActions } from "@/features/scan/components/ScanActions";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
-import { generateGoogleMapsUrl } from "@/server/geo";
+import { generateGoogleMapsUrl } from "@/lib/googleMaps";
 
 const searchSchema = z.object({
   "new-job": z.string().optional(),

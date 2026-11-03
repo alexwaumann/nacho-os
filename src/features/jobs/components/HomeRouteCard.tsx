@@ -3,7 +3,7 @@ import { formatArrivalTime } from "../lib/arrival";
 import { formatDriveTime } from "../lib/today";
 import { HourlyForecast } from "./HourlyForecast";
 
-import type { Coordinates } from "@/server/weather";
+import type { Coordinates } from "../../../../convex/lib/routing";
 import { cn } from "@/lib/utils";
 
 interface HomeRouteCardProps {

@@ -27,7 +27,7 @@ import { env } from "@/env";
 import { describeLocationError, getCurrentLocation } from "@/lib/geolocation";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
-import { generateGoogleMapsUrl } from "@/server/geo";
+import { generateGoogleMapsUrl } from "@/lib/googleMaps";
 
 type JobStatus = "pending" | "completed" | "paid";
 
