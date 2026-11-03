@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
+import { generateGoogleMapsUrl } from "@shared/googleMaps";
 import { api } from "../../../../convex/_generated/api";
 import type { MapCameraChangedEvent } from "@vis.gl/react-google-maps";
 import type { ReactNode } from "react";
@@ -27,7 +28,6 @@ import { env } from "@/env";
 import { describeLocationError, getCurrentLocation } from "@/lib/geolocation";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
-import { generateGoogleMapsUrl } from "@/lib/googleMaps";
 
 type JobStatus = "pending" | "completed" | "paid";
 

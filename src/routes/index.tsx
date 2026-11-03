@@ -9,6 +9,7 @@ import { z } from "zod";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { getHomeLegSeconds, isRouteDone, isStopDone } from "@shared/jobs/today";
+import { generateGoogleMapsUrl } from "@shared/googleMaps";
 import { api } from "../../convex/_generated/api";
 
 import type { Id } from "../../convex/_generated/dataModel";
@@ -29,7 +30,6 @@ import { useRouteOptimization } from "@/features/jobs/hooks/useRouteOptimization
 import { ScanActions } from "@/features/scan/components/ScanActions";
 import { cn } from "@/lib/utils";
 import { openExternal } from "@/lib/openExternal";
-import { generateGoogleMapsUrl } from "@/lib/googleMaps";
 
 const searchSchema = z.object({
   "new-job": z.string().optional(),

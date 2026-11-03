@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 
+import { Toaster } from "@/components/ui/toast";
 import { useTheme } from "@/hooks/useTheme";
 import { AppProviders } from "@/integrations/providers";
 
@@ -63,6 +64,7 @@ function RootNavigator() {
           <Stack.Screen name="sign-in" />
         </Stack.Protected>
       </Stack>
+      <Toaster />
     </ThemeProvider>
   );
 }
