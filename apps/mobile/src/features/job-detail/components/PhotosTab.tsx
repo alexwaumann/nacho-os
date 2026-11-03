@@ -9,6 +9,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
+import { AddJobPhoto } from "@/features/photos/components/AddJobPhoto";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
@@ -20,12 +21,13 @@ type JobPhotos = FunctionReturnType<typeof api.jobPhotos.listByJob>;
 type JobPhoto = JobPhotos[number];
 
 interface PhotosTabProps {
+  jobId: Id<"jobs">;
   /** Oldest first, as the query returns them; undefined while loading */
   photos: JobPhotos | undefined;
 }
 
-/** The job's photos, newest first: view big, caption ("Bathroom 2"), delete */
-export function PhotosTab({ photos }: PhotosTabProps) {
+/** The job's photos, newest first: add (camera or library), view big, caption, delete */
+export function PhotosTab({ jobId, photos }: PhotosTabProps) {
   const { colors } = useTheme();
   const [editingId, setEditingId] = useState<Id<"jobPhotos"> | null>(null);
   const setCaption = useMutation(api.jobPhotos.setCaption).withOptimisticUpdate(
@@ -83,7 +85,7 @@ export function PhotosTab({ photos }: PhotosTabProps) {
 
   return (
     <View style={styles.tab}>
-      {/* ADD PHOTO: "Take photo" and "Choose from library" buttons go here (a later PR) */}
+      <AddJobPhoto jobId={jobId} />
 
       {photos === undefined ?
         <ActivityIndicator />

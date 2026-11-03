@@ -15,6 +15,9 @@ import { useRouteBrief } from "@/features/route/hooks/useRouteBrief";
 import { useRouteOptimization } from "@/features/route/hooks/useRouteOptimization";
 import { useRouteOrder } from "@/features/route/hooks/useRouteOrder";
 import { useTodayRoute } from "@/features/route/hooks/useTodayRoute";
+import { openAddJob } from "@/features/add-job/openAddJob";
+import { useScanCheck } from "@/features/checks/hooks/useScanCheck";
+import { useScanReceipt } from "@/features/receipts/hooks/useScanReceipt";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo, openRouteDirections } from "@/lib/directions";
 import { space } from "@/lib/theme";
@@ -33,8 +36,6 @@ import { WorkOrderQueue } from "./WorkOrderQueue";
 type Job = Doc<"jobs">;
 type JobId = Id<"jobs">;
 
-const showComingSoon = () => toast.info("Coming soon");
-
 /**
  * Today: the action buttons, the weather brief, and today's route in order (drag to reorder,
  * swipe to remove, tap to open), ending with the drive home. A port of the web Today page.
@@ -42,6 +43,8 @@ const showComingSoon = () => toast.info("Coming soon");
 export function TodayScreen() {
   const { colors } = useTheme();
   const isLargeText = useIsLargeText();
+  const receiptScan = useScanReceipt();
+  const checkScan = useScanCheck();
   const { stops, totals, homeCoordinates, homeLegSeconds, isLoaded } = useTodayRoute();
   const { orderedJobs, setOrder, getOrder } = useRouteOrder(stops);
   const { isOptimizing, recalculateRouteMetrics, clearRoute } = useRouteOptimization();
@@ -138,9 +141,9 @@ export function TodayScreen() {
   const header = (
     <View style={styles.header}>
       <TodayActions
-        onAddJob={showComingSoon}
-        onScanReceipt={showComingSoon}
-        onScanCheck={showComingSoon}
+        onAddJob={openAddJob}
+        onScanReceipt={() => void receiptScan.start()}
+        onScanCheck={() => void checkScan.start()}
       />
 
       <WorkOrderQueue />
