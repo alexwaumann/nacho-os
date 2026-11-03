@@ -58,6 +58,9 @@ function RootNavigator() {
               contentStyle: { backgroundColor: colors.background },
             }}
           />
+          <Stack.Screen name="scan-receipt" options={{ presentation: "modal" }} />
+          <Stack.Screen name="scan-check" options={{ presentation: "modal" }} />
+          <Stack.Screen name="edit-route" options={{ presentation: "modal" }} />
           <Stack.Screen
             name="add-job"
             options={{

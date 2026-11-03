@@ -1,24 +1,17 @@
 import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { findNearestSlotIndex } from "@shared/jobs/arrival";
+import {
+  FORECAST_HOURS,
+  getHourStart,
+  roundCoordinate,
+  selectForecastSlots,
+} from "@shared/jobs/forecast";
 
 import { api } from "../../../../convex/_generated/api";
-import type { Coordinates, HourlyForecastSlot } from "../../../../convex/lib/weather";
+import type { Coordinates } from "../../../../convex/lib/weather";
 import { convexQueryClient } from "@/integrations/tanstack-query/root-provider";
 
 const HOUR = 1000 * 60 * 60;
-
-// Enough hours to reach the arrival time at the last stop of a long day
-const FORECAST_HOURS = 16;
-
-export function getHourStart(now = Date.now()) {
-  const date = new Date(now);
-  date.setMinutes(0, 0, 0);
-  return date.getTime();
-}
-
-// ~1km precision so nearby stops share a forecast
-const roundCoordinate = (value: number) => Number(value.toFixed(2));
 
 /**
  * The hourly forecast query for a site, shared by the forecast strip and the voice assistant.
@@ -91,27 +84,10 @@ export function useHourlyForecast(
     placeholderData: keepPreviousData,
   });
 
-  let slots: Array<HourlyForecastSlot> | undefined;
-  let arrivalIndex = -1;
-  if (query.data) {
-    const upcoming = query.data.hourly.filter((slot) => slot.time > hourStart);
-    const shown = upcoming.slice(0, upcomingHours);
-
-    if (arrivalTime !== undefined && shown.length === upcomingHours) {
-      const nearest = findNearestSlotIndex(
-        upcoming.map((slot) => slot.time),
-        arrivalTime,
-      );
-      if (nearest >= upcomingHours) {
-        shown[upcomingHours - 1] = upcoming[nearest];
-        arrivalIndex = upcomingHours;
-      } else if (nearest >= 0) {
-        arrivalIndex = nearest + 1;
-      }
-    }
-
-    slots = [query.data.current, ...shown];
-  }
+  const { slots, arrivalIndex } =
+    query.data ?
+      selectForecastSlots(query.data, hourStart, upcomingHours, arrivalTime)
+    : { slots: undefined, arrivalIndex: -1 };
 
   return { slots, arrivalIndex, isLoading: query.isLoading };
 }
