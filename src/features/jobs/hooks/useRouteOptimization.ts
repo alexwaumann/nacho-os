@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 import type { Coordinates, RouteWaypoint } from "../../../../convex/lib/routing";
+import { getErrorMessage } from "@/lib/errors";
 import { describeLocationError, getCurrentLocation as getDeviceLocation } from "@/lib/geolocation";
 
 type Job = Doc<"jobs">;
@@ -256,7 +257,7 @@ export function useRouteOptimization() {
       } catch (error) {
         console.error("Route optimization error:", error);
         toast.error("Failed to optimize route", {
-          description: error instanceof Error ? error.message : "Unknown error occurred",
+          description: getErrorMessage(error, "Something went wrong. Please try again."),
         });
         setIsOptimizing(false);
         return false;
