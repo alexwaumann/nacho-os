@@ -1,4 +1,4 @@
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import {
@@ -29,7 +29,6 @@ import { requestLocationPermission, watchLocationPermission } from "@/lib/geoloc
 import { Label } from "@/components/ui/label";
 import { isNativePluginAvailable } from "@/lib/native";
 import { cn } from "@/lib/utils";
-import { geocodeAddress } from "@/server/geo";
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
@@ -38,6 +37,7 @@ export const Route = createFileRoute("/account")({
 function AccountPage() {
   const { user } = useUser();
   const { data: convexUser } = useQuery(convexQuery(api.users.getCurrentUser, {}));
+  const geocodeAddress = useAction(api.maps.geocodeAddress);
   const updateHomeAddress = useMutation(api.users.updateHomeAddress);
   const updateSettings = useMutation(api.users.updateSettings).withOptimisticUpdate(
     (localStore, { settings }) => {
@@ -79,7 +79,7 @@ function AccountPage() {
 
     try {
       // Geocode the address
-      const coords = await geocodeAddress({ data: { address } });
+      const coords = await geocodeAddress({ address });
 
       // Save to Convex
       await updateHomeAddress({

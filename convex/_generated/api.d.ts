@@ -21,12 +21,14 @@ import type * as lib_jobExtraction from "../lib/jobExtraction.js";
 import type * as lib_media from "../lib/media.js";
 import type * as lib_routeBriefAgent from "../lib/routeBriefAgent.js";
 import type * as lib_routeTiming from "../lib/routeTiming.js";
+import type * as lib_routing from "../lib/routing.js";
 import type * as lib_voice_agent from "../lib/voice/agent.js";
 import type * as lib_voice_globalAgent from "../lib/voice/globalAgent.js";
 import type * as lib_voice_globalOps from "../lib/voice/globalOps.js";
 import type * as lib_voice_ops from "../lib/voice/ops.js";
 import type * as lib_voice_validators from "../lib/voice/validators.js";
-import type * as lib_workdayForecast from "../lib/workdayForecast.js";
+import type * as lib_weather from "../lib/weather.js";
+import type * as maps from "../maps.js";
 import type * as payments from "../payments.js";
 import type * as receiptActions from "../receiptActions.js";
 import type * as receipts from "../receipts.js";
@@ -34,6 +36,7 @@ import type * as routeBriefActions from "../routeBriefActions.js";
 import type * as routeBriefs from "../routeBriefs.js";
 import type * as users from "../users.js";
 import type * as voice from "../voice.js";
+import type * as weather from "../weather.js";
 
 import type {
   ApiFromModules,
@@ -55,12 +58,14 @@ declare const fullApi: ApiFromModules<{
   "lib/media": typeof lib_media;
   "lib/routeBriefAgent": typeof lib_routeBriefAgent;
   "lib/routeTiming": typeof lib_routeTiming;
+  "lib/routing": typeof lib_routing;
   "lib/voice/agent": typeof lib_voice_agent;
   "lib/voice/globalAgent": typeof lib_voice_globalAgent;
   "lib/voice/globalOps": typeof lib_voice_globalOps;
   "lib/voice/ops": typeof lib_voice_ops;
   "lib/voice/validators": typeof lib_voice_validators;
-  "lib/workdayForecast": typeof lib_workdayForecast;
+  "lib/weather": typeof lib_weather;
+  maps: typeof maps;
   payments: typeof payments;
   receiptActions: typeof receiptActions;
   receipts: typeof receipts;
@@ -68,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   routeBriefs: typeof routeBriefs;
   users: typeof users;
   voice: typeof voice;
+  weather: typeof weather;
 }>;
 
 /**

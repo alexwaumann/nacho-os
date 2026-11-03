@@ -15,7 +15,7 @@ import { useHourlyForecast } from "../hooks/useHourlyForecast";
 import { formatArrivalTime } from "../lib/arrival";
 import type { LucideIcon } from "lucide-react";
 
-import type { Coordinates, HourlyForecastSlot } from "@/server/weather";
+import type { Coordinates, HourlyForecastSlot } from "../../../../convex/lib/weather";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 

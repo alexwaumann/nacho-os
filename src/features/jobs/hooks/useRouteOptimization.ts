@@ -1,12 +1,11 @@
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
-import type { Coordinates, RouteWaypoint } from "@/server/geo";
+import type { Coordinates, RouteWaypoint } from "../../../../convex/lib/routing";
 import { describeLocationError, getCurrentLocation as getDeviceLocation } from "@/lib/geolocation";
-import { calculateRouteMetrics, geocodeAddress, optimizeRoute } from "@/server/geo";
 
 type Job = Doc<"jobs">;
 
@@ -18,6 +17,9 @@ interface RecalculateOptions {
 export function useRouteOptimization() {
   const [isOptimizing, setIsOptimizing] = useState(false);
 
+  const geocodeAddress = useAction(api.maps.geocodeAddress);
+  const optimizeRoute = useAction(api.maps.optimizeRoute);
+  const calculateRouteMetrics = useAction(api.maps.calculateRouteMetrics);
   const batchUpdateRouteSelection = useMutation(api.jobs.batchUpdateRouteSelection);
   const batchUpdateRouteMetrics = useMutation(api.jobs.batchUpdateRouteMetrics);
   const updateRouteTotals = useMutation(api.jobs.updateRouteTotals);
@@ -82,7 +84,7 @@ export function useRouteOptimization() {
           const geocodeResults = await Promise.all(
             jobsWithoutCoords.map(async (job) => {
               try {
-                const coordinates = await geocodeAddress({ data: { address: job.address } });
+                const coordinates = await geocodeAddress({ address: job.address });
                 return { job, coordinates, error: null };
               } catch (error) {
                 return { job, coordinates: null, error };
@@ -178,12 +180,10 @@ export function useRouteOptimization() {
 
         // Call Google Routes API to optimize
         const routeResult = await optimizeRoute({
-          data: {
-            origin: currentLocation,
-            destination,
-            waypoints,
-            optimize: true,
-          },
+          origin: currentLocation,
+          destination,
+          waypoints,
+          optimize: true,
         });
 
         console.log("routeResult", routeResult);
@@ -271,6 +271,8 @@ export function useRouteOptimization() {
       updateRouteTotals,
       deleteRouteTotals,
       updateJob,
+      geocodeAddress,
+      optimizeRoute,
     ],
   );
 
@@ -315,7 +317,7 @@ export function useRouteOptimization() {
           const geocodeResults = await Promise.all(
             jobsWithoutCoords.map(async (job) => {
               try {
-                const coordinates = await geocodeAddress({ data: { address: job.address } });
+                const coordinates = await geocodeAddress({ address: job.address });
                 return { job, coordinates, error: null };
               } catch (error) {
                 return { job, coordinates: null, error };
@@ -375,11 +377,9 @@ export function useRouteOptimization() {
 
         // Call route metrics calculation with home address as destination (if set)
         const routeResult = await calculateRouteMetrics({
-          data: {
-            origin: currentLocation,
-            waypoints,
-            destination: currentUser?.homeCoordinates,
-          },
+          origin: currentLocation,
+          waypoints,
+          destination: currentUser?.homeCoordinates,
         });
 
         if (!routeResult) {
@@ -430,6 +430,8 @@ export function useRouteOptimization() {
       batchUpdateRouteMetrics,
       updateRouteTotals,
       updateJob,
+      geocodeAddress,
+      calculateRouteMetrics,
     ],
   );
 

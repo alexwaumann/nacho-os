@@ -2,8 +2,9 @@ import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react";
 import { findNearestSlotIndex } from "../lib/arrival";
 
-import type { Coordinates, HourlyForecastSlot } from "@/server/weather";
-import { fetchHourlyForecast } from "@/server/weather";
+import { api } from "../../../../convex/_generated/api";
+import type { Coordinates, HourlyForecastSlot } from "../../../../convex/lib/weather";
+import { convexQueryClient } from "@/integrations/tanstack-query/root-provider";
 
 const HOUR = 1000 * 60 * 60;
 
@@ -29,7 +30,10 @@ export function hourlyForecastQueryOptions(coordinates: Coordinates, hourStart: 
   return queryOptions({
     queryKey: ["weather", "hourly", lat, lng, hourStart, FORECAST_HOURS],
     queryFn: () =>
-      fetchHourlyForecast({ data: { coordinates: { lat, lng }, hours: FORECAST_HOURS } }),
+      convexQueryClient.convexClient.action(api.weather.getHourlyForecast, {
+        coordinates: { lat, lng },
+        hours: FORECAST_HOURS,
+      }),
     staleTime: HOUR / 2,
     gcTime: HOUR * 2,
   });

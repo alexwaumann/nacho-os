@@ -7,27 +7,13 @@ import { coordinatesValidator, weatherRiskValidator } from "./schema";
 import { createGeminiClient } from "./lib/ai";
 import { requireIdentity } from "./lib/auth";
 import { requestRouteBrief } from "./lib/routeBriefAgent";
-import { getTodayHourlyForecast } from "./lib/workdayForecast";
+import { calculateDistance } from "./lib/routing";
+import { getTodayHourlyForecast } from "./lib/weather";
 import type { RouteBrief } from "./lib/routeBriefAgent";
-import type { Coordinates } from "./lib/workdayForecast";
+import type { Coordinates } from "./lib/routing";
 
 const MAX_STOPS = 15;
 const KM_PER_MILE = 1.609344;
-const EARTH_RADIUS_KM = 6371;
-
-/** Straight-line (haversine) distance in km */
-function calculateDistance(from: Coordinates, to: Coordinates): number {
-  const dLat = ((to.lat - from.lat) * Math.PI) / 180;
-  const dLon = ((to.lng - from.lng) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((from.lat * Math.PI) / 180) *
-      Math.cos((to.lat * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 const toMiles = (from: Coordinates | undefined, to: Coordinates | undefined) =>
   from && to ? Math.round(calculateDistance(from, to) / KM_PER_MILE) : null;
 

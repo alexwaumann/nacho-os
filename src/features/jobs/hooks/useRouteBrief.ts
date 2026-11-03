@@ -14,7 +14,7 @@ import { api } from "../../../../convex/_generated/api";
 import { useCurrentHour } from "./useHourlyForecast";
 
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
-import type { Coordinates } from "../../../../convex/lib/workdayForecast";
+import type { Coordinates } from "../../../../convex/lib/routing";
 import { getErrorMessage } from "@/lib/errors";
 
 type Job = Doc<"jobs">;

@@ -4,7 +4,7 @@ import { ON_SITE_MINUTES } from "./routeTiming";
 import { VOICE_MODEL, VOICE_THINKING } from "./voice/agent";
 import type { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-import type { WorkdayForecastSlot } from "./workdayForecast";
+import type { WorkdayForecastSlot } from "./weather";
 
 // Server-only: writes the daily weather brief for the route with Gemini
 
