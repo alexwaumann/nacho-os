@@ -4,10 +4,10 @@ import type { Id } from "@convex/_generated/dataModel";
 
 import type { PickedImage } from "./pickImages";
 
-const UPLOAD_FAILED = "Couldn't send the picture. Check your internet and try again.";
+const UPLOAD_FAILED = "Couldn't send it. Check your internet and try again.";
 
 /**
- * Upload a picture on the phone to Convex storage, straight from the file (no base64 in
+ * Upload a picture (or PDF) on the phone to Convex storage, straight from the file (no base64 in
  * JavaScript), and return its storage id. `uploadUrl` comes from `api.files.generateUploadUrl`.
  */
 export async function uploadImage(uploadUrl: string, image: PickedImage): Promise<Id<"_storage">> {

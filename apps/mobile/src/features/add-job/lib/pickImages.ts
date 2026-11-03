@@ -3,7 +3,7 @@ import DocumentScanner, { ResponseType } from "react-native-document-scanner-plu
 
 import { clearToastsBeforePresenting } from "@/components/ui/toast";
 
-/** A picture on the phone, ready to upload */
+/** A picture on the phone, ready to upload (or a PDF chosen in Files: `application/pdf`) */
 export interface PickedImage {
   uri: string;
   mimeType: string;

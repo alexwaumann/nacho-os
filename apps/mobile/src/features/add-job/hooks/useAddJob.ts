@@ -1,6 +1,7 @@
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 
 import { api } from "@convex/_generated/api";
+import { isPdf } from "@convex/lib/media";
 import { getErrorMessage } from "@shared/errors";
 import { describeJobSource, getAddJobRows } from "@shared/jobs/addJobQueue";
 import type { AddJobRow, JobSourceKind } from "@shared/jobs/addJobQueue";
@@ -19,8 +20,8 @@ import { uploadImage } from "../lib/uploadImage";
 const SEND_FAILED = "Couldn't send it. Check your internet and try again.";
 
 /**
- * Send work orders to be read, like the web's useAddJob: each job's pages are uploaded to
- * storage and queued (`jobs.enqueueJob`); the server reads them in the background and makes the
+ * Send work orders to be read, like the web's useAddJob: each job's pages (or its PDF) are
+ * uploaded to storage and queued (`jobs.enqueueJob`); the server reads them in the background and makes the
  * job. `rows` is the "Reading work orders" list: sending, reading, done (with the new job), or
  * failed (retry, or remove).
  */
@@ -46,11 +47,21 @@ export function useAddJob() {
     if (!submission) return false;
     updateSubmission(id, { stage: "uploading", error: undefined, queueId: undefined });
     try {
-      // Pages upload in parallel, each with its own one-time upload URL
-      const storageIds = await Promise.all(
-        submission.pages.map(async (page) => uploadImage(await generateUploadUrl(), page)),
-      );
-      const queueId = await enqueueJob({ fileStorageIds: storageIds, fileName: submission.name });
+      const [firstPage] = submission.pages;
+      let queueId;
+      let storageIds;
+      if (submission.pages.length === 1 && firstPage && isPdf(firstPage.mimeType)) {
+        // A PDF goes as-is, with no page images: the server reads it and keeps it with the job
+        const sourceFileId = await uploadImage(await generateUploadUrl(), firstPage);
+        storageIds = [sourceFileId];
+        queueId = await enqueueJob({ fileStorageIds: [], sourceFileId, fileName: submission.name });
+      } else {
+        // Pages upload in parallel, each with its own one-time upload URL
+        storageIds = await Promise.all(
+          submission.pages.map(async (page) => uploadImage(await generateUploadUrl(), page)),
+        );
+        queueId = await enqueueJob({ fileStorageIds: storageIds, fileName: submission.name });
+      }
       updateSubmission(id, { stage: "sent", queueId, storageIds });
       return true;
     } catch (error) {
@@ -61,12 +72,19 @@ export function useAddJob() {
   };
 
   /** Send pictures as new jobs: each group of pages is one job */
-  const submit = async (kind: JobSourceKind, jobs: PickedImage[][]) => {
+  const submit = (kind: JobSourceKind, jobs: PickedImage[][]) =>
+    submitNamed(jobs.map((pages) => ({ name: describeJobSource(kind, pages.length), pages })));
+
+  /**
+   * Send new jobs with their own names, e.g. files from the Files app: a PDF is a job of its
+   * own, named after the file
+   */
+  const submitNamed = async (jobs: { name: string; pages: PickedImage[] }[]) => {
     // Added last to first, so the newest-first list shows them in the order he picked them
     const ids = jobs
-      .filter((pages) => pages.length > 0)
+      .filter(({ pages }) => pages.length > 0)
       .reverse()
-      .map((pages) => addSubmission(describeJobSource(kind, pages.length), pages).id)
+      .map(({ name, pages }) => addSubmission(name, pages).id)
       .reverse();
     const results = await Promise.all(ids.map(send));
     const sentCount = results.filter(Boolean).length;
@@ -84,7 +102,7 @@ export function useAddJob() {
     }
   };
 
-  /** Send a failed one again: its pictures are still on the phone */
+  /** Send a failed one again: its pictures (or PDF) are still on the phone */
   const retry = async (row: AddJobRow) => {
     if (!row.submissionId) return;
     // The server deletes a failed job's pictures, so it's a fresh upload and a new queue item
@@ -111,7 +129,7 @@ export function useAddJob() {
     }
   };
 
-  return { rows, isLoading: queue === undefined, submit, retry, dismiss };
+  return { rows, isLoading: queue === undefined, submit, submitNamed, retry, dismiss };
 }
 
 /** Forget the finished ones among `rows` once he's seen them (when the sheet closes) */

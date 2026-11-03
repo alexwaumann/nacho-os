@@ -88,11 +88,12 @@ export const listByJob = query({
       .withIndex("by_job", (q) => q.eq("jobId", args.jobId))
       .collect();
 
-    // Add image URLs
+    // Add image URLs, and the file type: a receipt from the iOS app may be a PDF
     const receiptsWithUrls = await Promise.all(
       receipts.map(async (receipt) => ({
         ...receipt,
         imageUrl: await ctx.storage.getUrl(receipt.imageId),
+        imageContentType: (await ctx.db.system.get(receipt.imageId))?.contentType ?? null,
       })),
     );
 

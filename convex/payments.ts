@@ -99,6 +99,8 @@ export const getByJob = query({
     return {
       ...payment,
       imageUrl: await ctx.storage.getUrl(payment.imageId),
+      // A check from the iOS app may be a PDF
+      imageContentType: (await ctx.db.system.get(payment.imageId))?.contentType ?? null,
     };
   },
 });

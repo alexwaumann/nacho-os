@@ -50,7 +50,9 @@ export async function getImage(title: string): Promise<CapturedImage | null> {
         ]);
         return null;
       }
-      toast.error("Couldn't get the photo", { description: captureError.message });
+      toast.error(source === "file" ? "Couldn't use that file" : "Couldn't get the photo", {
+        description: captureError.message,
+      });
       return null;
     }
   }

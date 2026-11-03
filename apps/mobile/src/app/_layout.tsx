@@ -75,6 +75,7 @@ function RootNavigator() {
             name="image-viewer"
             options={{ presentation: "fullScreenModal", animation: "fade" }}
           />
+          <Stack.Screen name="pdf-viewer" options={{ presentation: "fullScreenModal" }} />
         </Stack.Protected>
 
         <Stack.Protected guard={!isSignedIn}>

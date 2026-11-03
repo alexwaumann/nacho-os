@@ -7,20 +7,22 @@ import { internal } from "./_generated/api";
 import { extractJob } from "./lib/jobExtraction";
 import { geocodeAddress } from "./lib/geo";
 import { env } from "./env";
+import { SOURCE_FILE_TOO_LARGE } from "./lib/jobSource";
+import { MAX_DOCUMENT_BYTES } from "./lib/media";
 import type { Id } from "./_generated/dataModel";
 import type { ActionCtx } from "./_generated/server";
 import type { AccessCode, SourceFile } from "./lib/jobExtraction";
 
-// Keep inline Gemini requests well under the 20MB request limit
-const MAX_SOURCE_FILE_BYTES = 15 * 1024 * 1024;
+type LoadedFile = SourceFile | "missing" | "tooLarge";
 
 async function loadFile(
   ctx: ActionCtx,
   storageId: Id<"_storage">,
   maxBytes = Infinity,
-): Promise<SourceFile | null> {
+): Promise<LoadedFile> {
   const blob = await ctx.storage.get(storageId);
-  if (!blob || blob.size > maxBytes) return null;
+  if (!blob) return "missing";
+  if (blob.size > maxBytes) return "tooLarge";
   const base64 = Buffer.from(await blob.arrayBuffer()).toString("base64");
   return { base64, mimeType: blob.type };
 }
@@ -33,16 +35,20 @@ async function loadExtractionFiles(
   sourceFileId: Id<"_storage"> | undefined,
   pageImageIds: Array<Id<"_storage">>,
 ): Promise<Array<SourceFile>> {
+  let isSourceTooLarge = false;
   if (sourceFileId) {
-    const source = await loadFile(ctx, sourceFileId, MAX_SOURCE_FILE_BYTES);
-    if (source) return [source];
+    const source = await loadFile(ctx, sourceFileId, MAX_DOCUMENT_BYTES);
+    if (typeof source === "object") return [source];
+    isSourceTooLarge = source === "tooLarge";
   }
 
   const images: Array<SourceFile> = [];
   for (const storageId of pageImageIds) {
     const image = await loadFile(ctx, storageId);
-    if (image) images.push(image);
+    if (typeof image === "object") images.push(image);
   }
+  // A large PDF with no page images to fall back on (the iOS app sends PDFs as-is)
+  if (images.length === 0 && isSourceTooLarge) throw new Error(SOURCE_FILE_TOO_LARGE);
   return images;
 }
 

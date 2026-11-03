@@ -3,28 +3,28 @@
 import { action } from "./_generated/server";
 import { scanCheckImage, scanReceiptImage } from "./lib/ai";
 import { requireIdentity } from "./lib/auth";
-import { assertImage, mediaValidator } from "./lib/media";
+import { assertImageOrPdf, mediaValidator } from "./lib/media";
 
 /**
- * Read a receipt photo (or a PDF's first page, rendered on the client) with Gemini
+ * Read a receipt photo or PDF with Gemini (the website sends a PDF's first page as an image)
  */
 export const analyzeReceipt = action({
   args: { image: mediaValidator },
   handler: async (ctx, { image }) => {
     await requireIdentity(ctx);
-    assertImage(image);
+    assertImageOrPdf(image);
     return await scanReceiptImage(image);
   },
 });
 
 /**
- * Read a check photo (or a PDF's first page, rendered on the client) with Gemini
+ * Read a check photo or PDF with Gemini (the website sends a PDF's first page as an image)
  */
 export const analyzeCheck = action({
   args: { image: mediaValidator },
   handler: async (ctx, { image }) => {
     await requireIdentity(ctx);
-    assertImage(image);
+    assertImageOrPdf(image);
     return await scanCheckImage(image);
   },
 });

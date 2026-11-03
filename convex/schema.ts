@@ -80,6 +80,9 @@ export default defineSchema({
 
     // Source document - array of image storage IDs (multi-page PDFs become multiple images)
     sourceImageIds: v.optional(v.array(v.id("_storage"))),
+    // The original document (a PDF), kept when there are no page images: the iOS app sends PDFs
+    // as-is instead of rendering their pages
+    sourceFileId: v.optional(v.id("_storage")),
 
     // State
     selectedForRoute: v.boolean(),

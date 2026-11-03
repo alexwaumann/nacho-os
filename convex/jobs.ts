@@ -2,6 +2,7 @@ import { v } from "convex/values";
 
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { getKeptSourceFileId } from "./lib/jobSource";
 
 // Reusable validators
 const taskValidator = v.object({
@@ -157,11 +158,14 @@ export const remove = mutation({
       throw new Error("Job not found or unauthorized");
     }
 
-    // Delete associated source images from storage
+    // Delete associated source images (and a kept source PDF) from storage
     if (job.sourceImageIds) {
       for (const imageId of job.sourceImageIds) {
         await ctx.storage.delete(imageId);
       }
+    }
+    if (job.sourceFileId) {
+      await ctx.storage.delete(job.sourceFileId);
     }
 
     // Delete associated receipts
@@ -613,8 +617,10 @@ export const finalizeJob = internalMutation({
 
     const { queueId, ...jobData } = args;
 
-    // The original upload is only needed for extraction
-    if (queueItem.sourceFileId) {
+    // The original upload is only needed for extraction, unless there are no page images to
+    // show instead (a PDF from the iOS app): then it stays with the job
+    const keptSourceFileId = getKeptSourceFileId(queueItem.sourceFileId, args.sourceImageIds);
+    if (queueItem.sourceFileId && !keptSourceFileId) {
       await ctx.storage.delete(queueItem.sourceFileId);
     }
 
@@ -623,6 +629,7 @@ export const finalizeJob = internalMutation({
       userId: queueItem.userId,
       type: "stop",
       ...jobData,
+      ...(keptSourceFileId ? { sourceFileId: keptSourceFileId } : {}),
       selectedForRoute: false,
       status: "pending",
     });
@@ -863,6 +870,35 @@ export const getSourceImageUrls = query({
     }
 
     return urls.filter((url): url is string => url !== null);
+  },
+});
+
+/**
+ * The job's kept source document (a PDF sent from the iOS app), or null when it has none. Jobs
+ * from the website have page images instead (getSourceImageUrls).
+ */
+export const getSourceFileUrl = query({
+  args: {
+    jobId: v.id("jobs"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) return null;
+
+    const job = await ctx.db.get(args.jobId);
+    if (!job || job.userId !== user._id || !job.sourceFileId) return null;
+
+    const file = await ctx.db.system.get(job.sourceFileId);
+    const url = await ctx.storage.getUrl(job.sourceFileId);
+    if (!file || !url) return null;
+    return { url, contentType: file.contentType ?? null, size: file.size };
   },
 });
 
