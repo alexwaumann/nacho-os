@@ -1,15 +1,4 @@
-import { Card } from "@/components/ui/card";
-import { Screen } from "@/components/ui/screen";
-import { Text } from "@/components/ui/text";
+import { JobsScreen } from "@/features/jobs/components/JobsScreen";
 
-/** Jobs: placeholder until the Jobs list and map PR. */
-export default function JobsScreen() {
-  return (
-    <Screen>
-      <Card>
-        <Text variant="heading">Coming soon</Text>
-        <Text tone="muted">All your jobs, with a map, will be here.</Text>
-      </Card>
-    </Screen>
-  );
-}
+/** Jobs: every job by status, as a list or on the map. */
+export default JobsScreen;
