@@ -26,6 +26,22 @@ const config: CapacitorConfig = {
     // The site has no `viewport-fit=cover`, so let iOS keep content clear of the status bar
     // and home indicator instead of drawing underneath them.
     contentInset: "always",
+    // No `backgroundColor`: the web view's colour also fills the status bar strip above the page
+    // for good, so brand blue there looked wrong. The default (white / black in dark mode)
+    // matches the site, and the splash below covers the load itself.
+  },
+  plugins: {
+    SplashScreen: {
+      // Keep the launch screen (same storyboard as the native splash) up until the site calls
+      // `SplashScreen.hide()` once it has rendered (see `src/lib/native.ts`), instead of showing
+      // a blank web view while it loads. The plugin has no "wait for hide()" with a maximum, so
+      // auto-hide stays on with a long duration as the safety net: a site build without the
+      // hide() call, or a launch that never gets that far, still shows the page after 10 s.
+      launchAutoHide: true,
+      launchShowDuration: 10000,
+      backgroundColor: "#0085c8",
+      showSpinner: false,
+    },
   },
 };
 

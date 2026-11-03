@@ -6,6 +6,7 @@ import { Authenticated, Unauthenticated } from "convex/react";
 
 import TopBar from "../components/TopBar";
 import BottomNav from "../components/BottomNav";
+import { HideNativeSplash } from "../components/HideNativeSplash";
 
 import ClerkProvider from "../integrations/clerk/provider";
 import ConvexProvider from "../integrations/convex/provider";
@@ -125,6 +126,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                     <main className="flex-1 max-w-lg mx-auto w-full px-2 pb-30">{children}</main>
                     <BottomNav />
                   </div>
+                  <HideNativeSplash />
                 </Authenticated>
                 <Unauthenticated>
                   <div className="min-h-screen flex items-center justify-center bg-muted p-4">
@@ -137,6 +139,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                       }}
                     />
                   </div>
+                  <HideNativeSplash />
                 </Unauthenticated>
                 <TanStackDevtools
                   config={{

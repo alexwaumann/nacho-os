@@ -65,6 +65,12 @@
     <p>Check Wi-Fi or mobile data, then tap Try again.</p>
     <a class="retry" id="retry" href="https://nacho-os.netlify.app">Try again</a>
     <script>
+      // The launch screen stays up until a page hides it (capacitor.config.ts). This page has no
+      // bundler, so use the plugin through Capacitor's global; old app builds lack it.
+      var splash =
+        window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen;
+      if (splash) splash.hide().catch(function () {});
+
       // Show that something is happening; if it still fails Capacitor reloads this page.
       document.getElementById("retry").addEventListener("click", function () {
         this.textContent = "Connecting…";
