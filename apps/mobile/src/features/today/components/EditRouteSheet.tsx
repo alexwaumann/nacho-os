@@ -3,12 +3,12 @@ import { SymbolView } from "expo-symbols";
 import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { describeDueDate } from "@shared/jobs/dueLabel";
 import { Button } from "@/components/ui/button";
+import { SheetFooter, SheetTitle } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
 import { useRouteOptimization } from "@/features/route/hooks/useRouteOptimization";
 import { useTheme } from "@/hooks/useTheme";
@@ -24,7 +24,6 @@ type JobId = Id<"jobs">;
  */
 export function EditRouteSheet() {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const { isAuthenticated } = useConvexAuth();
   const pendingJobs = useQuery(api.jobs.list, isAuthenticated ? { status: "pending" } : "skip");
   const { isOptimizing, optimizeAndSaveRoute } = useRouteOptimization();
@@ -58,21 +57,16 @@ export function EditRouteSheet() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerText}>
-          <Text variant="title">Today&apos;s stops</Text>
-          <Text tone={selectedCount === 0 ? "muted" : "primary"} accessibilityLiveRegion="polite">
-            {selectedCount === 0 ? "No stops picked" : `${selectedCount} picked`}
-          </Text>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.cancel, { opacity: pressed ? 0.6 : 1 }]}
-        >
-          <Text variant="label" tone="primary">
-            Cancel
-          </Text>
-        </Pressable>
+        <SheetTitle
+          title="Today's stops"
+          subtitle={
+            <Text tone={selectedCount === 0 ? "muted" : "primary"} accessibilityLiveRegion="polite">
+              {selectedCount === 0 ? "No stops picked" : `${selectedCount} picked`}
+            </Text>
+          }
+          actionLabel="Cancel"
+          onAction={() => router.back()}
+        />
       </View>
 
       {pendingJobs === undefined ?
@@ -98,16 +92,7 @@ export function EditRouteSheet() {
         />
       }
 
-      <View
-        style={[
-          styles.footer,
-          {
-            borderTopColor: colors.border,
-            backgroundColor: colors.background,
-            paddingBottom: Math.max(insets.bottom, space.lg),
-          },
-        ]}
-      >
+      <SheetFooter>
         <Button
           title={doneTitle}
           variant={selectedCount === 0 ? "destructive" : "primary"}
@@ -115,7 +100,7 @@ export function EditRouteSheet() {
           disabled={pendingJobs === undefined}
           onPress={() => void handleDone()}
         />
-      </View>
+      </SheetFooter>
     </View>
   );
 }
@@ -173,16 +158,11 @@ function PickableJob({ job, isSelected, onToggle }: PickableJobProps) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: space.md,
     paddingHorizontal: space.lg,
     paddingTop: space.xl,
     paddingBottom: space.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerText: { flex: 1, gap: space.xs },
-  cancel: { minHeight: minTapSize, justifyContent: "center", paddingHorizontal: space.sm },
   loading: { marginTop: space.xxl },
   list: { padding: space.lg, gap: space.md },
   empty: { textAlign: "center", paddingVertical: space.xxl },
@@ -197,9 +177,4 @@ const styles = StyleSheet.create({
   },
   jobBody: { flex: 1, gap: space.xs },
   upper: { textTransform: "uppercase" },
-  footer: {
-    paddingHorizontal: space.lg,
-    paddingTop: space.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
 });

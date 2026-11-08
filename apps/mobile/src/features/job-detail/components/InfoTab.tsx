@@ -11,6 +11,7 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { formatIsoDate } from "@shared/calendar";
 import { getDueBadge } from "@shared/jobs/dueDate";
 import { addAccessCode, restoreAccessCode, splitAccessCode } from "@shared/jobs/jobSheet";
+import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { useTheme } from "@/hooks/useTheme";
@@ -21,7 +22,7 @@ import { openImageViewer } from "../lib/imageViewer";
 import { openPdfViewer } from "../lib/pdfViewer";
 import { DatePickerModal } from "./DatePickerModal";
 import { TextEditModal } from "./EditModal";
-import { ActionButton, IconButton, Section, WARNING } from "./SheetParts";
+import { ActionButton, IconButton, WARNING } from "./SheetParts";
 import { StatusSection } from "./StatusSection";
 
 type Mutations = ReturnType<typeof useJobMutations>;

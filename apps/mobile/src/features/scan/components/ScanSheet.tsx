@@ -4,10 +4,10 @@ import { SymbolView } from "expo-symbols";
 import type { SFSymbol } from "expo-symbols";
 import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { isPdf } from "@convex/lib/media";
 import { Button } from "@/components/ui/button";
+import { SheetFooter } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
 import { openImageViewer } from "@/features/job-detail/lib/imageViewer";
 import { openPdfViewer } from "@/features/job-detail/lib/pdfViewer";
@@ -40,7 +40,6 @@ export function ScanSheet({
   footer,
 }: ScanSheetProps) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.sheet, { backgroundColor: colors.background }]}>
@@ -61,18 +60,7 @@ export function ScanSheet({
         {children}
       </ScrollView>
       {footer ?
-        <View
-          style={[
-            styles.footer,
-            {
-              borderColor: colors.border,
-              backgroundColor: colors.background,
-              paddingBottom: Math.max(insets.bottom, space.lg),
-            },
-          ]}
-        >
-          {footer}
-        </View>
+        <SheetFooter>{footer}</SheetFooter>
       : null}
     </View>
   );
@@ -204,11 +192,6 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-  },
-  footer: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: space.lg,
-    paddingTop: space.md,
   },
   footerButtons: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
   preview: {

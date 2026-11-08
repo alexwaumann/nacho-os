@@ -5,12 +5,13 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { formatIsoDate } from "@shared/calendar";
 import { getStatusActions, STATUS_LABELS } from "@shared/jobs/jobSheet";
 import type { JobStatus } from "@shared/jobs/jobSheet";
+import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { space } from "@/lib/theme";
 
 import type { useJobMutations } from "../hooks/useJobMutations";
-import { ActionButton, Pill, Section } from "./SheetParts";
+import { ActionButton, Pill } from "./SheetParts";
 
 /** The button for moving a job to each status, and what to ask first */
 export const STATUS_ACTIONS: Record<
