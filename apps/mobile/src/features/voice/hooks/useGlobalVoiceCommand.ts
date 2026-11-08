@@ -1,5 +1,4 @@
 import { useAction, useConvex, useConvexAuth, useMutation, useQuery } from "convex/react";
-import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 
@@ -37,6 +36,7 @@ import { toast, toastError } from "@/components/ui/toast";
 import { useCurrentHour } from "@/features/route/hooks/useCurrentHour";
 import { useRouteOptimization } from "@/features/route/hooks/useRouteOptimization";
 import { fetchHourlyForecast } from "@/features/route/lib/forecastCache";
+import { haptics } from "@/lib/haptics";
 
 import { showAddPhotoHint } from "../lib/photoRequest";
 import type { VoiceAudio } from "../lib/voiceAudio";
@@ -247,7 +247,7 @@ export function useGlobalVoiceCommand() {
         notUndoable: plan.notUndoable,
       });
       if (hasChanges) {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        haptics.success();
         toast.success(title, {
           description,
           duration: RESULT_TOAST_MS,

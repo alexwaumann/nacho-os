@@ -1,6 +1,5 @@
 import { ConvexError } from "convex/values";
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
-import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "@convex/_generated/api";
@@ -25,6 +24,7 @@ import {
 } from "@shared/voice/voiceClient";
 import type { PendingFollowUp } from "@shared/voice/voiceClient";
 import { toast, toastError } from "@/components/ui/toast";
+import { haptics } from "@/lib/haptics";
 
 import { showAddPhotoHint } from "../lib/photoRequest";
 import type { VoiceAudio } from "../lib/voiceAudio";
@@ -146,7 +146,7 @@ export function useVoiceCommand(job: Doc<"jobs">) {
       if (hasChanges) await saveFields(applied.changes);
       setFollowUp(nextFollowUp);
       if (hasChanges) {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        haptics.success();
         toast.success(title, {
           description,
           duration: RESULT_TOAST_MS,

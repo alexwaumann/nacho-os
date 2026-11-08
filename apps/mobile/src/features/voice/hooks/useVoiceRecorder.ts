@@ -7,11 +7,11 @@ import {
   useAudioRecorder,
 } from "expo-audio";
 import type { RecordingOptions, RecordingStatus } from "expo-audio";
-import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 
 import { withTimeout } from "@shared/voice/voiceClient";
+import { haptics } from "@/lib/haptics";
 
 import { discardRecording } from "../lib/voiceAudio";
 
@@ -129,7 +129,7 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions) {
       callbacksRef.current.onError("failed");
       return;
     }
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptics.medium();
     callbacksRef.current.onRecorded(uri);
   };
 
@@ -217,7 +217,7 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions) {
     session.timer = setTimeout(stop, maxMs);
     setState("recording");
     setStartedAt(session.startedAt);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    haptics.heavy();
   };
 
   // iOS took the mic away (a call, Siri) or the recorder failed mid-recording

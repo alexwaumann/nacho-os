@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Switch, View } from "react-native";
 
@@ -8,6 +7,7 @@ import { toastError } from "@/components/ui/toast";
 import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
+import { haptics } from "@/lib/haptics";
 import { minTapSize, space } from "@/lib/theme";
 
 import { useReadAloudSetting } from "../hooks/useReadAloudSetting";
@@ -22,7 +22,7 @@ export function ReadAloudRow() {
   const isStacked = useIsLargeText();
 
   const handleChange = async (isOn: boolean) => {
-    void Haptics.selectionAsync();
+    haptics.selection();
     try {
       await setEnabled(isOn);
     } catch (error) {
