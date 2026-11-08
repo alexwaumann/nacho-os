@@ -9,7 +9,7 @@ import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
 
-import { useToggleRoute } from "../hooks/useToggleRoute";
+import { useJobActions } from "../hooks/useJobActions";
 import { JobCard } from "./JobCard";
 
 interface JobsListProps {
@@ -33,7 +33,7 @@ const emptyText: Record<JobFilter, string> = {
  */
 export function JobsList({ jobs, filter, searchQuery, header }: JobsListProps) {
   const { colors } = useTheme();
-  const handleToggleRoute = useToggleRoute();
+  const jobActions = useJobActions();
   const visibleJobs = jobs ? getVisibleJobs(jobs, filter, searchQuery) : undefined;
   const trimmedQuery = searchQuery.trim();
 
@@ -41,7 +41,7 @@ export function JobsList({ jobs, filter, searchQuery, header }: JobsListProps) {
     <FlatList
       data={visibleJobs ?? []}
       keyExtractor={(job) => job._id}
-      renderItem={({ item }) => <JobCard job={item} onToggleRoute={handleToggleRoute} />}
+      renderItem={({ item }) => <JobCard job={item} actions={jobActions} />}
       ListHeaderComponent={header}
       ListEmptyComponent={
         visibleJobs === undefined ?
