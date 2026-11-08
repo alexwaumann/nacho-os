@@ -1,16 +1,21 @@
 import { useConvex } from "convex/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import type { Coordinates, HourlyForecast } from "@convex/lib/weather";
 import { selectForecastSlots } from "@shared/jobs/forecast";
 
-import { fetchHourlyForecast } from "../lib/forecastCache";
+import {
+  fetchHourlyForecast,
+  getForecastRefreshCount,
+  subscribeToForecastRefresh,
+} from "../lib/forecastCache";
 import { useCurrentHour } from "./useCurrentHour";
 
 /**
  * Current conditions followed by the next `upcomingHours` hourly slots at a site, with
  * `arrivalIndex` pointing at the slot nearest `arrivalTime` (-1 if none). Fetches again when the
- * hour turns, keeping the old forecast on screen meanwhile.
+ * hour turns or after a pull to refresh (`refreshForecasts`), keeping the old forecast on screen
+ * meanwhile.
  */
 export function useHourlyForecast(
   coordinates: Coordinates | undefined,
@@ -21,6 +26,7 @@ export function useHourlyForecast(
   const hourStart = useCurrentHour();
   const [forecast, setForecast] = useState<HourlyForecast | null>(null);
   const [hasFailed, setHasFailed] = useState(false);
+  const refreshCount = useSyncExternalStore(subscribeToForecastRefresh, getForecastRefreshCount);
 
   const lat = coordinates?.lat;
   const lng = coordinates?.lng;
@@ -41,7 +47,7 @@ export function useHourlyForecast(
     return () => {
       isCurrent = false;
     };
-  }, [convex, lat, lng, hourStart]);
+  }, [convex, lat, lng, hourStart, refreshCount]);
 
   const { slots, arrivalIndex } =
     forecast ?
