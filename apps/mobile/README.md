@@ -300,6 +300,50 @@ sends the clip. Add `&voiceMime=text%2Fplain` to make the server reject it (erro
 The link is ignored in release builds (`__DEV__`). Undo every change a test makes: the data is
 shared with the live website.
 
+## "Open in Nacho OS" (PDF work orders from Mail and Files)
+
+In Mail or Files he taps Share on a PDF and picks **Nacho OS** in the row of apps. The app opens
+on the Add Job sheet with that PDF already being read, exactly like Add Job → "Choose a file".
+
+- `app.json` registers the app as an **Alternate** handler for PDFs (`CFBundleDocumentTypes`,
+  `com.adobe.pdf`, `LSHandlerRank: Alternate`), so it is offered in the share sheet but never
+  becomes the default PDF viewer. `LSSupportsOpeningDocumentsInPlace` is `false`: iOS hands the
+  app its own **copy** of the file (in `tmp/<bundle id>-Inbox/`, or `Documents/Inbox/` on older
+  iOS), not a security-scoped link to the original, so there is no access to keep or release.
+- iOS opens the app with a `file://` URL. `src/app/+native-intent.tsx` catches it before Expo
+  Router tries to route it ("Unmatched route"), keeps it in `features/open-in`, and leaves him
+  where he was (or on Today when the app wasn't running). Ordinary `nachoos://` links pass through.
+- `useOpenAddJobForOpenedFiles` (root layout) opens Add Job once he's signed in, over whatever is
+  showing, a job sheet included. If he was signed out, the file waits until he signs in. If Add
+  Job is already open, it just adds the file to its list.
+- The Add Job sheet checks the file (a real PDF, under the 15 MB limit), moves it out of the inbox
+  into the cache and sends it like a chosen file. Problems show the same plain messages as "Choose
+  a file". The cached copy is deleted when its row leaves the list. Each launch deletes copies and
+  inbox files left over from before.
+- iOS hands "Open in" apps **one** file: with several PDFs selected, Nacho OS is offered but only
+  one arrives. (Taking several would need a Share Extension, which needs App Groups, so a paid
+  developer account.)
+
+The Info.plist keys are native: **rebuild** the dev client (`bunx expo run:ios`) and, on his
+iPhone, rebuild and reinstall from Xcode (see "Install on a real iPhone"). An old build doesn't
+show Nacho OS in the share sheet.
+
+**Testing in the Simulator.** Put PDFs into Files → On My iPhone (outside the repo; don't commit
+them):
+
+```bash
+UDID=<simulator udid>
+FILES="$(xcrun simctl get_app_container $UDID com.apple.DocumentsApp groups \
+  | grep FileProvider.LocalStorage | cut -f2)/File Provider Storage"
+mkdir -p "$FILES" && cp ~/Desktop/work-order.pdf "$FILES/"
+```
+
+Make a test PDF with `cupsfilter work-order.txt > work-order.pdf`. Then in Files: long-press the
+PDF → Share → Nacho OS. Try it with the app running, after quitting it, signed out, and with a job
+sheet open. Delete the jobs it makes afterwards: the data is shared with the live website. Mail
+needs an account set up in the Simulator, so test Mail on the phone. In a development build the
+cold start goes through the dev client, which still hands the file over.
+
 ## Metro (why `metro.config.js` exists)
 
 The app imports `../../convex` and `../../shared`, which are outside the project, so they're in
