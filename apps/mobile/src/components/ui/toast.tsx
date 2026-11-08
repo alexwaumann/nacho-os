@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { useEffect, useSyncExternalStore } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeInUp, FadeOutUp, LinearTransition } from "react-native-reanimated";
@@ -8,6 +7,7 @@ import { FullWindowOverlay } from "react-native-screens";
 import { getErrorMessage } from "@shared/errors";
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
+import { haptics } from "@/lib/haptics";
 import { minTapSize, radius, space } from "@/lib/theme";
 
 type ToastKind = "success" | "error" | "info";
@@ -21,7 +21,7 @@ export interface ToastOptions {
   description?: string;
   /** A button on the toast, e.g. Undo. Pressing it also closes the toast. */
   action?: ToastAction;
-  /** How long it stays up, in ms. Longer by default when there's an action to reach. */
+  /** How long it stays up, in ms. `UNDO_TOAST_MS` by default when there's an action to reach. */
   duration?: number;
   /** Reuse an id to replace a toast that's already showing instead of stacking another */
   id?: string;
@@ -32,6 +32,11 @@ interface ToastItem extends ToastOptions {
   kind: ToastKind;
   title: string;
 }
+
+/** How long a toast with a button (Undo) stays up: time to read it and reach the button */
+export const UNDO_TOAST_MS = 10_000;
+// A plain message
+const TOAST_MS = 4_000;
 
 // At most this many at once; the oldest goes first
 const MAX_TOASTS = 3;
@@ -54,7 +59,7 @@ function show(kind: ToastKind, title: string, options: ToastOptions = {}) {
     : [...toasts, item].slice(-MAX_TOASTS);
   emit();
   if (kind === "error") {
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    haptics.error();
   }
   return id;
 }
@@ -129,7 +134,7 @@ export function Toaster() {
 
 function ToastCard({ item }: { item: ToastItem }) {
   const { colors } = useTheme();
-  const duration = item.duration ?? (item.action ? 6000 : 4000);
+  const duration = item.duration ?? (item.action ? UNDO_TOAST_MS : TOAST_MS);
 
   useEffect(() => {
     const timer = setTimeout(() => dismiss(item.id), duration);
