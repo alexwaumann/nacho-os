@@ -117,7 +117,7 @@ apps/mobile/
       sign-in.tsx
       (tabs)/
         _layout.tsx     # native tab bar (Today, Jobs, Account); voice mic slot
-        (today)/        # each tab is a folder with its own Stack (large title header)
+        (today)/        # each tab is a folder with its own Stack (no header on its first screen)
           _layout.tsx
           index.tsx     # "/"
         jobs/           # "/jobs"
@@ -154,15 +154,44 @@ apps/mobile/
 
 ### Styling and accessibility
 
-The user is in his 60s on an iPhone 15 Pro Max (430×932 pt). Use the primitives in
-`src/components/ui` so text and tap targets stay big:
+The user is in his 60s on an iPhone 15 Pro Max with **Display Zoom set to "Larger Text"**, which
+makes the screen 375×812 pt (not 430×932) and everything bigger, at the default text size. So the
+app uses **standard iOS sizes** and lets the phone's settings (Display Zoom, and the text size if
+he changes it) do the enlarging. Don't make things bigger in the app itself. Test at 375 pt wide
+(a Simulator with Display Zoom on) at the default text size and at an accessibility size (AX2).
 
-- `Text` (`variant`: `title` 30, `heading` 24, `body` 20, `label` 20, `caption` 17; `tone`:
-  `default`, `muted`, `primary`, `destructive`, `onPrimary`). It scales with Dynamic Type, capped
-  per variant (`maxScale` in `src/lib/theme.ts`) so the largest accessibility sizes still fit.
-  Don't use React Native's `Text` directly.
-- `Button` is at least 56 pt tall (`minTapSize`); keep every tappable thing at least that.
-- `Screen` is the scrolling page body; put it first in a tab screen so the large title collapses.
+- `Text` uses Apple's text styles at the default size, with Apple's line heights (`typography`
+  in `src/lib/theme.ts`):
+
+  | Variant      | iOS style   | Size / line | Weight   | Use                                       |
+  | ------------ | ----------- | ----------- | -------- | ----------------------------------------- |
+  | `largeTitle` | Large Title | 34 / 41     | bold     | sign-in, scanned amounts                  |
+  | `title`      | Title 1     | 28 / 34     | bold     | sheet titles                              |
+  | `title2`     | Title 2     | 22 / 28     | bold     | the job sheet's address                   |
+  | `heading`    | Title 3     | 20 / 25     | semibold | card and section headings                 |
+  | `label`      | Headline    | 17 / 22     | semibold | buttons, row titles                       |
+  | `body`       | Body        | 17 / 22     | regular  | text (the default)                        |
+  | `caption`    | Subheadline | 15 / 20     | regular  | the secondary line under a title          |
+  | `footnote`   | Footnote    | 13 / 18     | regular  | group headings ("STATUS"), chips, footers |
+
+  `tone`: `default`, `muted`, `primary`, `destructive`, `onPrimary`. Nothing he reads is smaller
+  than 13. Don't use React Native's `Text` directly, and don't set `fontSize` by hand.
+
+- **Dynamic Type**: every variant grows with the text size like its iOS style (`maxScale` stops
+  it where Apple's style stops at AX5, so titles grow less than body text). Layouts must reflow,
+  not truncate: let text wrap, and at the accessibility sizes (`useIsLargeText()`) stack rows
+  (buttons under each other, a switch under its label, an icon above its text). Cap text
+  (`maxFontSizeMultiplier`) only where a layout truly can't grow: the hourly forecast strip,
+  segmented controls, stop-number badges, the calendar grid, the voice card. Icons next to text
+  use `useScaledSize(points)` so they grow with it.
+- Sizes: tap targets at least 44 pt (`minTapSize`), main buttons 50 pt (`buttonHeight`, used by
+  `Button` and the icon buttons), SF Symbols about the size of the text beside them (17–22 pt).
+- **Tabs have no header**: Today, Jobs and Account start right under the status bar.
+  `TabStack` hides the header on a tab's first screen; render `<StatusBarScrim />` after the
+  screen's scroll view so scrolled content fades out behind the clock. Jobs' search is a
+  `SearchField` at the top of the list (there's no header for a native search bar). Screens
+  pushed inside a tab (e.g. Account → Home address) get a normal small header with Back.
+- `Screen` is the scrolling page body; its insets for the status bar and tab bar are automatic.
 - `SegmentedControl` (`options`, `value`, `onChange`; an option can have an `icon`, a `count`
   shown after its label like "Photos 2", or a `detail` line) is the one segmented control:
   Jobs filter and view, the job sheet's tabs, Appearance. It is the single place to swap in
