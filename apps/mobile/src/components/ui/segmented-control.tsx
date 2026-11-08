@@ -1,7 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { SymbolView } from "expo-symbols";
-import { Pressable, StyleSheet, View } from "react-native";
 import type { SFSymbol } from "expo-symbols";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
@@ -10,23 +10,34 @@ import { minTapSize, radius, space } from "@/lib/theme";
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
-  /** Smaller second line, e.g. a count */
+  /** Shown after the label on the same line, e.g. "Photos 2"; hidden when 0 or missing */
+  count?: number;
+  /** Smaller second line under the label, e.g. a count */
   detail?: string;
   icon?: SFSymbol;
-  /** Read out instead of the label and detail */
+  /** Read out instead of the label, count and detail */
   accessibilityLabel?: string;
 }
 
-interface SegmentedControlProps<T extends string> {
+export interface SegmentedControlProps<T extends string> {
   options: readonly SegmentOption<T>[];
+  /** The selected option's value */
   value: T;
   onChange: (value: T) => void;
-  accessibilityLabel: string;
+  /** What the whole control picks, read out by VoiceOver */
+  accessibilityLabel?: string;
+}
+
+function describe<T extends string>({ label, count, detail }: SegmentOption<T>) {
+  return [label, count ? String(count) : undefined, detail].filter(Boolean).join(", ");
 }
 
 /**
  * A row of big segments, like iOS's segmented control but at least 56 pt tall with large text
- * (the native one stays small at large text sizes).
+ * (the native one stays small at large text sizes). VoiceOver reads it as tabs, one selected.
+ *
+ * Every segmented control in the app goes through here, so swapping the insides for the native
+ * control later (e.g. Expo UI's SwiftUI `Picker`) is a change to this file only.
  */
 export function SegmentedControl<T extends string>({
   options,
@@ -55,10 +66,7 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             accessibilityRole="tab"
             accessibilityState={{ selected: isSelected }}
-            accessibilityLabel={
-              option.accessibilityLabel ??
-              (option.detail ? `${option.label}, ${option.detail}` : option.label)
-            }
+            accessibilityLabel={option.accessibilityLabel ?? describe(option)}
             onPress={() => handlePress(option.value)}
             style={({ pressed }) => [
               styles.segment,
@@ -81,9 +89,10 @@ export function SegmentedControl<T extends string>({
                 maxFontSizeMultiplier={1.5}
                 numberOfLines={1}
                 adjustsFontSizeToFit
-                minimumFontScale={0.8}
+                minimumFontScale={0.7}
               >
                 {option.label}
+                {option.count ? ` ${option.count}` : ""}
               </Text>
             </View>
             {option.detail ?

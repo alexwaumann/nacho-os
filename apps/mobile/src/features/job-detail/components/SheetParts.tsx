@@ -1,6 +1,5 @@
 import { SymbolView } from "expo-symbols";
 import type { SFSymbol } from "expo-symbols";
-import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import type { PressableProps, StyleProp, ViewStyle } from "react-native";
 
@@ -8,29 +7,8 @@ import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
-// Small building blocks the job sheet's tabs share
-
-interface SectionProps {
-  title: string;
-  /** Shown at the right of the heading, e.g. "3 of 5 done" */
-  aside?: ReactNode;
-  children: ReactNode;
-}
-
-/** A titled block of the sheet */
-export function Section({ title, aside, children }: SectionProps) {
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeading}>
-        <Text variant="caption" tone="muted" style={styles.sectionTitle}>
-          {title.toUpperCase()}
-        </Text>
-        {aside}
-      </View>
-      {children}
-    </View>
-  );
-}
+// Small building blocks the job sheet's tabs share (section headings are in
+// @/components/ui/section)
 
 /** A dashed box with a short message, for "nothing here yet" */
 export function EmptyNote({ children }: { children: string }) {
@@ -180,15 +158,6 @@ export function IconButton({ icon, tint, background, style, ...props }: IconButt
 }
 
 const styles = StyleSheet.create({
-  section: { gap: space.md },
-  sectionHeading: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.md,
-    flexWrap: "wrap",
-  },
-  sectionTitle: { fontWeight: "800", letterSpacing: 1.2 },
   empty: {
     borderWidth: 1.5,
     borderStyle: "dashed",

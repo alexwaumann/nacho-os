@@ -1,21 +1,23 @@
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { isPdf } from "@convex/lib/media";
 import { describeJobSource, groupPages } from "@shared/jobs/addJobQueue";
 import type { AddJobRow, JobSourceKind } from "@shared/jobs/addJobQueue";
+import { Section } from "@/components/ui/section";
+import { SheetTitle } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
-import { ActionButton, Section } from "@/features/job-detail/components/SheetParts";
+import { ActionButton } from "@/features/job-detail/components/SheetParts";
 import { MediaError } from "@/features/media/lib/errors";
 import { assertFileSize, MAX_WORK_ORDER_FILE_BYTES } from "@/features/media/lib/fileSize";
 import { chooseFiles } from "@/features/media/lib/pickers";
 import { pickPhotos, showPickPhotosError } from "@/features/media/lib/pickPhotos";
 import type { ChosenFile, MediaFile } from "@/features/media/lib/types";
 import { useTheme } from "@/hooks/useTheme";
-import { minTapSize, space } from "@/lib/theme";
+import { space } from "@/lib/theme";
 
 import { clearDoneRows, useAddJob } from "../hooks/useAddJob";
 import { useSubmissions } from "../lib/submissions";
@@ -129,21 +131,7 @@ export function AddJobScreen() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxl }]}
     >
-      <View style={styles.header}>
-        <Text variant="title" style={styles.title}>
-          Add jobs
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.back()}
-          hitSlop={8}
-          style={({ pressed }) => [styles.done, pressed && { opacity: 0.6 }]}
-        >
-          <Text variant="label" tone="primary" style={styles.bold}>
-            Done
-          </Text>
-        </Pressable>
-      </View>
+      <SheetTitle title="Add jobs" actionLabel="Done" onAction={() => router.back()} isActionBold />
 
       <Text tone="muted">
         Send the work order (paper, photo or PDF). The address and tasks are filled in for you.
@@ -205,16 +193,6 @@ export function AddJobScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: space.lg, paddingTop: space.xl, gap: space.lg },
-  header: { flexDirection: "row", alignItems: "center", gap: space.md },
-  title: { flex: 1 },
-  done: {
-    minHeight: minTapSize,
-    minWidth: minTapSize,
-    paddingHorizontal: space.sm,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bold: { fontWeight: "800" },
   sources: { gap: space.md },
   source: { minHeight: 64 },
 });

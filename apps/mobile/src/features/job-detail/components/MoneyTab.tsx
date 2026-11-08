@@ -9,6 +9,7 @@ import { isPdf } from "@convex/lib/media";
 import { formatIsoDate } from "@shared/calendar";
 import { formatMoney, getJobMoneySummary } from "@shared/jobs/jobSheet";
 import { Card } from "@/components/ui/card";
+import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
 import { AddReceiptButton } from "@/features/receipts/components/AddReceiptButton";
@@ -17,7 +18,7 @@ import { radius, space } from "@/lib/theme";
 
 import { openImageViewer } from "../lib/imageViewer";
 import { openPdfViewer } from "../lib/pdfViewer";
-import { ActionButton, EmptyNote, Section, WARNING } from "./SheetParts";
+import { ActionButton, EmptyNote, WARNING } from "./SheetParts";
 
 type Receipts = FunctionReturnType<typeof api.receipts.listByJob>;
 type Payment = FunctionReturnType<typeof api.payments.getByJob>;

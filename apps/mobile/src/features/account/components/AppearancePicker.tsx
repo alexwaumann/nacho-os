@@ -1,9 +1,9 @@
 import { THEME_PREFERENCES } from "@shared/users/settings";
 import type { ThemePreference } from "@shared/users/settings";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import type { SegmentOption } from "@/components/ui/segmented-control";
 import { useThemePreference } from "@/hooks/useTheme";
 
-import { SegmentedControl } from "../../jobs/components/SegmentedControl";
-import type { SegmentOption } from "../../jobs/components/SegmentedControl";
 import { Section } from "./Section";
 
 const LABELS: Record<ThemePreference, Omit<SegmentOption<ThemePreference>, "value">> = {

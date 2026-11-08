@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { formatDueDate } from "@shared/jobs/jobsList";
+import { SectionLabel } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
@@ -51,13 +52,9 @@ export function JobPicker({
         return (
           <View key={job._id} style={styles.list}>
             {isNewSection ?
-              <Text
-                variant="caption"
-                tone="muted"
-                style={[styles.sectionLabel, index > 0 && styles.sectionGap]}
-              >
-                {sectionLabel.toUpperCase()}
-              </Text>
+              <SectionLabel style={[styles.sectionLabel, index > 0 && styles.sectionGap]}>
+                {sectionLabel}
+              </SectionLabel>
             : null}
             <JobPickerRow
               job={job}
@@ -145,7 +142,7 @@ function JobPickerRow({ job, isSelected, isRecommended, onSelect }: JobPickerRow
 
 const styles = StyleSheet.create({
   list: { gap: space.md },
-  sectionLabel: { fontWeight: "800", letterSpacing: 1.2, paddingHorizontal: space.xs },
+  sectionLabel: { paddingHorizontal: space.xs },
   sectionGap: { paddingTop: space.md },
   row: {
     minHeight: 72,

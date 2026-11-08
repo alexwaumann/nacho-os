@@ -7,13 +7,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "@convex/_generated/api";
 import type { JobFilter } from "@shared/jobs/jobsList";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import type { SegmentOption } from "@/components/ui/segmented-control";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
 
 import { JobsList } from "./JobsList";
 import { JobsMap } from "./JobsMap";
-import { SegmentedControl } from "./SegmentedControl";
-import type { SegmentOption } from "./SegmentedControl";
 
 type JobsView = "list" | "map";
 

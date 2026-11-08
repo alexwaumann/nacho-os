@@ -2,6 +2,8 @@ import { useAuth } from "@clerk/expo";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { Toaster } from "@/components/ui/toast";
 import { singleJobSheetRouter } from "@/features/job-detail/lib/singleJobSheet";
@@ -14,9 +16,12 @@ SplashScreen.setOptions({ fade: true, duration: 250 });
 
 export default function RootLayout() {
   return (
-    <AppProviders>
-      <RootNavigator />
-    </AppProviders>
+    // Once, around the whole app, as react-native-gesture-handler asks (Today's drag and swipe)
+    <GestureHandlerRootView style={styles.root}>
+      <AppProviders>
+        <RootNavigator />
+      </AppProviders>
+    </GestureHandlerRootView>
   );
 }
 
@@ -89,3 +94,7 @@ function RootNavigator() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});

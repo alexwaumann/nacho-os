@@ -10,13 +10,14 @@ import {
   isLastOpenTask,
 } from "@shared/jobs/jobSheet";
 import type { JobTask } from "@shared/jobs/jobSheet";
+import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
 import type { useJobMutations } from "../hooks/useJobMutations";
-import { EmptyNote, Section } from "./SheetParts";
+import { EmptyNote } from "./SheetParts";
 
 const ALL_DONE_TOAST_MS = 15_000;
 

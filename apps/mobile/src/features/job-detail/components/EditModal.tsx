@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
-import { Text } from "@/components/ui/text";
+import { SheetBar } from "@/components/ui/sheet";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space, typography } from "@/lib/theme";
 
@@ -37,15 +37,12 @@ export function ModalShell({
       onRequestClose={onCancel}
     >
       <View style={[styles.sheet, { backgroundColor: colors.background }]}>
-        <View style={[styles.bar, { borderColor: colors.border }]}>
-          <BarButton label="Cancel" onPress={onCancel} />
-          <Text variant="label" style={styles.title} numberOfLines={2}>
-            {title}
-          </Text>
-          {onSave ?
-            <BarButton label="Save" onPress={onSave} isBold disabled={isSaveDisabled} />
-          : <View style={styles.barSpacer} />}
-        </View>
+        <SheetBar
+          title={title}
+          onCancel={onCancel}
+          onSave={onSave}
+          isSaveDisabled={isSaveDisabled}
+        />
         <ScrollView
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets
@@ -55,41 +52,6 @@ export function ModalShell({
         </ScrollView>
       </View>
     </Modal>
-  );
-}
-
-function BarButton({
-  label,
-  onPress,
-  isBold,
-  disabled,
-}: {
-  label: string;
-  onPress: () => void;
-  isBold?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={8}
-      style={({ pressed }) => [
-        styles.barButton,
-        {
-          opacity:
-            disabled ? 0.4
-            : pressed ? 0.6
-            : 1,
-        },
-      ]}
-    >
-      <Text variant="label" tone="primary" style={isBold && styles.bold}>
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -158,24 +120,6 @@ function TextEditModalBody({
 
 const styles = StyleSheet.create({
   sheet: { flex: 1 },
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.sm,
-    paddingHorizontal: space.sm,
-    paddingTop: space.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  title: { flex: 1, textAlign: "center" },
-  barButton: {
-    minHeight: minTapSize,
-    minWidth: 88,
-    paddingHorizontal: space.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  barSpacer: { minWidth: 88 },
-  bold: { fontWeight: "800" },
   body: { padding: space.lg, gap: space.lg },
   input: {
     minHeight: minTapSize,

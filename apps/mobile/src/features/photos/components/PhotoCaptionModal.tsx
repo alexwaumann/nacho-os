@@ -1,11 +1,11 @@
 import { Image } from "expo-image";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, View } from "react-native";
 
-import { Text } from "@/components/ui/text";
+import { SheetBar } from "@/components/ui/sheet";
 import { TextField } from "@/components/ui/text-field";
 import { useTheme } from "@/hooks/useTheme";
-import { minTapSize, radius, space } from "@/lib/theme";
+import { radius, space } from "@/lib/theme";
 
 interface PhotoCaptionModalProps {
   /** The photo just added; null hides the modal */
@@ -41,13 +41,13 @@ function CaptionForm({ imageUri, onSave, onSkip }: PhotoCaptionModalProps & { im
 
   return (
     <View style={[styles.sheet, { backgroundColor: colors.background }]}>
-      <View style={[styles.bar, { borderColor: colors.border }]}>
-        <BarButton label="Skip" onPress={onSkip} />
-        <Text variant="label" style={styles.title} numberOfLines={2}>
-          Add a caption
-        </Text>
-        <BarButton label="Save" onPress={() => onSave(draft)} isBold disabled={isEmpty} />
-      </View>
+      <SheetBar
+        title="Add a caption"
+        cancelLabel="Skip"
+        onCancel={onSkip}
+        onSave={() => onSave(draft)}
+        isSaveDisabled={isEmpty}
+      />
       <ScrollView
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -75,60 +75,8 @@ function CaptionForm({ imageUri, onSave, onSkip }: PhotoCaptionModalProps & { im
   );
 }
 
-function BarButton({
-  label,
-  onPress,
-  isBold,
-  disabled,
-}: {
-  label: string;
-  onPress: () => void;
-  isBold?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={8}
-      style={({ pressed }) => [
-        styles.barButton,
-        {
-          opacity:
-            disabled ? 0.4
-            : pressed ? 0.6
-            : 1,
-        },
-      ]}
-    >
-      <Text variant="label" tone="primary" style={isBold && styles.bold}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   sheet: { flex: 1 },
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.sm,
-    paddingHorizontal: space.sm,
-    paddingTop: space.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  title: { flex: 1, textAlign: "center" },
-  barButton: {
-    minHeight: minTapSize,
-    minWidth: 88,
-    paddingHorizontal: space.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bold: { fontWeight: "800" },
   body: { padding: space.lg, gap: space.lg },
   preview: { width: "100%", height: 220, borderRadius: radius.lg, borderWidth: 1 },
 });
