@@ -1,6 +1,7 @@
 import { useMutation } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { Image } from "expo-image";
+import { Link } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
@@ -15,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
 import { openImageViewer } from "../lib/imageViewer";
+import { shareImage } from "../lib/shareImage";
 import { TextEditModal } from "./EditModal";
 import { EmptyNote } from "./SheetParts";
 
@@ -67,6 +69,15 @@ export function PhotosTab({ jobId, photos }: PhotosTabProps) {
     }
   };
 
+  const handleShare = async (photo: JobPhoto) => {
+    if (!photo.imageUrl) return;
+    try {
+      await shareImage(photo.imageUrl, photo.caption);
+    } catch (error) {
+      toastError("Couldn't share the photo", error);
+    }
+  };
+
   const handleDelete = (photo: JobPhoto) => {
     Alert.alert("Delete this photo?", "You can't undo this.", [
       { text: "Cancel", style: "cancel" },
@@ -103,26 +114,71 @@ export function PhotosTab({ jobId, photos }: PhotosTabProps) {
                 ]}
               >
                 {photo.imageUrl ?
-                  <Pressable
-                    accessibilityRole="imagebutton"
-                    accessibilityLabel={
-                      photo.caption ? `View photo: ${photo.caption}` : "View photo"
-                    }
-                    onPress={() =>
+                  // A Link only for its native context menu (touch and hold); a tap opens the
+                  // viewer with all the photos, which a plain href can't carry
+                  <Link
+                    href="/image-viewer"
+                    asChild
+                    onPress={(event) => {
+                      event.preventDefault();
                       openImageViewer(
                         viewerImages,
                         viewable.findIndex((p) => p._id === photo._id),
-                      )
-                    }
-                    style={({ pressed }) => [styles.fill, pressed && { opacity: 0.7 }]}
+                      );
+                    }}
                   >
-                    <Image
-                      source={{ uri: photo.imageUrl }}
-                      style={styles.fill}
-                      contentFit="cover"
-                      transition={150}
-                    />
-                  </Pressable>
+                    <Link.Trigger>
+                      <Pressable
+                        accessibilityRole="imagebutton"
+                        accessibilityLabel={
+                          photo.caption ? `View photo: ${photo.caption}` : "View photo"
+                        }
+                        accessibilityHint="Touch and hold to share, caption or delete it."
+                        accessibilityActions={[
+                          { name: "share", label: "Share" },
+                          {
+                            name: "caption",
+                            label: photo.caption ? "Edit caption" : "Add caption",
+                          },
+                          { name: "delete", label: "Delete" },
+                        ]}
+                        onAccessibilityAction={(event) => {
+                          const name = event.nativeEvent.actionName;
+                          if (name === "share") void handleShare(photo);
+                          else if (name === "caption") setEditingId(photo._id);
+                          else if (name === "delete") handleDelete(photo);
+                        }}
+                        style={({ pressed }) => [styles.fill, pressed && { opacity: 0.7 }]}
+                      >
+                        <Image
+                          source={{ uri: photo.imageUrl }}
+                          style={styles.fill}
+                          contentFit="cover"
+                          transition={150}
+                        />
+                      </Pressable>
+                    </Link.Trigger>
+                    <Link.Menu>
+                      <Link.MenuAction
+                        icon="square.and.arrow.up"
+                        onPress={() => void handleShare(photo)}
+                      >
+                        Share
+                      </Link.MenuAction>
+                      <Link.MenuAction icon="pencil" onPress={() => setEditingId(photo._id)}>
+                        {photo.caption ? "Edit caption" : "Add caption"}
+                      </Link.MenuAction>
+                      <Link.Menu inline>
+                        <Link.MenuAction
+                          icon="trash"
+                          destructive
+                          onPress={() => handleDelete(photo)}
+                        >
+                          Delete
+                        </Link.MenuAction>
+                      </Link.Menu>
+                    </Link.Menu>
+                  </Link>
                 : <View style={[styles.fill, styles.center]}>
                     <ActivityIndicator />
                   </View>

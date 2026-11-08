@@ -10,6 +10,7 @@ import { formatIsoDate } from "@shared/calendar";
 import { formatMoney, getJobMoneySummary } from "@shared/jobs/jobSheet";
 import { Card } from "@/components/ui/card";
 import { Section } from "@/components/ui/section";
+import { SwipeableRow, useSwipeColors } from "@/components/ui/swipeable-row";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
 import { AddReceiptButton } from "@/features/receipts/components/AddReceiptButton";
@@ -35,6 +36,7 @@ interface MoneyTabProps {
 /** What the job paid and cost: the check, the receipts, and what's left */
 export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps) {
   const { colors } = useTheme();
+  const swipeColors = useSwipeColors();
   const removeReceipt = useMutation(api.receipts.remove);
   const removePayment = useMutation(api.payments.remove);
   const dismissQueueItem = useMutation(api.receipts.dismissQueueItem);
@@ -232,48 +234,60 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
           <ActivityIndicator />
         : receipts.length > 0 ?
           receipts.map((receipt) => (
-            <Card key={receipt._id}>
-              <View style={styles.amountRow}>
-                <View style={styles.grow}>
-                  <Text variant="label">{receipt.storeName}</Text>
-                  <Text variant="caption" tone="muted">
-                    {formatIsoDate(receipt.date)}
-                    {receipt.storeLocation ? ` · ${receipt.storeLocation}` : ""}
+            // Swipe left to delete (it asks first: a deleted receipt can't come back)
+            <SwipeableRow
+              key={receipt._id}
+              rightAction={{
+                label: "Delete",
+                icon: "trash.fill",
+                color: swipeColors.destructive,
+                accessibilityLabel: `Delete ${receipt.storeName} receipt`,
+                onPress: () => handleDeleteReceipt(receipt),
+              }}
+            >
+              <Card>
+                <View style={styles.amountRow}>
+                  <View style={styles.grow}>
+                    <Text variant="label">{receipt.storeName}</Text>
+                    <Text variant="caption" tone="muted">
+                      {formatIsoDate(receipt.date)}
+                      {receipt.storeLocation ? ` · ${receipt.storeLocation}` : ""}
+                    </Text>
+                  </View>
+                  <Text variant="heading" tone="destructive">
+                    {formatMoney(receipt.total)}
                   </Text>
                 </View>
-                <Text variant="heading" tone="destructive">
-                  {formatMoney(receipt.total)}
-                </Text>
-              </View>
-              <View style={styles.buttons}>
-                {receipt.imageUrl ?
+                <View style={styles.buttons}>
+                  {receipt.imageUrl ?
+                    <ActionButton
+                      title="View"
+                      icon={isPdf(receipt.imageContentType) ? "doc.richtext" : "photo"}
+                      style={styles.flex}
+                      accessibilityLabel={`View ${receipt.storeName} receipt`}
+                      onPress={() =>
+                        isPdf(receipt.imageContentType) ?
+                          openPdfViewer({
+                            uri: receipt.imageUrl!,
+                            title: `${receipt.storeName} · ${formatMoney(receipt.total)}`,
+                          })
+                        : openImageViewer(
+                            receiptImages,
+                            receiptsWithImages.findIndex((r) => r._id === receipt._id),
+                          )
+                      }
+                    />
+                  : null}
                   <ActionButton
-                    title="View"
-                    icon={isPdf(receipt.imageContentType) ? "doc.richtext" : "photo"}
-                    style={styles.flex}
-                    accessibilityLabel={`View ${receipt.storeName} receipt`}
-                    onPress={() =>
-                      isPdf(receipt.imageContentType) ?
-                        openPdfViewer({
-                          uri: receipt.imageUrl!,
-                          title: `${receipt.storeName} · ${formatMoney(receipt.total)}`,
-                        })
-                      : openImageViewer(
-                          receiptImages,
-                          receiptsWithImages.findIndex((r) => r._id === receipt._id),
-                        )
-                    }
+                    title="Delete"
+                    icon="trash"
+                    variant="destructiveOutline"
+                    accessibilityLabel={`Delete ${receipt.storeName} receipt`}
+                    onPress={() => handleDeleteReceipt(receipt)}
                   />
-                : null}
-                <ActionButton
-                  title="Delete"
-                  icon="trash"
-                  variant="destructiveOutline"
-                  accessibilityLabel={`Delete ${receipt.storeName} receipt`}
-                  onPress={() => handleDeleteReceipt(receipt)}
-                />
-              </View>
-            </Card>
+                </View>
+              </Card>
+            </SwipeableRow>
           ))
         : (receiptQueue ?? []).length === 0 ?
           <EmptyNote>No receipts added yet.</EmptyNote>
