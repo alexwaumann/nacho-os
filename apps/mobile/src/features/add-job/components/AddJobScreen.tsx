@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { isPdf } from "@convex/lib/media";
@@ -9,19 +9,15 @@ import type { AddJobRow, JobSourceKind } from "@shared/jobs/addJobQueue";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { ActionButton, Section } from "@/features/job-detail/components/SheetParts";
-import {
-  assertFileSize,
-  ChooseFileError,
-  chooseFiles,
-  MAX_WORK_ORDER_FILE_BYTES,
-} from "@/features/scan/lib/chooseFile";
-import type { ChosenFile } from "@/features/scan/lib/chooseFile";
+import { MediaError } from "@/features/media/lib/errors";
+import { assertFileSize, MAX_WORK_ORDER_FILE_BYTES } from "@/features/media/lib/fileSize";
+import { chooseFiles } from "@/features/media/lib/pickers";
+import { pickPhotos, showPickPhotosError } from "@/features/media/lib/pickPhotos";
+import type { ChosenFile, MediaFile } from "@/features/media/lib/types";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, space } from "@/lib/theme";
 
 import { clearDoneRows, useAddJob } from "../hooks/useAddJob";
-import { choosePhotos, PickImagesError, scanPaperwork, takePhoto } from "../lib/pickImages";
-import type { PickedImage } from "../lib/pickImages";
 import { useSubmissions } from "../lib/submissions";
 import { QueueRow } from "./QueueRow";
 
@@ -36,22 +32,14 @@ function askGrouping(count: number, what = "photos"): Promise<"one" | "each" | n
   });
 }
 
-function showPickError(error: unknown) {
-  const message =
-    error instanceof PickImagesError ? error.message : "That didn't work. Please try again.";
-  if (error instanceof PickImagesError && error.isSettingsError) {
-    Alert.alert("Camera is off", message, [
-      { text: "Not now", style: "cancel" },
-      { text: "Open Settings", onPress: () => void Linking.openSettings() },
-    ]);
-    return;
-  }
-  toast.error("Couldn't get the pictures", { description: message });
-}
+const PHOTO_SOURCES = { scan: "scanner", camera: "camera", library: "library" } as const;
 
-/** Choose PDFs or pictures in Files, refusing ones too big for the server to read */
+/**
+ * Choose PDFs or pictures in Files (pictures downsized), refusing ones too big for the server to
+ * read
+ */
 async function chooseWorkOrderFiles(): Promise<ChosenFile[] | null> {
-  const files = await chooseFiles({ isMultiple: true });
+  const files = await chooseFiles("workOrder", { isMultiple: true });
   for (const file of files ?? []) {
     assertFileSize(file, MAX_WORK_ORDER_FILE_BYTES, "Try photos of the pages instead.");
   }
@@ -78,15 +66,12 @@ export function AddJobScreen() {
 
   const handleSource = async (kind: JobSourceKind) => {
     setActiveSource(kind);
-    let pages: PickedImage[] | null;
+    let pages: MediaFile[] | null;
     try {
-      pages =
-        kind === "scan" ? await scanPaperwork()
-        : kind === "camera" ? await takePhoto()
-        : await choosePhotos();
+      pages = await pickPhotos(PHOTO_SOURCES[kind], "workOrder");
     } catch (error) {
       setActiveSource(null);
-      showPickError(error);
+      showPickPhotosError(error, "Couldn't get the pictures");
       return;
     }
     setActiveSource(null);
@@ -108,7 +93,7 @@ export function AddJobScreen() {
     } catch (error) {
       setActiveSource(null);
       const message =
-        error instanceof ChooseFileError ? error.message : "That didn't work. Please try again.";
+        error instanceof MediaError ? error.message : "That didn't work. Please try again.";
       toast.error("Couldn't use that file", { description: message });
       return;
     }

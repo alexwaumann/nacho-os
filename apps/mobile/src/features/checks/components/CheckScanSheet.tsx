@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
+import { useUploadFile } from "@/features/media/hooks/useUploadFile";
+import type { MediaFile } from "@/features/media/lib/types";
 import { JobPicker } from "@/features/scan/components/JobPicker";
 import {
   FooterButtons,
@@ -21,8 +23,6 @@ import {
 } from "@/features/scan/components/ScanSheet";
 import { useReadImage } from "@/features/scan/hooks/useReadImage";
 import { useScanSheetImage } from "@/features/scan/hooks/useScanSheetImage";
-import { useUploadImage } from "@/features/scan/hooks/useUploadImage";
-import type { CapturedImage } from "@/features/scan/lib/capture";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
 
@@ -80,7 +80,7 @@ export function CheckScanSheet() {
 }
 
 interface CheckFoundProps {
-  image: CapturedImage;
+  image: MediaFile;
   check: ScannedCheck;
   onCancel: () => void;
 }
@@ -91,7 +91,7 @@ function CheckFound({ image, check, onCancel }: CheckFoundProps) {
   const { isAuthenticated } = useConvexAuth();
   const unpaidJobs = useQuery(api.jobs.listUnpaid, isAuthenticated ? {} : "skip");
   const createPayment = useMutation(api.payments.create);
-  const uploadImage = useUploadImage();
+  const uploadFile = useUploadFile();
   const [selectedJobId, setSelectedJobId] = useState<Id<"jobs"> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -107,7 +107,7 @@ function CheckFound({ image, check, onCancel }: CheckFoundProps) {
     if (!selectedJob) return;
     setIsSaving(true);
     try {
-      const imageId = await uploadImage(image);
+      const imageId = await uploadFile(image);
       // Also marks the job paid
       await createPayment({
         jobId: selectedJob._id,

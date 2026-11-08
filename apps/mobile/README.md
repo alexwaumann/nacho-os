@@ -132,7 +132,8 @@ apps/mobile/
 
 - **Routes** live in `src/app` and should mostly compose feature components. Put a feature's
   components, hooks and helpers under `src/features/<feature>/` (`today`, `jobs`, `job-sheet`,
-  `add-job`, `scan`, `voice`, `account` …), not in `src/app`.
+  `add-job`, `scan`, `voice`, `account` …), not in `src/app`. Getting and uploading pictures and
+  files is shared by several features and lives in `src/features/media/` (see App helpers).
 - **New tab screens** that push (e.g. a job list filter) go in the tab's folder; add a
   `<Stack.Screen>` to that tab's `_layout.tsx` if it needs options. **Screens shown over the
   tabs** (sheets, modals) go at the root of `src/app` and get a `<Stack.Screen>` inside the
@@ -211,6 +212,27 @@ messages, route/today/due-date math, receipt job ranking). Import it with `@shar
 - **Location:** `getCurrentLocation()` from `@/lib/location` asks for permission and returns
   `{ lat, lng }`, or throws a `LocationError` with a plain message (`describeLocationError`).
   `isLocationSettingsError` tells you when to offer `Linking.openSettings()`.
+- **Photos and files** (`src/features/media/`): every way of getting a picture or PDF and sending
+  it to Convex storage. Use it rather than calling `expo-image-picker`, the document scanner or
+  `expo-document-picker` yourself:
+  - `pickPhotos(source, purpose)`: scanner, camera or photo library, for jobs (Add Job, a job's
+    Photos tab), with `showPickPhotosError(error, title)` for its errors.
+  - `getImage(title)`: one receipt or check. It asks where it comes from (scan, photo, library,
+    Files) and explains problems itself.
+  - `chooseFiles(purpose, { isMultiple })`: PDFs or pictures from Files. Check sizes with
+    `assertFileSize`.
+  - `useUploadFile()` returns `(file) => storageId`.
+
+  Every picker takes a `purpose` (`workOrder`, `jobPhoto` or `receipt`, from
+  `@shared/media/imageResize`). Pictures come back already downsized to JPEG with the same
+  longest side and quality as the web app (1024 px / 70%, 1280 px / 75%, 1536 px / 85%), via
+  `downsizeImage`. PDFs come back unchanged. If downsizing fails, the original is sent and a
+  warning is logged. In development, each picture logs its size before and after (`[media] …`).
+  It lives under `features/` instead of `lib/` because it has hooks and native UI (action sheet,
+  alerts) next to its helpers, like a feature, and several features use it.
+  Call `clearToastsBeforePresenting()` yourself only for pickers outside this folder; these
+  pickers already call it.
+
 - **Directions:** `openDirectionsTo(address)` and `openRouteDirections(stops, homeCoordinates)`
   from `@/lib/directions` open Google Maps links (in the Google Maps app when it's installed),
   built by `@shared/googleMaps`, the same as the web app.
@@ -225,6 +247,7 @@ work is JavaScript-only. A rebuild is only needed after adding a native module o
 | Apple Maps (in-app map)              | `react-native-maps` (default provider; no Google SDK) |
 | Current location                     | `expo-location`                                       |
 | Camera / photo library               | `expo-image-picker`                                   |
+| Downsizing photos before upload      | `expo-image-manipulator`                              |
 | PDFs and other files                 | `expo-document-picker`, `expo-file-system`            |
 | Scanning receipts, checks, paperwork | `react-native-document-scanner-plugin` (VisionKit)    |
 | Showing images / PDFs                | `expo-image`, `react-native-webview`                  |

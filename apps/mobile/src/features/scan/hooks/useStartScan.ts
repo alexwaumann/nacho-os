@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { getImage } from "../lib/getImage";
+import { getImage } from "@/features/media/lib/getImage";
 import { openScanSheet } from "../lib/pendingScan";
 import type { ScanKind } from "../lib/pendingScan";
 

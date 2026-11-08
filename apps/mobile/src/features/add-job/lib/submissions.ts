@@ -2,11 +2,11 @@ import { useSyncExternalStore } from "react";
 
 import type { JobSubmission } from "@shared/jobs/addJobQueue";
 
-import type { PickedImage } from "./pickImages";
+import type { MediaFile } from "@/features/media/lib/types";
 
 /** A submission plus its pictures on the phone, kept so a failed one can be sent again */
 export interface LocalSubmission extends JobSubmission {
-  pages: PickedImage[];
+  pages: MediaFile[];
 }
 
 // Work orders sent from this phone since the app opened, newest first. Outside React so uploads
@@ -24,7 +24,7 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-export function addSubmission(name: string, pages: PickedImage[]): LocalSubmission {
+export function addSubmission(name: string, pages: MediaFile[]): LocalSubmission {
   const submission: LocalSubmission = { id: `job-${nextId++}`, name, pages, stage: "uploading" };
   submissions = [submission, ...submissions];
   emit();

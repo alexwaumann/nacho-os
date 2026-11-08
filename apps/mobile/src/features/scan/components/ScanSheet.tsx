@@ -14,7 +14,7 @@ import { openPdfViewer } from "@/features/job-detail/lib/pdfViewer";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
-import type { CapturedImage } from "../lib/capture";
+import type { MediaFile } from "@/features/media/lib/types";
 
 interface ScanSheetProps {
   title: string;
@@ -84,7 +84,7 @@ export function FooterButtons({ children }: { children: ReactNode }) {
 }
 
 /** The photo (or PDF) being read; tap to see it full screen */
-export function PhotoPreview({ image, caption }: { image: CapturedImage; caption: string }) {
+export function PhotoPreview({ image, caption }: { image: MediaFile; caption: string }) {
   const { colors } = useTheme();
   if (isPdf(image.mimeType)) {
     const name = image.name ?? "PDF";
@@ -127,7 +127,7 @@ export function PhotoPreview({ image, caption }: { image: CapturedImage; caption
 }
 
 /** Shown while Gemini reads the photo */
-export function ReadingView({ image, label }: { image: CapturedImage; label: string }) {
+export function ReadingView({ image, label }: { image: MediaFile; label: string }) {
   const { colors } = useTheme();
   return (
     <View style={styles.state}>
@@ -145,7 +145,7 @@ export function ReadingView({ image, label }: { image: CapturedImage; label: str
 interface ReadErrorViewProps {
   title: string;
   message: string;
-  image: CapturedImage;
+  image: MediaFile;
   onRetry: () => void;
   onNewPhoto: () => void;
   isPicking: boolean;

@@ -6,8 +6,9 @@ import { getErrorMessage } from "@shared/errors";
 import { describeJobSource, getAddJobRows } from "@shared/jobs/addJobQueue";
 import type { AddJobRow, JobSourceKind } from "@shared/jobs/addJobQueue";
 import { toast, toastError } from "@/components/ui/toast";
+import { useUploadFile } from "@/features/media/hooks/useUploadFile";
+import type { MediaFile } from "@/features/media/lib/types";
 
-import type { PickedImage } from "../lib/pickImages";
 import {
   addSubmission,
   getSubmission,
@@ -15,7 +16,6 @@ import {
   updateSubmission,
   useSubmissions,
 } from "../lib/submissions";
-import { uploadImage } from "../lib/uploadImage";
 
 const SEND_FAILED = "Couldn't send it. Check your internet and try again.";
 
@@ -28,7 +28,7 @@ const SEND_FAILED = "Couldn't send it. Check your internet and try again.";
 export function useAddJob() {
   const { isAuthenticated } = useConvexAuth();
   const submissions = useSubmissions();
-  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const uploadFile = useUploadFile();
   const enqueueJob = useMutation(api.jobs.enqueueJob);
   const removeQueueItem = useMutation(api.jobs.removeQueueItem);
 
@@ -52,14 +52,12 @@ export function useAddJob() {
       let storageIds;
       if (submission.pages.length === 1 && firstPage && isPdf(firstPage.mimeType)) {
         // A PDF goes as-is, with no page images: the server reads it and keeps it with the job
-        const sourceFileId = await uploadImage(await generateUploadUrl(), firstPage);
+        const sourceFileId = await uploadFile(firstPage);
         storageIds = [sourceFileId];
         queueId = await enqueueJob({ fileStorageIds: [], sourceFileId, fileName: submission.name });
       } else {
         // Pages upload in parallel, each with its own one-time upload URL
-        storageIds = await Promise.all(
-          submission.pages.map(async (page) => uploadImage(await generateUploadUrl(), page)),
-        );
+        storageIds = await Promise.all(submission.pages.map((page) => uploadFile(page)));
         queueId = await enqueueJob({ fileStorageIds: storageIds, fileName: submission.name });
       }
       updateSubmission(id, { stage: "sent", queueId, storageIds });
@@ -72,14 +70,14 @@ export function useAddJob() {
   };
 
   /** Send pictures as new jobs: each group of pages is one job */
-  const submit = (kind: JobSourceKind, jobs: PickedImage[][]) =>
+  const submit = (kind: JobSourceKind, jobs: MediaFile[][]) =>
     submitNamed(jobs.map((pages) => ({ name: describeJobSource(kind, pages.length), pages })));
 
   /**
    * Send new jobs with their own names, e.g. files from the Files app: a PDF is a job of its
    * own, named after the file
    */
-  const submitNamed = async (jobs: { name: string; pages: PickedImage[] }[]) => {
+  const submitNamed = async (jobs: { name: string; pages: MediaFile[] }[]) => {
     // Added last to first, so the newest-first list shows them in the order he picked them
     const ids = jobs
       .filter(({ pages }) => pages.length > 0)
