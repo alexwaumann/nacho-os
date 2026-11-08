@@ -1,23 +1,18 @@
 import { SymbolView } from "expo-symbols";
-import { useRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import type { AccessibilityActionEvent } from "react-native";
-import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
-import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
 
 import type { Doc } from "@convex/_generated/dataModel";
 import { formatDriveTime } from "@shared/jobs/today";
+import { SwipeableRow, useSwipeColors } from "@/components/ui/swipeable-row";
 import { Text } from "@/components/ui/text";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
-import { minTapSize, radius, space } from "@/lib/theme";
+import { radius, space } from "@/lib/theme";
 
 import { getTodayColors } from "../lib/todayColors";
 import { ActionButton } from "./ActionButton";
 import { HourlyForecastStrip } from "./HourlyForecastStrip";
-
-// How far the card slides to show "Remove" behind it
-const REMOVE_ACTION_WIDTH = 132;
 
 interface RouteStopCardProps {
   job: Doc<"jobs">;
@@ -59,7 +54,7 @@ export function RouteStopCard({
 }: RouteStopCardProps) {
   const { scheme, colors } = useTheme();
   const today = getTodayColors(scheme);
-  const swipeableRef = useRef<SwipeableMethods>(null);
+  const swipeColors = useSwipeColors();
   const badgeSize = useScaledSize(32, 1.6);
   const smallIcon = useScaledSize(15);
 
@@ -72,11 +67,6 @@ export function RouteStopCard({
     isDone ? "Done"
     : totalTasks > 0 ? `${doneTasks} of ${totalTasks} tasks done`
     : "No tasks";
-
-  const handleRemove = () => {
-    swipeableRef.current?.close();
-    onRemove();
-  };
 
   const accessibilityActions = [
     { name: "activate", label: "Open job" },
@@ -101,32 +91,18 @@ export function RouteStopCard({
     }
   };
 
-  const renderRemoveAction = () => (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Remove ${job.address} from today's route`}
-      onPress={handleRemove}
-      style={({ pressed }) => [
-        styles.removeAction,
-        { backgroundColor: today.removeBackground, opacity: pressed ? 0.8 : 1 },
-      ]}
-    >
-      <SymbolView name="minus.circle.fill" size={24} tintColor="#ffffff" />
-      <Text variant="label" style={styles.removeLabel} maxFontSizeMultiplier={1.6}>
-        Remove
-      </Text>
-    </Pressable>
-  );
-
   return (
-    <ReanimatedSwipeable
-      ref={swipeableRef}
-      friction={1.5}
-      rightThreshold={REMOVE_ACTION_WIDTH / 2}
-      overshootRight={false}
+    <SwipeableRow
       enabled={!isDragging}
-      renderRightActions={renderRemoveAction}
-      containerStyle={styles.swipeContainer}
+      rightAction={{
+        label: "Remove",
+        icon: "minus.circle.fill",
+        color: swipeColors.destructive,
+        accessibilityLabel: `Remove ${job.address} from today's route`,
+        onPress: onRemove,
+        // As before: swipe, then tap Remove
+        isFullSwipe: false,
+      }}
     >
       <View
         style={[
@@ -255,12 +231,11 @@ export function RouteStopCard({
           />
         )}
       </View>
-    </ReanimatedSwipeable>
+    </SwipeableRow>
   );
 }
 
 const styles = StyleSheet.create({
-  swipeContainer: { borderRadius: radius.lg, borderCurve: "continuous" },
   card: {
     borderRadius: radius.lg,
     borderCurve: "continuous",
@@ -302,16 +277,5 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   track: { flex: 1, height: 6, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
-  removeAction: {
-    width: REMOVE_ACTION_WIDTH,
-    minHeight: minTapSize,
-    marginLeft: space.sm,
-    borderRadius: radius.lg,
-    borderCurve: "continuous",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: space.xs,
-  },
-  removeLabel: { color: "#ffffff" },
   count: { fontWeight: "600", fontVariant: ["tabular-nums"] },
 });
