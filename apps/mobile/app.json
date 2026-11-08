@@ -13,7 +13,16 @@
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": ["comgooglemaps"]
+        "LSApplicationQueriesSchemes": ["comgooglemaps"],
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "PDF work order",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": ["com.adobe.pdf"]
+          }
+        ],
+        "LSSupportsOpeningDocumentsInPlace": false
       }
     },
     "plugins": [

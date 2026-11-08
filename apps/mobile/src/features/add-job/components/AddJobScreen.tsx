@@ -1,3 +1,4 @@
+import { useConvexAuth } from "convex/react";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
@@ -16,6 +17,8 @@ import { assertFileSize, MAX_WORK_ORDER_FILE_BYTES } from "@/features/media/lib/
 import { chooseFiles } from "@/features/media/lib/pickers";
 import { pickPhotos, showPickPhotosError } from "@/features/media/lib/pickPhotos";
 import type { ChosenFile, MediaFile } from "@/features/media/lib/types";
+import { useReceiveOpenedFiles } from "@/features/open-in/hooks/useOpenedFiles";
+import { readOpenedFile } from "@/features/open-in/lib/openedFiles";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
 
@@ -48,6 +51,11 @@ async function chooseWorkOrderFiles(): Promise<ChosenFile[] | null> {
   return files;
 }
 
+/** A plain reason a file can't be used */
+function describeFileError(error: unknown) {
+  return error instanceof MediaError ? error.message : "That didn't work. Please try again.";
+}
+
 /**
  * Add jobs from paperwork: scan it, photograph it, pick photos or choose a PDF in Files, and the
  * server reads the job from it. Below, the work orders being read, with the new job when one is done.
@@ -55,6 +63,7 @@ async function chooseWorkOrderFiles(): Promise<ChosenFile[] | null> {
 export function AddJobScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { isAuthenticated } = useConvexAuth();
   const { rows, submit, submitNamed, retry, dismiss } = useAddJob();
   const submissions = useSubmissions();
   const [activeSource, setActiveSource] = useState<JobSourceKind | "file" | null>(null);
@@ -87,21 +96,7 @@ export function AddJobScreen() {
   };
 
   // Each PDF is a job of its own; several pictures might be one work order or several
-  const handleChooseFile = async () => {
-    setActiveSource("file");
-    let files: ChosenFile[] | null;
-    try {
-      files = await chooseWorkOrderFiles();
-    } catch (error) {
-      setActiveSource(null);
-      const message =
-        error instanceof MediaError ? error.message : "That didn't work. Please try again.";
-      toast.error("Couldn't use that file", { description: message });
-      return;
-    }
-    setActiveSource(null);
-    if (!files || files.length === 0) return;
-
+  const sendFiles = async (files: ChosenFile[]) => {
     const pdfs = files.filter((file) => isPdf(file.mimeType));
     const pictures = files.filter((file) => !isPdf(file.mimeType));
     const grouping = pictures.length > 1 ? await askGrouping(pictures.length, "pictures") : "each";
@@ -114,6 +109,35 @@ export function AddJobScreen() {
       })),
     ]);
   };
+
+  const handleChooseFile = async () => {
+    setActiveSource("file");
+    let files: ChosenFile[] | null;
+    try {
+      files = await chooseWorkOrderFiles();
+    } catch (error) {
+      setActiveSource(null);
+      toast.error("Couldn't use that file", { description: describeFileError(error) });
+      return;
+    }
+    setActiveSource(null);
+    if (!files || files.length === 0) return;
+    await sendFiles(files);
+  };
+
+  // PDFs shared to the app ("Open in Nacho OS" in Mail or Files) go the same way as chosen ones
+  const handleOpenedFiles = async (urls: string[]) => {
+    const files: ChosenFile[] = [];
+    for (const url of urls) {
+      try {
+        files.push(readOpenedFile(url));
+      } catch (error) {
+        toast.error("Couldn't use that file", { description: describeFileError(error) });
+      }
+    }
+    if (files.length > 0) await sendFiles(files);
+  };
+  useReceiveOpenedFiles(isAuthenticated, (urls) => void handleOpenedFiles(urls));
 
   const handleOpen = (row: Extract<AddJobRow, { kind: "done" }>) => {
     router.back();

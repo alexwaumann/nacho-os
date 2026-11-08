@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import type { JobSubmission } from "@shared/jobs/addJobQueue";
 
 import type { MediaFile } from "@/features/media/lib/types";
+import { discardOpenedFile } from "@/features/open-in/lib/openedFiles";
 
 /** A submission plus its pictures on the phone, kept so a failed one can be sent again */
 export interface LocalSubmission extends JobSubmission {
@@ -38,6 +39,10 @@ export function updateSubmission(id: string, changes: Partial<JobSubmission>) {
 
 export function removeSubmissions(ids: readonly string[]) {
   if (ids.length === 0) return;
+  // A PDF shared to the app is deleted with its row; it isn't needed for a retry any more
+  for (const submission of submissions) {
+    if (ids.includes(submission.id)) submission.pages.forEach(discardOpenedFile);
+  }
   submissions = submissions.filter((s) => !ids.includes(s.id));
   emit();
 }

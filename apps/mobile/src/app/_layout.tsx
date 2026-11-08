@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { Toaster } from "@/components/ui/toast";
 import { singleJobSheetRouter } from "@/features/job-detail/lib/singleJobSheet";
+import { useOpenAddJobForOpenedFiles } from "@/features/open-in/hooks/useOpenedFiles";
 import { useTheme } from "@/hooks/useTheme";
 import { AppProviders } from "@/integrations/providers";
 
@@ -28,6 +29,8 @@ export default function RootLayout() {
 function RootNavigator() {
   const { isLoaded, isSignedIn } = useAuth();
   const { scheme, colors } = useTheme();
+  // "Open in Nacho OS": a PDF shared from Mail or Files opens Add Job (see +native-intent.tsx)
+  useOpenAddJobForOpenedFiles(!!isSignedIn);
 
   useEffect(() => {
     if (isLoaded) SplashScreen.hide();
