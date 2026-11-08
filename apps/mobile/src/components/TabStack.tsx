@@ -4,28 +4,31 @@ import type { ReactNode } from "react";
 import { useTheme } from "@/hooks/useTheme";
 
 interface TabStackProps {
-  /** Large title of the tab's first screen */
+  /** Name of the tab's first screen; the Back button of screens pushed from it shows it */
   title: string;
   /** `<Stack.Screen>`s for the tab's other screens that need options */
   children?: ReactNode;
 }
 
-/** The Stack inside each tab: a native large-title header that collapses on scroll. */
+/**
+ * The Stack inside each tab. The tab's first screen has no header (the tab bar already says
+ * where you are): its content starts under the status bar, with a `StatusBarScrim` over it.
+ * Screens pushed from it get a normal small header with a Back button.
+ */
 export function TabStack({ title, children }: TabStackProps) {
   const { colors } = useTheme();
 
   return (
     <Stack
       screenOptions={{
-        headerLargeTitle: true,
-        headerTransparent: true,
         headerTintColor: colors.primary,
-        headerLargeTitleStyle: { color: colors.foreground },
         headerTitleStyle: { color: colors.foreground },
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: colors.background },
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="index" options={{ title }} />
+      <Stack.Screen name="index" options={{ title, headerShown: false }} />
       {children}
     </Stack>
   );

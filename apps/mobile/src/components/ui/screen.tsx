@@ -5,8 +5,9 @@ import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
 
 /**
- * The scrolling page body of a screen. Put it first in the screen so the native large-title
- * header collapses as it scrolls; content insets for the header and tab bar are automatic.
+ * The scrolling page body of a screen. Content insets for the status bar (or header) and the tab
+ * bar are automatic. Tab screens have no header: add `<StatusBarScrim />` after it so content
+ * doesn't show through the status bar.
  * Screens with text inputs should pass `automaticallyAdjustKeyboardInsets` so the keyboard
  * doesn't cover them.
  */
