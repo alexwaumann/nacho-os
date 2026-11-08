@@ -3,7 +3,6 @@ import { router } from "expo-router";
 import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import DraggableFlatList, { ScaleDecorator } from "react-native-draggable-flatlist";
 import type { RenderItemParams } from "react-native-draggable-flatlist";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { hasOrderChanged, moveInOrder } from "@shared/jobs/routePlan";
@@ -221,21 +220,19 @@ export function TodayScreen() {
     : undefined;
 
   return (
-    <GestureHandlerRootView style={styles.flex}>
-      <DraggableFlatList
-        data={orderedJobs}
-        keyExtractor={(job) => job._id}
-        renderItem={renderStop}
-        onDragBegin={handleDragBegin}
-        onDragEnd={({ data }) => handleNewOrder(data.map((job) => job._id))}
-        ListHeaderComponent={header}
-        ListFooterComponent={footer}
-        contentInsetAdjustmentBehavior="automatic"
-        containerStyle={[styles.flex, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      />
-    </GestureHandlerRootView>
+    <DraggableFlatList
+      data={orderedJobs}
+      keyExtractor={(job) => job._id}
+      renderItem={renderStop}
+      onDragBegin={handleDragBegin}
+      onDragEnd={({ data }) => handleNewOrder(data.map((job) => job._id))}
+      ListHeaderComponent={header}
+      ListFooterComponent={footer}
+      contentInsetAdjustmentBehavior="automatic"
+      containerStyle={[styles.flex, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    />
   );
 }
 
