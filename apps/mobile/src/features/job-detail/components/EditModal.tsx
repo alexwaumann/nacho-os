@@ -124,10 +124,10 @@ const styles = StyleSheet.create({
   input: {
     minHeight: minTapSize,
     fontSize: typography.body.fontSize,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm + 2,
     borderRadius: radius.md,
     borderWidth: 1,
   },
-  multiline: { minHeight: 200, textAlignVertical: "top", lineHeight: typography.body.lineHeight },
+  multiline: { minHeight: 160, textAlignVertical: "top", lineHeight: typography.body.lineHeight },
 });

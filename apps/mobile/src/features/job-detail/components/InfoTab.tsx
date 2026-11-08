@@ -14,6 +14,7 @@ import { addAccessCode, restoreAccessCode, splitAccessCode } from "@shared/jobs/
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
@@ -131,6 +132,7 @@ export function AccessCodesSection({
 }) {
   const { colors } = useTheme();
   const [isAdding, setIsAdding] = useState(false);
+  const iconSize = useScaledSize(20);
   // The codes as they are now, for an Undo pressed after other edits
   const latestCodes = useRef(codes);
   useEffect(() => {
@@ -179,7 +181,7 @@ export function AccessCodesSection({
               onPress={() => void handleCopy(code)}
               style={({ pressed }) => [styles.codeBody, pressed && { opacity: 0.6 }]}
             >
-              <SymbolView name="key.fill" size={22} tintColor={colors.primary} />
+              <SymbolView name="key.fill" size={iconSize} tintColor={colors.primary} />
               <View style={styles.codeText}>
                 {label ?
                   <Text variant="caption" tone="muted">
@@ -190,7 +192,7 @@ export function AccessCodesSection({
                   {value}
                 </Text>
               </View>
-              <SymbolView name="doc.on.doc" size={22} tintColor={colors.mutedForeground} />
+              <SymbolView name="doc.on.doc" size={iconSize} tintColor={colors.mutedForeground} />
             </Pressable>
             <IconButton
               icon="xmark"
@@ -224,6 +226,7 @@ export function AccessCodesSection({
 function NotesSection({ notes, onSave }: { notes: string; onSave: Mutations["setNotes"] }) {
   const { colors } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
+  const iconSize = useScaledSize(20);
 
   const handleSave = (draft: string) => {
     setIsEditing(false);
@@ -246,7 +249,7 @@ function NotesSection({ notes, onSave }: { notes: string; onSave: Mutations["set
         <Text tone={notes ? "default" : "muted"} style={styles.flex}>
           {notes || "Add private notes about this job"}
         </Text>
-        <SymbolView name="pencil" size={22} tintColor={colors.mutedForeground} />
+        <SymbolView name="pencil" size={iconSize} tintColor={colors.mutedForeground} />
       </Pressable>
       <TextEditModal
         visible={isEditing}
@@ -304,7 +307,7 @@ function WorkOrderSection({ images, pdf }: { images: string[] | undefined; pdf?:
           >
             <Image source={{ uri }} style={styles.fill} contentFit="cover" transition={150} />
             <View style={styles.pageNumber}>
-              <Text variant="caption" style={styles.white} maxFontSizeMultiplier={1.3}>
+              <Text variant="footnote" style={styles.white} maxFontSizeMultiplier={1.5}>
                 {i + 1}
               </Text>
             </View>
@@ -316,32 +319,32 @@ function WorkOrderSection({ images, pdf }: { images: string[] | undefined; pdf?:
 }
 
 const styles = StyleSheet.create({
-  tab: { gap: space.xl },
+  tab: { gap: space.lg },
   leftButton: { alignSelf: "flex-start" },
   codeRow: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: radius.lg,
     borderWidth: 1,
-    paddingLeft: space.lg,
-    paddingRight: space.xs,
+    paddingLeft: space.md,
+    paddingRight: 0,
   },
   codeBody: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    minHeight: minTapSize + space.lg,
+    minHeight: minTapSize + space.sm,
     paddingVertical: space.sm,
   },
   codeText: { flex: 1 },
-  mono: { fontFamily: "Menlo", letterSpacing: 1 },
+  mono: { fontFamily: "Menlo", letterSpacing: 0.5 },
   notes: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: space.md,
-    minHeight: minTapSize + space.lg,
-    padding: space.lg,
+    minHeight: minTapSize + space.sm,
+    padding: space.md,
     borderRadius: radius.lg,
     borderWidth: 1,
   },

@@ -5,6 +5,7 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import type { UseRouteBriefResult } from "@/features/route/hooks/useRouteBrief";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -41,6 +42,8 @@ export function RouteBriefCard({ routeBrief }: RouteBriefCardProps) {
   const { scheme, colors } = useTheme();
   const today = getTodayColors(scheme);
   const { brief, suggestion, canRefresh, isGenerating, isApplying, error } = routeBrief;
+  const iconSize = useScaledSize(28);
+  const numberSize = useScaledSize(28, 1.6);
 
   if (!canRefresh) return null;
 
@@ -91,7 +94,7 @@ export function RouteBriefCard({ routeBrief }: RouteBriefCardProps) {
         }
       >
         <View style={styles.headline}>
-          <SymbolView name={look.icon} size={34} tintColor={look.color} />
+          <SymbolView name={look.icon} size={iconSize} tintColor={look.color} />
           <Text variant="label" style={styles.flex}>
             {brief.headline}
           </Text>
@@ -110,7 +113,7 @@ export function RouteBriefCard({ routeBrief }: RouteBriefCardProps) {
       {suggestion ?
         <Card style={[styles.suggestion, { borderColor: colors.primary }]}>
           <View style={styles.row}>
-            <SymbolView name="list.number" size={26} tintColor={colors.primary} />
+            <SymbolView name="list.number" size={iconSize} tintColor={colors.primary} />
             <Text variant="heading" style={styles.flex}>
               Suggested order
             </Text>
@@ -119,8 +122,13 @@ export function RouteBriefCard({ routeBrief }: RouteBriefCardProps) {
           <View style={styles.stack}>
             {suggestion.jobs.map((job, index) => (
               <View key={job._id} style={styles.suggestedStop}>
-                <View style={[styles.number, { backgroundColor: today.primaryTint }]}>
-                  <Text variant="label" tone="primary" maxFontSizeMultiplier={1.4}>
+                <View
+                  style={[
+                    styles.number,
+                    { width: numberSize, height: numberSize, backgroundColor: today.primaryTint },
+                  ]}
+                >
+                  <Text variant="label" tone="primary" maxFontSizeMultiplier={1.6}>
                     {index + 1}
                   </Text>
                 </View>
@@ -155,8 +163,6 @@ const styles = StyleSheet.create({
   suggestion: { borderWidth: 2, gap: space.md },
   suggestedStop: { flexDirection: "row", alignItems: "flex-start", gap: space.md },
   number: {
-    width: 36,
-    height: 36,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",

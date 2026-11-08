@@ -184,7 +184,7 @@ export function JobsMap({ filter }: JobsMapProps) {
                 { backgroundColor: colors.card, borderColor: colors.foreground },
               ]}
             >
-              <SymbolView name="house.fill" size={20} tintColor={colors.foreground} />
+              <SymbolView name="house.fill" size={18} tintColor={colors.foreground} />
             </View>
           </Marker>
         : null}
@@ -326,7 +326,7 @@ function MapButton({ icon, label, onPress, isPrimary, isBusy }: MapButtonProps) 
     >
       {isBusy ?
         <ActivityIndicator color={tint} />
-      : <SymbolView name={icon} size={26} weight="semibold" tintColor={tint} />}
+      : <SymbolView name={icon} size={20} weight="semibold" tintColor={tint} />}
     </Pressable>
   );
 }
@@ -355,8 +355,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   homePin: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: radius.pill,
     borderWidth: 2,
     alignItems: "center",
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  pinNumber: { color: "#ffffff", fontWeight: "800" },
+  pinNumber: { color: "#ffffff", fontWeight: "700" },
   emptyNote: {
     position: "absolute",
     left: space.md,

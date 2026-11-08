@@ -7,6 +7,7 @@ import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
 
@@ -16,6 +17,7 @@ import { Section } from "./Section";
 export function HomeAddressCard() {
   const { colors } = useTheme();
   const router = useRouter();
+  const iconSize = useScaledSize(24);
   const { isAuthenticated } = useConvexAuth();
   const user = useQuery(api.users.getCurrentUser, isAuthenticated ? {} : "skip");
 
@@ -36,7 +38,7 @@ export function HomeAddressCard() {
           >
             <SymbolView
               name={homeAddress ? "house.fill" : "house"}
-              size={28}
+              size={iconSize}
               tintColor={homeAddress ? colors.primary : colors.mutedForeground}
             />
             <Text style={styles.address} tone={homeAddress ? "default" : "muted"}>

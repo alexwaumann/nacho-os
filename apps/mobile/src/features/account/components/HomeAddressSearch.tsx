@@ -11,6 +11,7 @@ import { Screen } from "@/components/ui/screen";
 import { Text } from "@/components/ui/text";
 import { TextField } from "@/components/ui/text-field";
 import { toast, toastError } from "@/components/ui/toast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, space } from "@/lib/theme";
 
@@ -28,6 +29,7 @@ export function HomeAddressSearch() {
   const geocodeAddress = useAction(api.maps.geocodeAddress);
   const updateHomeAddress = useMutation(api.users.updateHomeAddress);
 
+  const pinSize = useScaledSize(24);
   const [query, setQuery] = useState("");
   const [savingPlaceId, setSavingPlaceId] = useState<string>();
   const { suggestions, isSearching, hasError, isSearchable } = usePlaceSuggestions(
@@ -107,7 +109,7 @@ export function HomeAddressSearch() {
                 },
               ]}
             >
-              <SymbolView name="mappin.circle.fill" size={28} tintColor={colors.primary} />
+              <SymbolView name="mappin.circle.fill" size={pinSize} tintColor={colors.primary} />
               <View style={styles.suggestionText}>
                 <Text variant="label">{suggestion.mainText ?? suggestion.label}</Text>
                 {suggestion.secondaryText ?
@@ -139,11 +141,11 @@ const styles = StyleSheet.create({
   current: { gap: space.xs },
   list: { paddingVertical: 0, gap: 0 },
   suggestion: {
-    minHeight: minTapSize + space.lg,
+    minHeight: minTapSize + space.sm,
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    paddingVertical: space.md,
+    paddingVertical: space.sm + 2,
   },
   divider: { borderTopWidth: StyleSheet.hairlineWidth },
   suggestionText: { flex: 1, gap: 2 },

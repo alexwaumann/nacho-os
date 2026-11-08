@@ -47,7 +47,7 @@ export function JobVoiceButton({ job }: JobVoiceButtonProps) {
           <ActivityIndicator color={colors.primaryForeground} />
         : <SymbolView
             name={mic.isRecording ? "stop.fill" : "mic.fill"}
-            size={26}
+            size={20}
             tintColor={mic.isRecording ? "#ffffff" : colors.primaryForeground}
           />
         }

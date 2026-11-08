@@ -10,6 +10,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
 import { AddJobPhoto } from "@/features/photos/components/AddJobPhoto";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
@@ -45,6 +46,7 @@ export function PhotosTab({ jobId, photos }: PhotosTabProps) {
     },
   );
   const removePhoto = useMutation(api.jobPhotos.remove);
+  const pencilSize = useScaledSize(15);
 
   // Newest first: on a long job the photo he just took is the one he wants
   const newestFirst = [...(photos ?? [])].reverse();
@@ -131,10 +133,10 @@ export function PhotosTab({ jobId, photos }: PhotosTabProps) {
                     photo.caption ? `Delete photo: ${photo.caption}` : "Delete photo"
                   }
                   onPress={() => handleDelete(photo)}
-                  hitSlop={6}
+                  hitSlop={8}
                   style={({ pressed }) => [styles.delete, pressed && { opacity: 0.7 }]}
                 >
-                  <SymbolView name="trash.fill" size={22} tintColor="#fff" />
+                  <SymbolView name="trash.fill" size={17} tintColor="#fff" />
                 </Pressable>
               </View>
               <Pressable
@@ -153,7 +155,7 @@ export function PhotosTab({ jobId, photos }: PhotosTabProps) {
                 >
                   {photo.caption || "Add caption"}
                 </Text>
-                <SymbolView name="pencil" size={18} tintColor={colors.mutedForeground} />
+                <SymbolView name="pencil" size={pencilSize} tintColor={colors.mutedForeground} />
               </Pressable>
             </View>
           ))}
@@ -174,8 +176,8 @@ export function PhotosTab({ jobId, photos }: PhotosTabProps) {
 }
 
 const styles = StyleSheet.create({
-  tab: { gap: space.xl },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: space.lg },
+  tab: { gap: space.lg },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
   cell: { width: "47%", gap: space.xs },
   frame: {
     aspectRatio: 1,
@@ -189,8 +191,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: space.sm,
     right: space.sm,
-    width: 48,
-    height: 48,
+    width: 36,
+    height: 36,
     borderRadius: radius.pill,
     backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",

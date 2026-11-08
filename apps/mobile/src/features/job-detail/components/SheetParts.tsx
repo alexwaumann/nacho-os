@@ -4,8 +4,9 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import type { PressableProps, StyleProp, ViewStyle } from "react-native";
 
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
-import { minTapSize, radius, space } from "@/lib/theme";
+import { buttonHeight, minTapSize, radius, space } from "@/lib/theme";
 
 // Small building blocks the job sheet's tabs share (section headings are in
 // @/components/ui/section)
@@ -35,6 +36,7 @@ export function Pill({
   icon?: SFSymbol;
 }) {
   const { colors } = useTheme();
+  const iconSize = useScaledSize(13);
   const color = {
     neutral: colors.mutedForeground,
     primary: colors.primary,
@@ -45,9 +47,9 @@ export function Pill({
   return (
     <View style={[styles.pill, { borderColor: color, backgroundColor: `${color}1A` }]}>
       {icon ?
-        <SymbolView name={icon} size={18} tintColor={color} />
+        <SymbolView name={icon} size={iconSize} tintColor={color} />
       : null}
-      <Text variant="caption" style={{ color, fontWeight: "700" }} maxFontSizeMultiplier={1.6}>
+      <Text variant="footnote" style={{ color, fontWeight: "600" }}>
         {label}
       </Text>
     </View>
@@ -67,7 +69,7 @@ interface ActionButtonProps extends Omit<PressableProps, "children" | "style"> {
   style?: StyleProp<ViewStyle>;
 }
 
-/** A 56 pt button with an SF Symbol in front of its title */
+/** A 50 pt button with an SF Symbol in front of its title */
 export function ActionButton({
   title,
   icon,
@@ -78,6 +80,7 @@ export function ActionButton({
   ...props
 }: ActionButtonProps) {
   const { colors } = useTheme();
+  const iconSize = useScaledSize(20);
   const isDisabled = disabled || isLoading;
   const background = {
     primary: colors.primary,
@@ -119,7 +122,7 @@ export function ActionButton({
         <ActivityIndicator color={foreground} />
       : <>
           {icon ?
-            <SymbolView name={icon} size={22} tintColor={foreground} />
+            <SymbolView name={icon} size={iconSize} tintColor={foreground} />
           : null}
           <Text variant="label" style={{ color: foreground, flexShrink: 1 }} numberOfLines={2}>
             {title}
@@ -138,7 +141,7 @@ interface IconButtonProps extends Omit<PressableProps, "children" | "style"> {
   style?: StyleProp<ViewStyle>;
 }
 
-/** A round 56 pt button with just an SF Symbol */
+/** A round 44 pt button with just an SF Symbol */
 export function IconButton({ icon, tint, background, style, ...props }: IconButtonProps) {
   const { colors } = useTheme();
   return (
@@ -152,7 +155,7 @@ export function IconButton({ icon, tint, background, style, ...props }: IconButt
       ]}
       {...props}
     >
-      <SymbolView name={icon} size={26} tintColor={tint ?? colors.foreground} />
+      <SymbolView name={icon} size={20} tintColor={tint ?? colors.foreground} />
     </Pressable>
   );
 }
@@ -162,20 +165,20 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderStyle: "dashed",
     borderRadius: radius.lg,
-    padding: space.xl,
+    padding: space.lg,
   },
   center: { textAlign: "center" },
   pill: {
     flexDirection: "row",
     alignItems: "center",
     gap: space.xs,
-    paddingHorizontal: space.md,
-    paddingVertical: space.xs,
+    paddingHorizontal: space.sm + 2,
+    paddingVertical: 3,
     borderRadius: radius.pill,
     borderWidth: 1,
   },
   action: {
-    minHeight: minTapSize,
+    minHeight: buttonHeight,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

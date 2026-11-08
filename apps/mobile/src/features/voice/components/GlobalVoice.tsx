@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
-import { space } from "@/lib/theme";
+import { space, typography } from "@/lib/theme";
 
 import { useGlobalVoiceCommand } from "../hooks/useGlobalVoiceCommand";
 import { useVoiceMic } from "../hooks/useVoiceMic";
@@ -83,7 +83,7 @@ export function GlobalVoiceAccessory({ voice }: { voice: GlobalVoice }) {
         <ActivityIndicator color={colors.primary} />
       : <SymbolView
           name={mic.isRecording ? "stop.fill" : "mic.fill"}
-          size={isInline ? 20 : 24}
+          size={isInline ? 17 : 20}
           tintColor={tint}
         />
       }
@@ -129,6 +129,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   flex: { flex: 1 },
-  inlineText: { fontSize: 17 },
+  inlineText: { fontSize: typography.caption.fontSize },
   onRed: { color: "#ffffff" },
 });

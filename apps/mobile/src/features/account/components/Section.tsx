@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import type { ReactNode } from "react";
 
+import { SectionLabel } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { space } from "@/lib/theme";
 
@@ -15,12 +16,10 @@ interface SectionProps {
 export function Section({ title, footer, children }: SectionProps) {
   return (
     <View style={styles.section}>
-      <Text variant="label" tone="muted" accessibilityRole="header" style={styles.title}>
-        {title}
-      </Text>
+      <SectionLabel style={styles.title}>{title}</SectionLabel>
       {children}
       {footer ?
-        <Text variant="caption" tone="muted" style={styles.footer}>
+        <Text variant="footnote" tone="muted" style={styles.footer}>
           {footer}
         </Text>
       : null}
@@ -30,6 +29,6 @@ export function Section({ title, footer, children }: SectionProps) {
 
 const styles = StyleSheet.create({
   section: { gap: space.sm },
-  title: { paddingHorizontal: space.xs },
-  footer: { paddingHorizontal: space.xs },
+  title: { paddingHorizontal: space.lg },
+  footer: { paddingHorizontal: space.lg },
 });

@@ -164,7 +164,7 @@ export function JobDetailSheet({ jobId, requestedTab }: JobDetailSheetProps) {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   missing: { gap: space.md, padding: space.xl },
-  content: { paddingTop: space.xl },
+  content: { paddingTop: space.lg },
   padded: { paddingHorizontal: space.lg },
-  tabs: { paddingHorizontal: space.lg, paddingVertical: space.md },
+  tabs: { paddingHorizontal: space.lg, paddingVertical: space.sm },
 });

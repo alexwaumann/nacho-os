@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Switch, View } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { toastError } from "@/components/ui/toast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, space } from "@/lib/theme";
 
@@ -15,6 +16,7 @@ import { Section } from "./Section";
 export function ReadAloudRow() {
   const { colors } = useTheme();
   const { isEnabled, isLoaded, setEnabled } = useReadAloudSetting();
+  const iconSize = useScaledSize(24);
 
   const handleChange = async (isOn: boolean) => {
     void Haptics.selectionAsync();
@@ -37,7 +39,7 @@ export function ReadAloudRow() {
           onPress={() => handleChange(!isEnabled)}
           style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
         >
-          <SymbolView name="speaker.wave.2.fill" size={28} tintColor={colors.primary} />
+          <SymbolView name="speaker.wave.2.fill" size={iconSize} tintColor={colors.primary} />
           <View style={styles.text}>
             <Text variant="label">Read replies out loud</Text>
             <Text variant="caption" tone="muted">
@@ -62,5 +64,5 @@ export function ReadAloudRow() {
 const styles = StyleSheet.create({
   card: { paddingVertical: space.sm },
   row: { minHeight: minTapSize, flexDirection: "row", alignItems: "center", gap: space.md },
-  text: { flex: 1, gap: space.xs },
+  text: { flex: 1, gap: 2 },
 });

@@ -3,8 +3,9 @@ import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 import type { PressableProps, StyleProp, ViewStyle } from "react-native";
 
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
-import { minTapSize, radius, space } from "@/lib/theme";
+import { buttonHeight, radius, space } from "@/lib/theme";
 
 import type { SFSymbol } from "../lib/symbols";
 
@@ -19,7 +20,7 @@ interface ActionButtonProps extends Omit<PressableProps, "children" | "style"> {
 }
 
 /**
- * A button with an SF Symbol before its label, at least 56 pt tall. The `Button` primitive has no
+ * A button with an SF Symbol before its label, 50 pt tall at the default text size. The `Button` primitive has no
  * icon yet; a later polish PR can fold this into it.
  */
 export function ActionButton({
@@ -33,6 +34,7 @@ export function ActionButton({
 }: ActionButtonProps) {
   const { colors } = useTheme();
   const isDisabled = disabled || isLoading;
+  const iconSize = useScaledSize(20);
 
   const look = {
     primary: { background: colors.primary, border: colors.primary, text: colors.primaryForeground },
@@ -64,7 +66,7 @@ export function ActionButton({
       {isLoading ?
         <ActivityIndicator color={iconColor} />
       : icon ?
-        <SymbolView name={icon} size={24} tintColor={iconColor} weight="semibold" />
+        <SymbolView name={icon} size={iconSize} tintColor={iconColor} weight="semibold" />
       : null}
       <Text variant="label" style={[styles.label, { color: look.text }]} numberOfLines={2}>
         {title}
@@ -75,7 +77,7 @@ export function ActionButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: minTapSize,
+    minHeight: buttonHeight,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -84,7 +86,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
     borderRadius: radius.md,
     borderCurve: "continuous",
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
   label: { flexShrink: 1, textAlign: "center" },
 });
