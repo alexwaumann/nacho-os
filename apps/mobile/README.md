@@ -125,7 +125,7 @@ apps/mobile/
       job/[id].tsx      # job detail, a native formSheet over the tabs ("/job/<id>")
     components/
       ui/               # primitives (kebab-case files): text, button, card, screen, text-field,
-                        # toast, segmented-control, section, sheet
+                        # toast, segmented-control, section, sheet, swipeable-row
       *.tsx             # shared app components (PascalCase), e.g. TabStack
     features/<feature>/ # per-feature code: components/, hooks/, lib/ (e.g. features/today/)
     hooks/              # app-wide hooks (useTheme, useSyncUser)
@@ -205,6 +205,38 @@ he changes it) do the enlarging. Don't make things bigger in the app itself. Tes
   values; no styling library.
 - Prefer native: SF Symbols (`expo-symbols`), native headers, sheets and tab bar, `Alert` for
   confirmations.
+
+### Interactions
+
+The app should feel like an iOS app: swipe a row to act on it, touch and hold for a menu, a haptic
+when something happens. Reuse these patterns on new screens:
+
+- **Swipe actions:** wrap a row (usually a `Card`) in `SwipeableRow` from
+  `@/components/ui/swipeable-row`. `leftAction` is revealed by swiping right (the "do it" action,
+  e.g. Add to today), `rightAction` by swiping left (Done, Remove, Delete). Each has an SF Symbol,
+  a short label and a color from `useSwipeColors()` (`primary`, `success`, `destructive`,
+  `neutral`). Swiping most of the way across runs the action without a tap, unless the action sets
+  `isFullSwipe: false` (Today's stops: swipe, then tap Remove). Only one row is open at a time.
+  VoiceOver can't swipe, so give the row's content `accessibilityActions` for the same actions.
+  Used by Today's stops, the Jobs cards and the job sheet's receipts.
+- **Undo, not "Are you sure?":** an action that can be reversed runs at once and shows
+  `toast.success(…, { action: { label: "Undo", onPress } })`. A toast with a button stays up
+  `UNDO_TOAST_MS` (10 s) so there's time to reach it. Only what can't be undone asks first, with the
+  native destructive `Alert` (`style: "destructive"`), e.g. deleting a receipt, photo or job.
+- **Long-press menus:** use Expo Router's native context menu: `<Link asChild>` with
+  `<Link.Trigger>`, `<Link.Menu>` and `<Link.MenuAction icon destructive>` (put Delete in an
+  `inline` sub-menu so it gets its own section). Add `<Link.Preview>` with your own content for a
+  peek, as the Jobs cards do (`JobPreview`); iOS asks for its height up front, so estimate it.
+  For something that isn't a screen (a photo in a grid), point the Link at the screen a tap opens
+  and call `event.preventDefault()` in its `onPress` to open it your own way (Photos tab).
+- **Haptics:** call `haptics.*` from `@/lib/haptics`, never `expo-haptics` directly:
+  `selection` (segmented controls, switches), `swipeThreshold` (fired by `SwipeableRow` where
+  letting go does something), `success` (added to today, marked done, a task checked off),
+  `finished` (the last task), `medium` (picked up to drag), `error` (error toasts do it).
+- **Pull to refresh:** use gesture-handler's `RefreshControl` (`import { RefreshControl } from
+"react-native-gesture-handler"`) so it works with gesture-handler lists like Today's
+  draggable list. Today's only refreshes the weather (brief and hourly forecasts via
+  `refreshForecasts`); it never re-plans the route.
 
 ## Data: Convex and Clerk
 
