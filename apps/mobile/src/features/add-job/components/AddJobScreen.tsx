@@ -192,7 +192,7 @@ export function AddJobScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: space.lg, paddingTop: space.xl, gap: space.lg },
+  content: { padding: space.lg, gap: space.lg },
   sources: { gap: space.md },
-  source: { minHeight: 64 },
+  source: { minHeight: 56 },
 });

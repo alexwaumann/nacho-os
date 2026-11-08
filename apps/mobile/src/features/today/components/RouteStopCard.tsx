@@ -8,6 +8,7 @@ import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSw
 import type { Doc } from "@convex/_generated/dataModel";
 import { formatDriveTime } from "@shared/jobs/today";
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
@@ -59,6 +60,8 @@ export function RouteStopCard({
   const { scheme, colors } = useTheme();
   const today = getTodayColors(scheme);
   const swipeableRef = useRef<SwipeableMethods>(null);
+  const badgeSize = useScaledSize(32, 1.6);
+  const smallIcon = useScaledSize(15);
 
   const totalTasks = job.tasks?.length ?? 0;
   const doneTasks = job.tasks?.filter((task) => task.completed).length ?? 0;
@@ -108,8 +111,8 @@ export function RouteStopCard({
         { backgroundColor: today.removeBackground, opacity: pressed ? 0.8 : 1 },
       ]}
     >
-      <SymbolView name="minus.circle.fill" size={32} tintColor="#ffffff" />
-      <Text variant="label" style={styles.removeLabel} maxFontSizeMultiplier={1.3}>
+      <SymbolView name="minus.circle.fill" size={24} tintColor="#ffffff" />
+      <Text variant="label" style={styles.removeLabel} maxFontSizeMultiplier={1.6}>
         Remove
       </Text>
     </Pressable>
@@ -149,16 +152,23 @@ export function RouteStopCard({
         >
           <View style={styles.header}>
             <View
-              style={[styles.badge, { backgroundColor: isDone ? colors.success : colors.primary }]}
+              style={[
+                styles.badge,
+                {
+                  minWidth: badgeSize,
+                  height: badgeSize,
+                  backgroundColor: isDone ? colors.success : colors.primary,
+                },
+              ]}
             >
               {isDone ?
                 <SymbolView
                   name="checkmark"
-                  size={20}
+                  size={smallIcon}
                   weight="heavy"
                   tintColor={colors.primaryForeground}
                 />
-              : <Text variant="label" tone="onPrimary" maxFontSizeMultiplier={1.4}>
+              : <Text variant="label" tone="onPrimary" maxFontSizeMultiplier={1.6}>
                   {stopNumber}
                 </Text>
               }
@@ -166,7 +176,7 @@ export function RouteStopCard({
             <Text variant="heading" style={[styles.address, isDone && styles.doneText]}>
               {job.address}
             </Text>
-            <SymbolView name="line.3.horizontal" size={22} tintColor={colors.mutedForeground} />
+            <SymbolView name="line.3.horizontal" size={20} tintColor={colors.mutedForeground} />
           </View>
 
           {accessCodes.length > 0 ?
@@ -179,7 +189,7 @@ export function RouteStopCard({
                     { backgroundColor: colors.muted, borderColor: colors.border },
                   ]}
                 >
-                  <SymbolView name="key.fill" size={18} tintColor={colors.mutedForeground} />
+                  <SymbolView name="key.fill" size={smallIcon} tintColor={colors.mutedForeground} />
                   <Text variant="label" style={styles.codeText}>
                     {code}
                   </Text>
@@ -190,7 +200,7 @@ export function RouteStopCard({
 
           {driveTime ?
             <View style={styles.inline}>
-              <SymbolView name="car.fill" size={20} tintColor={colors.mutedForeground} />
+              <SymbolView name="car.fill" size={smallIcon} tintColor={colors.mutedForeground} />
               <Text variant="label">{driveTime}</Text>
             </View>
           : null}
@@ -207,7 +217,7 @@ export function RouteStopCard({
             <View style={styles.inline}>
               <SymbolView
                 name="exclamationmark.triangle.fill"
-                size={20}
+                size={smallIcon}
                 tintColor={today.warning}
               />
               <Text variant="body" style={[styles.flex, { color: today.warning }]}>
@@ -229,7 +239,7 @@ export function RouteStopCard({
                   ]}
                 />
               </View>
-              <Text variant="label" tone="muted">
+              <Text variant="caption" tone="muted" style={styles.count}>
                 {doneTasks}/{totalTasks}
               </Text>
             </View>
@@ -268,8 +278,6 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: "row", alignItems: "flex-start", gap: space.md },
   badge: {
-    minWidth: 40,
-    height: 40,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -279,19 +287,20 @@ const styles = StyleSheet.create({
   doneText: { opacity: 0.6 },
   codes: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   code: {
-    minHeight: 44,
+    minHeight: 32,
     flexDirection: "row",
     alignItems: "center",
     gap: space.sm,
-    paddingHorizontal: space.md,
-    borderRadius: radius.md,
+    paddingHorizontal: space.sm + 2,
+    paddingVertical: space.xs,
+    borderRadius: radius.sm,
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  codeText: { fontFamily: "Menlo", fontWeight: "800", letterSpacing: 1 },
+  codeText: { fontFamily: "Menlo", fontWeight: "700", letterSpacing: 0.5 },
   inline: { flexDirection: "row", alignItems: "center", gap: space.sm },
   flex: { flex: 1 },
   progressRow: { flexDirection: "row", alignItems: "center", gap: space.md },
-  track: { flex: 1, height: 10, borderRadius: radius.pill, overflow: "hidden" },
+  track: { flex: 1, height: 6, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
   removeAction: {
     width: REMOVE_ACTION_WIDTH,
@@ -304,4 +313,5 @@ const styles = StyleSheet.create({
     gap: space.xs,
   },
   removeLabel: { color: "#ffffff" },
+  count: { fontWeight: "600", fontVariant: ["tabular-nums"] },
 });

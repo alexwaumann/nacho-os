@@ -152,7 +152,7 @@ function CheckFound({ image, check, onCancel }: CheckFoundProps) {
       }
     >
       <Card style={styles.summary}>
-        <Text variant="title" style={styles.amount}>
+        <Text variant="largeTitle" style={styles.amount}>
           {amount}
         </Text>
         {check.payerName ?
@@ -199,7 +199,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   summary: { gap: space.xs },
-  amount: { fontSize: 36, lineHeight: 42, fontWeight: "900" },
+  amount: { fontVariant: ["tabular-nums"] },
   loading: { paddingVertical: space.xl },
   center: { textAlign: "center", paddingVertical: space.xl },
   footerButton: { flexGrow: 1, flexBasis: 140 },

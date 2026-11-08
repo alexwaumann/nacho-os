@@ -10,6 +10,7 @@ import { describeDueDate } from "@shared/jobs/dueLabel";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -31,6 +32,7 @@ export function EmptyRouteCard({ onPlanRoute, onOpenJob }: EmptyRouteCardProps) 
   const pendingJobs = useQuery(api.jobs.list, isAuthenticated ? { status: "pending" } : "skip");
   const toggleSelectedForRoute = useMutation(api.jobs.toggleSelectedForRoute);
   const [addingJobId, setAddingJobId] = useState<Id<"jobs"> | null>(null);
+  const mapSize = useScaledSize(40, 1.5);
 
   const dueSoonest = sortJobsByDueDate(
     (pendingJobs ?? []).filter((job) => !job.selectedForRoute),
@@ -51,7 +53,7 @@ export function EmptyRouteCard({ onPlanRoute, onOpenJob }: EmptyRouteCardProps) 
   return (
     <View style={styles.wrapper}>
       <View style={[styles.empty, { borderColor: colors.border }]}>
-        <SymbolView name="map" size={48} tintColor={colors.mutedForeground} />
+        <SymbolView name="map" size={mapSize} tintColor={colors.mutedForeground} />
         <Text variant="heading" style={styles.center}>
           No stops planned for today
         </Text>
@@ -119,15 +121,15 @@ const styles = StyleSheet.create({
   wrapper: { gap: space.md },
   empty: {
     alignItems: "center",
-    gap: space.lg,
-    padding: space.xl,
-    borderWidth: 2,
+    gap: space.md,
+    padding: space.lg,
+    borderWidth: 1.5,
     borderStyle: "dashed",
     borderRadius: radius.lg,
   },
   center: { textAlign: "center" },
   fullWidth: { alignSelf: "stretch" },
   row: { gap: space.md },
-  rowBody: { gap: space.xs, minHeight: 44, justifyContent: "center" },
+  rowBody: { gap: 2, minHeight: 44, justifyContent: "center" },
   upper: { textTransform: "uppercase" },
 });

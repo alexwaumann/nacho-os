@@ -5,6 +5,7 @@ import type { Coordinates, HourlyForecastSlot } from "@convex/lib/weather";
 import { formatArrivalTime } from "@shared/jobs/arrival";
 import { Text } from "@/components/ui/text";
 import { useHourlyForecast } from "@/features/route/hooks/useHourlyForecast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -14,7 +15,8 @@ import { getWeatherSymbol } from "../lib/weatherSymbol";
 // Only call out rain when it's reasonably likely
 const PRECIP_THRESHOLD = 20;
 // Five columns have to fit the card, so the strip grows less with Dynamic Type than body text
-const STRIP_MAX_SCALE = 1.35;
+// (and shrinks a label to fit past that)
+const STRIP_MAX_SCALE = 1.5;
 
 function formatHour(time: number) {
   return new Date(time).toLocaleTimeString([], { hour: "numeric" });
@@ -92,6 +94,7 @@ function ForecastSlot({ slot, isNow, isArrival, showRainChance }: ForecastSlotPr
   const label = isNow ? "Now" : formatHour(slot.time);
   const arrivalHint = isArrival ? ", about when you get there" : "";
   const isRainy = slot.precipProb >= PRECIP_THRESHOLD;
+  const iconSize = useScaledSize(22, STRIP_MAX_SCALE);
 
   return (
     <View
@@ -108,7 +111,7 @@ function ForecastSlot({ slot, isNow, isArrival, showRainChance }: ForecastSlotPr
       ]}
     >
       <Text
-        variant="caption"
+        variant="footnote"
         style={[
           styles.hour,
           { color: isNow || isArrival ? colors.primary : colors.mutedForeground },
@@ -119,7 +122,7 @@ function ForecastSlot({ slot, isNow, isArrival, showRainChance }: ForecastSlotPr
       >
         {label}
       </Text>
-      <SymbolView name={symbol.name} size={26} tintColor={symbol.color} />
+      <SymbolView name={symbol.name} size={iconSize} tintColor={symbol.color} />
       <Text
         variant="label"
         style={styles.temp}
@@ -131,7 +134,7 @@ function ForecastSlot({ slot, isNow, isArrival, showRainChance }: ForecastSlotPr
       </Text>
       {showRainChance ?
         <Text
-          variant="caption"
+          variant="footnote"
           style={[styles.rain, { color: today.rain, opacity: isRainy ? 1 : 0 }]}
           maxFontSizeMultiplier={STRIP_MAX_SCALE}
           numberOfLines={1}
@@ -153,7 +156,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderCurve: "continuous",
   },
-  loading: { minHeight: 96, alignItems: "center", justifyContent: "center" },
+  loading: { minHeight: 84, alignItems: "center", justifyContent: "center" },
   slot: {
     flex: 1,
     alignItems: "center",
@@ -164,7 +167,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "transparent",
   },
-  hour: { fontSize: 14, lineHeight: 18, fontWeight: "700" },
-  temp: { fontSize: 19, lineHeight: 24, fontWeight: "800" },
-  rain: { fontSize: 14, lineHeight: 18, fontWeight: "700" },
+  hour: { fontWeight: "600" },
+  temp: { fontWeight: "700" },
+  rain: { fontWeight: "600" },
 });

@@ -13,7 +13,7 @@ interface SectionLabelProps {
 /** A small, bold, upper-case heading over a group, e.g. "STATUS" or "ON TODAY'S ROUTE" */
 export function SectionLabel({ children, style }: SectionLabelProps) {
   return (
-    <Text variant="caption" tone="muted" style={[styles.label, style]}>
+    <Text variant="footnote" tone="muted" style={[styles.label, style]}>
       {children.toUpperCase()}
     </Text>
   );
@@ -48,5 +48,5 @@ const styles = StyleSheet.create({
     gap: space.md,
     flexWrap: "wrap",
   },
-  label: { fontWeight: "800", letterSpacing: 1.2 },
+  label: { fontWeight: "600", letterSpacing: 0.4 },
 });

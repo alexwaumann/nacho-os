@@ -9,8 +9,9 @@ import { useSyncUser } from "@/hooks/useSyncUser";
 import { useTheme } from "@/hooks/useTheme";
 
 /**
- * The native iOS tab bar (Liquid Glass on iOS 26+). Each tab is a folder with its own Stack, so
- * it gets a native large-title header and can push screens of its own.
+ * The native iOS tab bar (Liquid Glass on iOS 26+), with the system's label size. Each tab is a
+ * folder with its own Stack (`TabStack`): the tab's first screen has no header, and it can push
+ * screens of its own that do.
  *
  * Voice: the global mic is `<NativeTabs.BottomAccessory>` (iOS 26+: a glass bar above the tab bar
  * on every tab, shrinking inline when the bar minimizes). Its state lives here because iOS draws
@@ -23,7 +24,7 @@ export default function TabsLayout() {
 
   return (
     <>
-      <NativeTabs tintColor={colors.primary} labelStyle={{ fontSize: 12, fontWeight: "600" }}>
+      <NativeTabs tintColor={colors.primary}>
         <NativeTabs.BottomAccessory>
           <GlobalVoiceAccessory voice={voice} />
         </NativeTabs.BottomAccessory>

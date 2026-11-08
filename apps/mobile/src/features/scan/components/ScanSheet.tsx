@@ -11,6 +11,7 @@ import { SheetFooter } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
 import { openImageViewer } from "@/features/job-detail/lib/imageViewer";
 import { openPdfViewer } from "@/features/job-detail/lib/pdfViewer";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -40,6 +41,7 @@ export function ScanSheet({
   footer,
 }: ScanSheetProps) {
   const { colors } = useTheme();
+  const circleSize = useScaledSize(44, 1.5);
 
   return (
     <View style={[styles.sheet, { backgroundColor: colors.background }]}>
@@ -50,8 +52,13 @@ export function ScanSheet({
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.titleRow}>
-          <View style={[styles.icon, { backgroundColor: `${iconColor}26` }]}>
-            <SymbolView name={icon} size={28} tintColor={iconColor} />
+          <View
+            style={[
+              styles.icon,
+              { width: circleSize, height: circleSize, backgroundColor: `${iconColor}26` },
+            ]}
+          >
+            <SymbolView name={icon} size={circleSize / 2} tintColor={iconColor} />
           </View>
           <Text variant="title" style={styles.flex}>
             {title}
@@ -74,6 +81,7 @@ export function FooterButtons({ children }: { children: ReactNode }) {
 /** The photo (or PDF) being read; tap to see it full screen */
 export function PhotoPreview({ image, caption }: { image: MediaFile; caption: string }) {
   const { colors } = useTheme();
+  const pdfIconSize = useScaledSize(32);
   if (isPdf(image.mimeType)) {
     const name = image.name ?? "PDF";
     return (
@@ -86,7 +94,7 @@ export function PhotoPreview({ image, caption }: { image: MediaFile; caption: st
           { borderColor: colors.border, backgroundColor: colors.muted, opacity: pressed ? 0.8 : 1 },
         ]}
       >
-        <SymbolView name="doc.richtext" size={40} tintColor={colors.primary} />
+        <SymbolView name="doc.richtext" size={pdfIconSize} tintColor={colors.primary} />
         <View style={styles.flex}>
           <Text variant="label" numberOfLines={2}>
             {name}
@@ -95,7 +103,7 @@ export function PhotoPreview({ image, caption }: { image: MediaFile; caption: st
             PDF · Tap to open it
           </Text>
         </View>
-        <SymbolView name="chevron.right" size={20} tintColor={colors.mutedForeground} />
+        <SymbolView name="chevron.right" size={15} tintColor={colors.mutedForeground} />
       </Pressable>
     );
   }
@@ -149,6 +157,7 @@ export function ReadErrorView({
   isPicking,
 }: ReadErrorViewProps) {
   const { colors } = useTheme();
+  const iconSize = useScaledSize(24);
   return (
     <View style={styles.state}>
       <View
@@ -160,7 +169,7 @@ export function ReadErrorView({
         <View style={styles.readingRow}>
           <SymbolView
             name="exclamationmark.triangle.fill"
-            size={30}
+            size={iconSize}
             tintColor={colors.destructive}
           />
           <Text variant="heading" tone="destructive" style={styles.flex}>
@@ -184,12 +193,10 @@ export function ReadErrorView({
 const styles = StyleSheet.create({
   sheet: { flex: 1 },
   flex: { flex: 1 },
-  content: { padding: space.lg, paddingTop: space.xl, gap: space.lg },
+  content: { padding: space.lg, gap: space.lg },
   titleRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   icon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -205,13 +212,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    padding: space.lg,
-    minHeight: 88,
+    padding: space.md,
+    minHeight: 72,
     borderWidth: StyleSheet.hairlineWidth * 2,
     borderRadius: radius.lg,
     borderCurve: "continuous",
   },
   state: { gap: space.lg },
   readingRow: { flexDirection: "row", alignItems: "center", gap: space.md },
-  errorBox: { borderWidth: 1, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+  errorBox: { borderWidth: 1, borderRadius: radius.lg, padding: space.md, gap: space.sm },
 });

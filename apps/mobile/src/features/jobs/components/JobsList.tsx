@@ -28,8 +28,8 @@ const emptyText: Record<JobFilter, string> = {
 };
 
 /**
- * The job cards for the filter, searched by address. It's the screen's scroll view, so the large
- * title collapses as it scrolls. Convex keeps the list live, so there's no pull to refresh.
+ * The job cards for the filter, searched by address. It's the screen's scroll view; the search and
+ * filters scroll with it. Convex keeps the list live, so there's no pull to refresh.
  */
 export function JobsList({ jobs, filter, searchQuery, header }: JobsListProps) {
   const { colors } = useTheme();

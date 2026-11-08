@@ -13,6 +13,7 @@ import type { JobTask } from "@shared/jobs/jobSheet";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -122,6 +123,7 @@ function TaskRow({ task, category, onPress }: TaskRowProps) {
   const area = task.area?.trim().toLowerCase() === category.toLowerCase() ? null : task.area;
   const details = [area, quantity].filter(Boolean).join(" · ");
   const isDone = task.completed;
+  const checkSize = useScaledSize(26, 1.6);
 
   return (
     <Pressable
@@ -143,13 +145,14 @@ function TaskRow({ task, category, onPress }: TaskRowProps) {
         <View
           style={[
             styles.check,
+            { width: checkSize, height: checkSize },
             isDone ?
               { backgroundColor: colors.success, borderColor: colors.success }
             : { borderColor: colors.mutedForeground },
           ]}
         >
           {isDone ?
-            <SymbolView name="checkmark" size={20} weight="bold" tintColor="#fff" />
+            <SymbolView name="checkmark" size={checkSize * 0.55} weight="bold" tintColor="#fff" />
           : null}
         </View>
         <View style={styles.rowText}>
@@ -172,21 +175,11 @@ function TaskRow({ task, category, onPress }: TaskRowProps) {
       {task.sourceItem ?
         <View style={[styles.sheetBox, { backgroundColor: isDone ? colors.card : colors.muted }]}>
           <View style={styles.sheetBoxHeading}>
-            <Text
-              variant="caption"
-              tone="muted"
-              style={styles.sheetLabel}
-              maxFontSizeMultiplier={1.5}
-            >
+            <Text variant="footnote" tone="muted" style={styles.sheetLabel}>
               ON THE SHEET
             </Text>
             {task.page ?
-              <Text
-                variant="caption"
-                tone="muted"
-                style={styles.sheetLabel}
-                maxFontSizeMultiplier={1.5}
-              >
+              <Text variant="footnote" tone="muted" style={styles.sheetLabel}>
                 PAGE {task.page}
               </Text>
             : null}
@@ -210,29 +203,27 @@ function TaskRow({ task, category, onPress }: TaskRowProps) {
 }
 
 const styles = StyleSheet.create({
-  tab: { gap: space.xl },
+  tab: { gap: space.lg },
   progress: { gap: space.sm },
-  track: { height: 12, borderRadius: radius.pill, overflow: "hidden" },
+  track: { height: 6, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
-  count: { fontWeight: "700" },
+  count: { fontWeight: "600" },
   row: {
-    gap: space.md,
-    padding: space.lg,
+    gap: space.sm,
+    padding: space.md,
     borderRadius: radius.lg,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderCurve: "continuous",
   },
   rowTop: { flexDirection: "row", alignItems: "flex-start", gap: space.md },
   check: {
-    width: 34,
-    height: 34,
     borderRadius: radius.pill,
-    borderWidth: 2.5,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
     marginTop: -2,
   },
-  rowText: { flex: 1, gap: space.xs },
+  rowText: { flex: 1, gap: 2 },
   strike: { textDecorationLine: "line-through" },
   order: { fontWeight: "700" },
   sheetBox: { borderRadius: radius.md, padding: space.md, gap: space.xs },
@@ -242,6 +233,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     columnGap: space.sm,
   },
-  sheetLabel: { fontWeight: "800", letterSpacing: 1 },
+  sheetLabel: { fontWeight: "600", letterSpacing: 0.4 },
   bold: { fontWeight: "600" },
 });

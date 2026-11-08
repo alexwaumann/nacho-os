@@ -19,7 +19,7 @@ import { openDirectionsTo } from "@/lib/directions";
 import { radius, space } from "@/lib/theme";
 
 // The card sits over the map, so its text grows less than elsewhere to leave some map showing
-const TEXT_MAX_SCALE = 1.35;
+const TEXT_MAX_SCALE = 1.5;
 
 interface MapJobSummaryProps {
   job: Doc<"jobs">;
@@ -73,13 +73,13 @@ export function MapJobSummary({ job, routeNumber, onClose }: MapJobSummaryProps)
           accessibilityRole="button"
           accessibilityLabel="Close"
           onPress={onClose}
-          hitSlop={8}
+          hitSlop={10}
           style={({ pressed }) => [
             styles.close,
             { backgroundColor: colors.muted, opacity: pressed ? 0.7 : 1 },
           ]}
         >
-          <SymbolView name="xmark" size={20} weight="bold" tintColor={colors.mutedForeground} />
+          <SymbolView name="xmark" size={13} weight="bold" tintColor={colors.mutedForeground} />
         </Pressable>
       </View>
 
@@ -132,10 +132,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "flex-start", gap: space.md },
   address: { flex: 1 },
   close: {
-    width: 44,
-    height: 44,
-    marginTop: -space.xs,
-    marginRight: -space.xs,
+    width: 30,
+    height: 30,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",

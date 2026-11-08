@@ -8,6 +8,8 @@ import { getStatusActions, splitAccessCode, STATUS_LABELS } from "@shared/jobs/j
 import { Text } from "@/components/ui/text";
 import { toastError } from "@/components/ui/toast";
 import { JobVoiceButton } from "@/features/voice/components/JobVoiceButton";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo } from "@/lib/directions";
 import { minTapSize, radius, space } from "@/lib/theme";
@@ -29,6 +31,10 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
   const accessCodes = job.accessCodes ?? [];
   // On a route day he reads the codes at the door, so they ride in the header
   const hasHeaderCodes = job.selectedForRoute && accessCodes.length > 0;
+  const keySize = useScaledSize(15);
+  const mapSize = useScaledSize(22);
+  // At the accessibility sizes the address gets the full width, under the buttons
+  const isStacked = useIsLargeText();
 
   const handleDirections = async () => {
     try {
@@ -59,15 +65,29 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
     );
   };
 
+  const buttons = (
+    <>
+      <JobVoiceButton job={job} />
+      <IconButton icon="ellipsis" accessibilityLabel="More actions" onPress={handleMore} />
+    </>
+  );
+
   return (
     <View style={styles.header}>
-      <View style={styles.titleRow}>
-        <Text variant="title" style={styles.address} selectable>
-          {job.address}
-        </Text>
-        <JobVoiceButton job={job} />
-        <IconButton icon="ellipsis" accessibilityLabel="More actions" onPress={handleMore} />
-      </View>
+      {isStacked ?
+        <>
+          <View style={[styles.titleRow, styles.buttonsOnly]}>{buttons}</View>
+          <Text variant="title2" selectable>
+            {job.address}
+          </Text>
+        </>
+      : <View style={styles.titleRow}>
+          <Text variant="title2" style={styles.address} selectable>
+            {job.address}
+          </Text>
+          {buttons}
+        </View>
+      }
 
       <View style={styles.pills}>
         <Pill label={STATUS_LABELS[job.status]} tone={STATUS_TONES[job.status]} />
@@ -97,7 +117,7 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
                   { borderColor: colors.primary, backgroundColor: `${colors.primary}1A` },
                 ]}
               >
-                <SymbolView name="key.fill" size={18} tintColor={colors.primary} />
+                <SymbolView name="key.fill" size={keySize} tintColor={colors.primary} />
                 {label ?
                   <Text variant="label">{label}</Text>
                 : null}
@@ -130,7 +150,7 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
       >
         <SymbolView
           name={job.selectedForRoute ? "map.fill" : "map"}
-          size={24}
+          size={mapSize}
           tintColor={job.selectedForRoute ? colors.primary : colors.mutedForeground}
         />
         <Text variant="label" style={styles.flex}>
@@ -154,6 +174,7 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
 const styles = StyleSheet.create({
   header: { gap: space.md },
   titleRow: { flexDirection: "row", alignItems: "flex-start", gap: space.sm },
+  buttonsOnly: { justifyContent: "flex-end" },
   address: { flex: 1, paddingTop: space.sm },
   pills: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   codes: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
@@ -166,22 +187,24 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
   },
-  mono: { fontFamily: "Menlo", letterSpacing: 1 },
+  mono: { fontFamily: "Menlo", letterSpacing: 0.5 },
   routeRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
     minHeight: minTapSize + space.sm,
-    paddingHorizontal: space.lg,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
     borderRadius: radius.md,
   },
   flex: { flex: 1 },
-  toggle: { width: 64, height: 36, borderRadius: 18, padding: 3, justifyContent: "center" },
+  // iOS's switch size
+  toggle: { width: 51, height: 31, borderRadius: 16, padding: 2, justifyContent: "center" },
   toggleOn: { alignItems: "flex-end" },
   knob: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 27,
+    height: 27,
+    borderRadius: 14,
     backgroundColor: "#fff",
     shadowColor: "#000",
     shadowOpacity: 0.2,

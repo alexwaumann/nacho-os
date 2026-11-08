@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
   field: { gap: space.sm },
   input: {
     minHeight: minTapSize,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm + 2,
     borderRadius: radius.md,
     borderWidth: 1,
   },

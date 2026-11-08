@@ -37,9 +37,9 @@ export function QueueRow({ row, thumbnailUri, onOpen, onRetry, onDismiss }: Queu
 
   const icon =
     row.kind === "done" ?
-      <SymbolView name="checkmark.circle.fill" size={30} tintColor={colors.success} />
+      <SymbolView name="checkmark.circle.fill" size={24} tintColor={colors.success} />
     : row.kind === "failed" ?
-      <SymbolView name="exclamationmark.triangle.fill" size={30} tintColor={colors.destructive} />
+      <SymbolView name="exclamationmark.triangle.fill" size={24} tintColor={colors.destructive} />
     : <ActivityIndicator size="large" color={colors.primary} />;
 
   const summary = (

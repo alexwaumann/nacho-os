@@ -5,6 +5,7 @@ import type { Coordinates } from "@convex/lib/routing";
 import { formatArrivalTime } from "@shared/jobs/arrival";
 import { formatDriveTime } from "@shared/jobs/today";
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -25,6 +26,8 @@ interface HomeRouteCardProps {
 export function HomeRouteCard({ homeCoordinates, driveSeconds, arrivalTime }: HomeRouteCardProps) {
   const { colors } = useTheme();
   const driveTime = formatDriveTime(driveSeconds);
+  const badgeSize = useScaledSize(32, 1.6);
+  const smallIcon = useScaledSize(15);
 
   return (
     <View
@@ -32,8 +35,13 @@ export function HomeRouteCard({ homeCoordinates, driveSeconds, arrivalTime }: Ho
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
     >
       <View style={styles.header}>
-        <View style={[styles.badge, { backgroundColor: colors.muted }]}>
-          <SymbolView name="house.fill" size={20} tintColor={colors.mutedForeground} />
+        <View
+          style={[
+            styles.badge,
+            { width: badgeSize, height: badgeSize, backgroundColor: colors.muted },
+          ]}
+        >
+          <SymbolView name="house.fill" size={smallIcon} tintColor={colors.mutedForeground} />
         </View>
         <Text variant="heading" style={styles.title}>
           Home
@@ -42,7 +50,7 @@ export function HomeRouteCard({ homeCoordinates, driveSeconds, arrivalTime }: Ho
 
       {driveTime ?
         <View style={styles.inline}>
-          <SymbolView name="car.fill" size={20} tintColor={colors.mutedForeground} />
+          <SymbolView name="car.fill" size={smallIcon} tintColor={colors.mutedForeground} />
           <Text variant="label">{driveTime}</Text>
         </View>
       : null}
@@ -60,15 +68,13 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     borderCurve: "continuous",
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderStyle: "dashed",
     padding: space.lg,
     gap: space.md,
   },
   header: { flexDirection: "row", alignItems: "center", gap: space.md },
   badge: {
-    width: 40,
-    height: 40,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",

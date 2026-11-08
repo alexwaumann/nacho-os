@@ -4,7 +4,7 @@ import type { PressableProps, StyleProp, ViewStyle } from "react-native";
 import { Text } from "@/components/ui/text";
 import type { TextTone } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
-import { minTapSize, radius, space } from "@/lib/theme";
+import { buttonHeight, radius, space } from "@/lib/theme";
 
 type ButtonVariant = "primary" | "secondary" | "destructive" | "ghost";
 
@@ -15,7 +15,7 @@ export interface ButtonProps extends Omit<PressableProps, "children" | "style"> 
   style?: StyleProp<ViewStyle>;
 }
 
-/** A full-width button at least 56 pt tall, with a spinner while `isLoading`. */
+/** A full-width button, 50 pt tall at the default text size, with a spinner while `isLoading`. */
 export function Button({
   title,
   variant = "primary",
@@ -76,8 +76,8 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: minTapSize,
-    paddingHorizontal: space.xl,
+    minHeight: buttonHeight,
+    paddingHorizontal: space.lg,
     paddingVertical: space.md,
     borderRadius: radius.md,
     alignItems: "center",

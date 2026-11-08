@@ -13,6 +13,7 @@ import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
 import { AddReceiptButton } from "@/features/receipts/components/AddReceiptButton";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -38,6 +39,7 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
   const removePayment = useMutation(api.payments.remove);
   const dismissQueueItem = useMutation(api.receipts.dismissQueueItem);
   const summary = getJobMoneySummary(receipts, payment);
+  const iconSize = useScaledSize(24);
 
   // PDF receipts open in the PDF viewer; the rest swipe through together in the image viewer
   const receiptsWithImages = (receipts ?? []).filter(
@@ -149,7 +151,7 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
           <ActivityIndicator />
         : payment ?
           <Card>
-            <Text variant="caption" tone="muted" style={styles.overline}>
+            <Text variant="footnote" tone="muted" style={styles.overline}>
               CHECK FROM
             </Text>
             <Text variant="heading">{payment.payerName || "Unknown"}</Text>
@@ -202,11 +204,11 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
             {item.status === "failed" ?
               <SymbolView
                 name="exclamationmark.triangle.fill"
-                size={26}
+                size={iconSize}
                 tintColor={colors.destructive}
               />
             : <ActivityIndicator />}
-            <View style={styles.flex}>
+            <View style={styles.grow}>
               <Text variant="label">
                 {item.status === "failed" ? "Couldn't read a receipt" : "Reading a receipt…"}
               </Text>
@@ -232,7 +234,7 @@ export function MoneyTab({ job, receipts, payment, receiptQueue }: MoneyTabProps
           receipts.map((receipt) => (
             <Card key={receipt._id}>
               <View style={styles.amountRow}>
-                <View style={styles.flex}>
+                <View style={styles.grow}>
                   <Text variant="label">{receipt.storeName}</Text>
                   <Text variant="caption" tone="muted">
                     {formatIsoDate(receipt.date)}
@@ -292,10 +294,11 @@ function StatusBanner({
   title: string;
   detail?: string;
 }) {
+  const iconSize = useScaledSize(24);
   return (
     <View style={[styles.banner, { borderColor: color, backgroundColor: `${color}1A` }]}>
       <View style={styles.bannerTitle}>
-        <SymbolView name={icon} size={30} tintColor={color} />
+        <SymbolView name={icon} size={iconSize} tintColor={color} />
         <Text variant="heading" style={{ color, flexShrink: 1 }}>
           {title}
         </Text>
@@ -320,7 +323,7 @@ function TotalRow({
 }) {
   return (
     <View style={styles.totalRow}>
-      <Text variant={isBig ? "label" : "body"} style={styles.flex}>
+      <Text variant={isBig ? "label" : "body"} style={styles.grow}>
         {label}
       </Text>
       <Text variant={isBig ? "heading" : "label"} style={color ? { color } : undefined}>
@@ -331,21 +334,29 @@ function TotalRow({
 }
 
 const styles = StyleSheet.create({
-  tab: { gap: space.xl },
+  tab: { gap: space.lg },
   flex: { flex: 1 },
-  banner: { borderWidth: 1, borderRadius: radius.lg, padding: space.lg, gap: space.xs },
+  // Takes the free space but lets the amount or button next to it wrap under it when tight
+  grow: { flexGrow: 1, flexShrink: 1 },
+  banner: { borderWidth: 1, borderRadius: radius.lg, padding: space.md, gap: space.xs },
   bannerTitle: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  totals: { gap: space.md },
-  totalRow: { flexDirection: "row", alignItems: "center", gap: space.md, flexWrap: "wrap" },
+  totals: { gap: space.sm },
+  totalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    columnGap: space.md,
+    flexWrap: "wrap",
+  },
   divider: { borderTopWidth: 1, paddingTop: space.md },
-  overline: { fontWeight: "800", letterSpacing: 1 },
+  overline: { fontWeight: "600", letterSpacing: 0.4 },
   amountRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: space.md,
+    columnGap: space.md,
     flexWrap: "wrap",
   },
   buttons: { flexDirection: "row", gap: space.sm, flexWrap: "wrap" },
-  queueItem: { flexDirection: "row", alignItems: "center", gap: space.md },
+  queueItem: { flexDirection: "row", alignItems: "center", gap: space.md, flexWrap: "wrap" },
 });

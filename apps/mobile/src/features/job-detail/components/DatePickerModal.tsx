@@ -99,10 +99,10 @@ function DatePickerBody({
           {WEEKDAYS.map((day, i) => (
             <Text
               key={i}
-              variant="caption"
+              variant="footnote"
               tone="muted"
               style={styles.weekday}
-              maxFontSizeMultiplier={1.3}
+              maxFontSizeMultiplier={1.6}
               accessibilityElementsHidden
             >
               {day}
@@ -137,7 +137,8 @@ function DatePickerBody({
                   <Text
                     variant="label"
                     tone={isSelected ? "onPrimary" : "default"}
-                    maxFontSizeMultiplier={1.3}
+                    // Seven days across: the grid can't grow much wider
+                    maxFontSizeMultiplier={1.6}
                   >
                     {dayDate.getDate()}
                   </Text>
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   monthBar: { flexDirection: "row", alignItems: "center", gap: space.sm },
   monthName: { flex: 1, textAlign: "center" },
   week: { flexDirection: "row" },
-  weekday: { flex: 1, textAlign: "center", paddingVertical: space.xs },
+  weekday: { flex: 1, textAlign: "center", paddingVertical: space.xs, fontWeight: "600" },
   day: { flex: 1, aspectRatio: 1, maxHeight: minTapSize + 8, margin: 1 },
   dayButton: { alignItems: "center", justifyContent: "center", borderRadius: radius.pill },
 });

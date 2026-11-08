@@ -7,6 +7,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { toastError } from "@/components/ui/toast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
@@ -16,6 +17,7 @@ export function WorkOrderQueue() {
   const { isAuthenticated } = useConvexAuth();
   const queue = useQuery(api.jobs.listQueue, isAuthenticated ? {} : "skip");
   const removeQueueItem = useMutation(api.jobs.removeQueueItem);
+  const iconSize = useScaledSize(24);
 
   const handleRemove = async (queueId: Id<"jobProcessingQueue">) => {
     try {
@@ -40,7 +42,7 @@ export function WorkOrderQueue() {
             {isFailed ?
               <SymbolView
                 name="exclamationmark.circle.fill"
-                size={28}
+                size={iconSize}
                 tintColor={colors.destructive}
               />
             : <ActivityIndicator color={colors.primary} />}
@@ -60,7 +62,7 @@ export function WorkOrderQueue() {
                   { backgroundColor: colors.muted, opacity: pressed ? 0.7 : 1 },
                 ]}
               >
-                <SymbolView name="xmark" size={20} weight="bold" tintColor={colors.foreground} />
+                <SymbolView name="xmark" size={15} weight="bold" tintColor={colors.foreground} />
               </Pressable>
             : null}
           </Card>
@@ -73,7 +75,7 @@ export function WorkOrderQueue() {
 const styles = StyleSheet.create({
   wrapper: { gap: space.md },
   row: { flexDirection: "row", alignItems: "center", gap: space.md },
-  body: { flex: 1, gap: space.xs },
+  body: { flex: 1, gap: 2 },
   remove: {
     width: minTapSize,
     height: minTapSize,

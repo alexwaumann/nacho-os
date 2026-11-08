@@ -7,6 +7,7 @@ import type { RenderItemParams } from "react-native-draggable-flatlist";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { hasOrderChanged, moveInOrder } from "@shared/jobs/routePlan";
 import { isRouteDone, isStopDone } from "@shared/jobs/today";
+import { StatusBarScrim } from "@/components/StatusBarScrim";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
 import { useRemoveRouteStop } from "@/features/route/hooks/useRemoveRouteStop";
@@ -17,11 +18,11 @@ import { useTodayRoute } from "@/features/route/hooks/useTodayRoute";
 import { openAddJob } from "@/features/add-job/openAddJob";
 import { useScanCheck } from "@/features/checks/hooks/useScanCheck";
 import { useScanReceipt } from "@/features/receipts/hooks/useScanReceipt";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo, openRouteDirections } from "@/lib/directions";
 import { space } from "@/lib/theme";
 
-import { useIsLargeText } from "../hooks/useIsLargeText";
 import { ActionButton } from "./ActionButton";
 import { AllStopsDoneCard } from "./AllStopsDoneCard";
 import { EmptyRouteCard } from "./EmptyRouteCard";
@@ -220,19 +221,22 @@ export function TodayScreen() {
     : undefined;
 
   return (
-    <DraggableFlatList
-      data={orderedJobs}
-      keyExtractor={(job) => job._id}
-      renderItem={renderStop}
-      onDragBegin={handleDragBegin}
-      onDragEnd={({ data }) => handleNewOrder(data.map((job) => job._id))}
-      ListHeaderComponent={header}
-      ListFooterComponent={footer}
-      contentInsetAdjustmentBehavior="automatic"
-      containerStyle={[styles.flex, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    />
+    <>
+      <DraggableFlatList
+        data={orderedJobs}
+        keyExtractor={(job) => job._id}
+        renderItem={renderStop}
+        onDragBegin={handleDragBegin}
+        onDragEnd={({ data }) => handleNewOrder(data.map((job) => job._id))}
+        ListHeaderComponent={header}
+        ListFooterComponent={footer}
+        contentInsetAdjustmentBehavior="automatic"
+        containerStyle={[styles.flex, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      />
+      <StatusBarScrim />
+    </>
   );
 }
 

@@ -2,6 +2,7 @@ import { SymbolView } from "expo-symbols";
 import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -16,6 +17,7 @@ interface AllStopsDoneCardProps {
 export function AllStopsDoneCard({ onPlanTomorrow }: AllStopsDoneCardProps) {
   const { scheme, colors } = useTheme();
   const today = getTodayColors(scheme);
+  const iconSize = useScaledSize(28);
 
   return (
     <View
@@ -25,7 +27,7 @@ export function AllStopsDoneCard({ onPlanTomorrow }: AllStopsDoneCardProps) {
       ]}
     >
       <View style={styles.row}>
-        <SymbolView name="checkmark.circle.fill" size={32} tintColor={colors.success} />
+        <SymbolView name="checkmark.circle.fill" size={iconSize} tintColor={colors.success} />
         <Text variant="heading" style={styles.flex}>
           All stops done for today
         </Text>
@@ -44,7 +46,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     borderCurve: "continuous",
-    borderWidth: 2,
+    borderWidth: 1.5,
     padding: space.lg,
     gap: space.md,
   },

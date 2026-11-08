@@ -5,10 +5,13 @@ import { FullWindowOverlay } from "react-native-screens";
 
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/hooks/useTheme";
-import { minTapSize, radius, space } from "@/lib/theme";
+import { buttonHeight, minTapSize, radius, space } from "@/lib/theme";
 
 import { COUNTDOWN_MS } from "../hooks/useVoiceMic";
 import type { VoiceMic } from "../hooks/useVoiceMic";
+
+// The card floats over the screen, so its text grows less than the page's to leave room around it
+const PANEL_MAX_SCALE = 2;
 
 /**
  * Recording surfaces use one deep red in light and dark mode: the dark theme's destructive red
@@ -89,10 +92,10 @@ function PanelContent({ mic, processingLabel }: Pick<VoicePanelProps, "mic" | "p
         <View style={styles.row}>
           <View style={styles.dot} />
           <View style={styles.flex}>
-            <Text variant="heading" style={styles.onRed} maxFontSizeMultiplier={1.6}>
+            <Text variant="heading" style={styles.onRed} maxFontSizeMultiplier={PANEL_MAX_SCALE}>
               Listening… {formatElapsed(mic.elapsedMs)}
             </Text>
-            <Text style={styles.onRed} maxFontSizeMultiplier={1.6}>
+            <Text style={styles.onRed} maxFontSizeMultiplier={PANEL_MAX_SCALE}>
               {isCountingDown ?
                 `Sends by itself in ${Math.max(Math.ceil(mic.remainingMs / 1000), 0)}s`
               : "Talk, then tap Send"}
@@ -110,8 +113,8 @@ function PanelContent({ mic, processingLabel }: Pick<VoicePanelProps, "mic" | "p
               { borderColor: "#ffffff", opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <SymbolView name="xmark" size={22} tintColor="#ffffff" weight="bold" />
-            <Text variant="label" style={styles.onRed} maxFontSizeMultiplier={1.5}>
+            <SymbolView name="xmark" size={17} tintColor="#ffffff" weight="bold" />
+            <Text variant="label" style={styles.onRed} maxFontSizeMultiplier={PANEL_MAX_SCALE}>
               Cancel
             </Text>
           </Pressable>
@@ -125,8 +128,12 @@ function PanelContent({ mic, processingLabel }: Pick<VoicePanelProps, "mic" | "p
               { backgroundColor: "#ffffff", opacity: pressed ? 0.8 : 1 },
             ]}
           >
-            <SymbolView name="paperplane.fill" size={24} tintColor={RECORDING_RED} />
-            <Text variant="label" style={{ color: RECORDING_RED }} maxFontSizeMultiplier={1.5}>
+            <SymbolView name="paperplane.fill" size={20} tintColor={RECORDING_RED} />
+            <Text
+              variant="label"
+              style={{ color: RECORDING_RED }}
+              maxFontSizeMultiplier={PANEL_MAX_SCALE}
+            >
               Send
             </Text>
           </Pressable>
@@ -149,11 +156,11 @@ function PanelContent({ mic, processingLabel }: Pick<VoicePanelProps, "mic" | "p
     >
       {mic.isProcessing || mic.isStarting ?
         <ActivityIndicator size="large" color={colors.background} />
-      : <SymbolView name="mic.slash.fill" size={28} tintColor={colors.background} />}
+      : <SymbolView name="mic.slash.fill" size={24} tintColor={colors.background} />}
       <Text
         variant="heading"
         style={[styles.flex, { color: colors.background }]}
-        maxFontSizeMultiplier={1.6}
+        maxFontSizeMultiplier={PANEL_MAX_SCALE}
       >
         {label}
       </Text>
@@ -164,7 +171,11 @@ function PanelContent({ mic, processingLabel }: Pick<VoicePanelProps, "mic" | "p
           hitSlop={8}
           style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
         >
-          <Text variant="label" style={{ color: colors.background }} maxFontSizeMultiplier={1.5}>
+          <Text
+            variant="label"
+            style={{ color: colors.background }}
+            maxFontSizeMultiplier={PANEL_MAX_SCALE}
+          >
             Cancel
           </Text>
         </Pressable>
@@ -199,13 +210,13 @@ function FollowUpCard({ question, onAnswer, onDismiss }: FollowUpCardProps) {
         style={({ pressed }) => [styles.row, styles.flex, { opacity: pressed ? 0.7 : 1 }]}
       >
         <View style={[styles.micCircle, { backgroundColor: colors.primary }]}>
-          <SymbolView name="mic.fill" size={26} tintColor={colors.primaryForeground} />
+          <SymbolView name="mic.fill" size={20} tintColor={colors.primaryForeground} />
         </View>
         <View style={styles.flex}>
-          <Text variant="label" maxFontSizeMultiplier={1.6}>
+          <Text variant="label" maxFontSizeMultiplier={PANEL_MAX_SCALE}>
             {question}
           </Text>
-          <Text variant="caption" tone="primary" maxFontSizeMultiplier={1.6}>
+          <Text variant="caption" tone="primary" maxFontSizeMultiplier={PANEL_MAX_SCALE}>
             Tap here to answer
           </Text>
         </View>
@@ -218,7 +229,7 @@ function FollowUpCard({ question, onAnswer, onDismiss }: FollowUpCardProps) {
           hitSlop={8}
           style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.6 : 1 }]}
         >
-          <SymbolView name="xmark" size={20} tintColor={colors.mutedForeground} weight="bold" />
+          <SymbolView name="xmark" size={15} tintColor={colors.mutedForeground} weight="bold" />
         </Pressable>
       : null}
     </Animated.View>
@@ -237,15 +248,15 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
   },
-  followUp: { flexDirection: "row", alignItems: "center", borderWidth: 2 },
+  followUp: { flexDirection: "row", alignItems: "center", borderWidth: 1.5 },
   row: { flexDirection: "row", alignItems: "center", gap: space.md },
   flex: { flex: 1 },
   onRed: { color: "#ffffff" },
-  dot: { width: 16, height: 16, borderRadius: 8, backgroundColor: "#ffffff" },
+  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#ffffff" },
   buttons: { flexDirection: "row", gap: space.md },
   button: {
     flex: 1,
-    minHeight: minTapSize + space.sm,
+    minHeight: buttonHeight,
     borderRadius: radius.md,
     flexDirection: "row",
     alignItems: "center",
@@ -253,7 +264,7 @@ const styles = StyleSheet.create({
     gap: space.sm,
     paddingHorizontal: space.md,
   },
-  cancel: { borderWidth: 2 },
+  cancel: { borderWidth: 1.5 },
   send: { flex: 1.4 },
   micCircle: {
     width: minTapSize,

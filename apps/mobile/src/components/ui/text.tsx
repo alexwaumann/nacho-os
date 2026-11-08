@@ -20,9 +20,16 @@ const toneColor: Record<TextTone, keyof ThemeColors> = {
   onPrimary: "primaryForeground",
 };
 
+const headerVariants: ReadonlySet<TextVariant> = new Set([
+  "largeTitle",
+  "title",
+  "title2",
+  "heading",
+]);
+
 /**
- * Text in the app's type scale. Grows with Dynamic Type (the iOS text size setting) up to the
- * variant's cap. Use this instead of React Native's Text.
+ * Text in the app's type scale (Apple's text styles, see `typography`). Grows with Dynamic Type
+ * (the iOS text size setting) like the matching iOS style. Use this instead of React Native's Text.
  */
 export function Text({ variant = "body", tone = "default", style, ...props }: TextProps) {
   const { colors } = useTheme();
@@ -31,7 +38,7 @@ export function Text({ variant = "body", tone = "default", style, ...props }: Te
   return (
     <NativeText
       maxFontSizeMultiplier={maxScale}
-      accessibilityRole={variant === "title" || variant === "heading" ? "header" : undefined}
+      accessibilityRole={headerVariants.has(variant) ? "header" : undefined}
       style={[type, { color: colors[toneColor[tone]] }, style]}
       {...props}
     />

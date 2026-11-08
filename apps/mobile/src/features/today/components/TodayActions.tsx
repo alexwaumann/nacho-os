@@ -2,10 +2,11 @@ import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
-import { useIsLargeText } from "../hooks/useIsLargeText";
 import type { SFSymbol } from "../lib/symbols";
 import { getTodayColors } from "../lib/todayColors";
 
@@ -69,6 +70,7 @@ function ActionTile({
   onPress,
 }: ActionTileProps) {
   const { colors } = useTheme();
+  const circleSize = useScaledSize(44, 1.5);
 
   return (
     <Pressable
@@ -81,8 +83,13 @@ function ActionTile({
         { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
       ]}
     >
-      <View style={[styles.icon, { backgroundColor: iconBackground }]}>
-        <SymbolView name={icon} size={28} tintColor={iconColor} weight="bold" />
+      <View
+        style={[
+          styles.icon,
+          { width: circleSize, height: circleSize, backgroundColor: iconBackground },
+        ]}
+      >
+        <SymbolView name={icon} size={circleSize / 2} tintColor={iconColor} weight="bold" />
       </View>
       <Text
         variant="label"
@@ -111,14 +118,12 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  tileStacked: { flexDirection: "row", justifyContent: "flex-start", minHeight: minTapSize + 16 },
+  tileStacked: { flexDirection: "row", justifyContent: "flex-start", minHeight: minTapSize },
   icon: {
-    width: 52,
-    height: 52,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },
-  label: { textAlign: "center", fontSize: 17, lineHeight: 21 },
+  label: { textAlign: "center" },
   labelStacked: { flex: 1 },
 });

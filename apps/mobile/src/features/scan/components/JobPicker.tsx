@@ -5,6 +5,7 @@ import type { Doc, Id } from "@convex/_generated/dataModel";
 import { formatDueDate } from "@shared/jobs/jobsList";
 import { SectionLabel } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { radius, space } from "@/lib/theme";
 
@@ -78,6 +79,8 @@ interface JobPickerRowProps {
 
 function JobPickerRow({ job, isSelected, isRecommended, onSelect }: JobPickerRowProps) {
   const { colors } = useTheme();
+  const radioSize = useScaledSize(26, 1.6);
+  const starSize = useScaledSize(13);
   const details = [STATUS_LABELS[job.status], job.dueDate && `Due ${formatDueDate(job.dueDate)}`]
     .filter(Boolean)
     .join(" · ");
@@ -105,8 +108,8 @@ function JobPickerRow({ job, isSelected, isRecommended, onSelect }: JobPickerRow
               { borderColor: colors.success, backgroundColor: `${colors.success}1A` },
             ]}
           >
-            <SymbolView name="star.fill" size={16} tintColor={colors.success} />
-            <Text variant="caption" style={{ color: colors.success, fontWeight: "700" }}>
+            <SymbolView name="star.fill" size={starSize} tintColor={colors.success} />
+            <Text variant="footnote" style={{ color: colors.success, fontWeight: "600" }}>
               Best match
             </Text>
           </View>
@@ -122,6 +125,8 @@ function JobPickerRow({ job, isSelected, isRecommended, onSelect }: JobPickerRow
         style={[
           styles.radio,
           {
+            width: radioSize,
+            height: radioSize,
             borderColor: isSelected ? colors.primary : colors.mutedForeground,
             backgroundColor: isSelected ? colors.primary : "transparent",
           },
@@ -130,7 +135,7 @@ function JobPickerRow({ job, isSelected, isRecommended, onSelect }: JobPickerRow
         {isSelected ?
           <SymbolView
             name="checkmark"
-            size={20}
+            size={radioSize * 0.55}
             weight="bold"
             tintColor={colors.primaryForeground}
           />
@@ -142,20 +147,20 @@ function JobPickerRow({ job, isSelected, isRecommended, onSelect }: JobPickerRow
 
 const styles = StyleSheet.create({
   list: { gap: space.md },
-  sectionLabel: { paddingHorizontal: space.xs },
+  sectionLabel: { paddingHorizontal: space.lg },
   sectionGap: { paddingTop: space.md },
   row: {
-    minHeight: 72,
+    minHeight: 60,
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    borderWidth: 2,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm + 2,
+    borderWidth: 1.5,
     borderRadius: radius.lg,
     borderCurve: "continuous",
   },
-  rowText: { flex: 1, gap: space.xs, alignItems: "flex-start" },
+  rowText: { flex: 1, gap: 2, alignItems: "flex-start" },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -166,10 +171,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   radio: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 3,
+    borderRadius: radius.pill,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },

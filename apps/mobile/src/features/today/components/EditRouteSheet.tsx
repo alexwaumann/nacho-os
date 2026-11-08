@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { SheetFooter, SheetTitle } from "@/components/ui/sheet";
 import { Text } from "@/components/ui/text";
 import { useRouteOptimization } from "@/features/route/hooks/useRouteOptimization";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
@@ -114,6 +115,7 @@ interface PickableJobProps {
 function PickableJob({ job, isSelected, onToggle }: PickableJobProps) {
   const { colors } = useTheme();
   const dueLabel = describeDueDate(job.dueDate, new Date());
+  const checkSize = useScaledSize(26);
   const totalTasks = job.tasks?.length ?? 0;
   const details = [
     dueLabel,
@@ -133,14 +135,14 @@ function PickableJob({ job, isSelected, onToggle }: PickableJobProps) {
         {
           backgroundColor: colors.card,
           borderColor: isSelected ? colors.primary : colors.border,
-          borderWidth: isSelected ? 3 : StyleSheet.hairlineWidth * 2,
+          borderWidth: isSelected ? 2 : StyleSheet.hairlineWidth * 2,
           opacity: pressed ? 0.7 : 1,
         },
       ]}
     >
       <SymbolView
         name={isSelected ? "checkmark.circle.fill" : "circle"}
-        size={34}
+        size={checkSize}
         tintColor={isSelected ? colors.primary : colors.mutedForeground}
       />
       <View style={styles.jobBody}>
@@ -159,8 +161,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: {
     paddingHorizontal: space.lg,
-    paddingTop: space.xl,
-    paddingBottom: space.md,
+    paddingTop: space.lg,
+    paddingBottom: space.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   loading: { marginTop: space.xxl },
@@ -170,11 +172,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    minHeight: minTapSize + 16,
-    padding: space.lg,
+    minHeight: minTapSize,
+    padding: space.md,
     borderRadius: radius.lg,
     borderCurve: "continuous",
   },
-  jobBody: { flex: 1, gap: space.xs },
+  jobBody: { flex: 1, gap: 2 },
   upper: { textTransform: "uppercase" },
 });

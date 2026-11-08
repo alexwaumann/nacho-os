@@ -175,7 +175,7 @@ export default function SignInScreen() {
               style={styles.logo}
               accessibilityIgnoresInvertColors
             />
-            <Text variant="title">Nacho OS</Text>
+            <Text variant="largeTitle">Nacho OS</Text>
             <Text tone="muted" style={styles.center}>
               Sign in with your username and password.
             </Text>
@@ -214,8 +214,8 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: space.xxl * 2, gap: space.xl },
+  content: { paddingTop: space.xxl * 2, gap: space.lg },
   header: { alignItems: "center", gap: space.sm, marginBottom: space.md },
   center: { textAlign: "center" },
-  logo: { width: 96, height: 96, borderRadius: 22, borderCurve: "continuous" },
+  logo: { width: 80, height: 80, borderRadius: 18, borderCurve: "continuous" },
 });

@@ -15,6 +15,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { toastError } from "@/components/ui/toast";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo } from "@/lib/directions";
 import { minTapSize, radius, space } from "@/lib/theme";
@@ -209,15 +210,15 @@ interface ChipProps {
 }
 
 function Chip({ label, icon, background, text, isStrong }: ChipProps) {
+  const iconSize = useScaledSize(13);
   return (
     <View style={[styles.chip, { backgroundColor: background }]}>
       {icon ?
-        <SymbolView name={icon} size={16} weight="semibold" tintColor={text} />
+        <SymbolView name={icon} size={iconSize} weight="semibold" tintColor={text} />
       : null}
       <Text
-        variant="caption"
-        maxFontSizeMultiplier={1.6}
-        style={[{ color: text }, isStrong && styles.strong]}
+        variant="footnote"
+        style={[styles.chipText, { color: text }, isStrong && styles.strong]}
       >
         {label}
       </Text>
@@ -233,6 +234,7 @@ interface RouteButtonProps {
 /** "Add to today" / "On today's route" toggle, like the route button on the web card */
 function RouteButton({ isOnRoute, onPress }: RouteButtonProps) {
   const { colors } = useTheme();
+  const iconSize = useScaledSize(20);
   return (
     <Pressable
       accessibilityRole="button"
@@ -249,7 +251,7 @@ function RouteButton({ isOnRoute, onPress }: RouteButtonProps) {
     >
       <SymbolView
         name={isOnRoute ? "checkmark.circle.fill" : "plus.circle"}
-        size={24}
+        size={iconSize}
         weight="semibold"
         tintColor={isOnRoute ? colors.primaryForeground : colors.primary}
       />
@@ -267,14 +269,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: space.xs,
-    paddingHorizontal: space.sm + 2,
-    paddingVertical: space.xs,
+    paddingHorizontal: space.sm,
+    paddingVertical: 3,
     borderRadius: radius.sm,
     borderCurve: "continuous",
   },
+  chipText: { fontWeight: "600" },
   strong: { fontWeight: "700" },
   progress: { gap: space.xs },
-  track: { height: 8, borderRadius: radius.pill, overflow: "hidden" },
+  track: { height: 6, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
   routeButton: {
     minHeight: minTapSize,
@@ -283,8 +286,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: space.sm,
     paddingHorizontal: space.lg,
+    paddingVertical: space.sm,
     borderRadius: radius.md,
     borderCurve: "continuous",
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
 });
