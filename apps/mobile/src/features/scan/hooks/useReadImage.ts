@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { getErrorMessage } from "@shared/errors";
 
-import type { CapturedImage } from "../lib/capture";
+import type { MediaFile } from "@/features/media/lib/types";
 import { readImageData } from "../lib/imageData";
 import type { ImageData } from "../lib/imageData";
 
@@ -16,10 +16,7 @@ export type ReadState<T> =
  * the photo changes. Each attempt runs once, even when effects run twice in development, because
  * every read costs a Gemini call.
  */
-export function useReadImage<T>(
-  image: CapturedImage | null,
-  read: (data: ImageData) => Promise<T>,
-) {
+export function useReadImage<T>(image: MediaFile | null, read: (data: ImageData) => Promise<T>) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<ReadState<T>>({ status: "reading" });
   const startedKey = useRef<string | null>(null);

@@ -1,13 +1,14 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { Alert, Linking, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { toast, toastError } from "@/components/ui/toast";
-import { choosePhotos, PickImagesError, takePhoto } from "@/features/add-job/lib/pickImages";
-import type { PickedImage } from "@/features/add-job/lib/pickImages";
 import { ActionButton } from "@/features/job-detail/components/SheetParts";
+import { pickPhotos, showPickPhotosError } from "@/features/media/lib/pickPhotos";
+import type { PhotoSource } from "@/features/media/lib/pickPhotos";
+import type { MediaFile } from "@/features/media/lib/types";
 import { space } from "@/lib/theme";
 
 import { useAddJobPhoto } from "../hooks/useAddJobPhoto";
@@ -27,20 +28,13 @@ export function AddJobPhoto({ jobId }: AddJobPhotoProps) {
   const [isPicking, setIsPicking] = useState(false);
   const [captioning, setCaptioning] = useState<{ id: Id<"jobPhotos">; uri: string } | null>(null);
 
-  const handlePick = async (pick: () => Promise<PickedImage[] | null>) => {
+  const handlePick = async (source: PhotoSource) => {
     setIsPicking(true);
-    let images: PickedImage[] | null;
+    let images: MediaFile[] | null;
     try {
-      images = await pick();
+      images = await pickPhotos(source, "jobPhoto");
     } catch (error) {
-      if (error instanceof PickImagesError && error.isSettingsError) {
-        Alert.alert("Camera is off", error.message, [
-          { text: "Not now", style: "cancel" },
-          { text: "Open Settings", onPress: () => void Linking.openSettings() },
-        ]);
-      } else {
-        toastError("Couldn't get the photo", error);
-      }
+      showPickPhotosError(error, "Couldn't get the photo");
       return;
     } finally {
       setIsPicking(false);
@@ -74,13 +68,13 @@ export function AddJobPhoto({ jobId }: AddJobPhotoProps) {
         variant="primary"
         isLoading={isUploading}
         disabled={isBusy}
-        onPress={() => void handlePick(takePhoto)}
+        onPress={() => void handlePick("camera")}
       />
       <ActionButton
         title="Choose from library"
         icon="photo.on.rectangle"
         disabled={isBusy}
-        onPress={() => void handlePick(choosePhotos)}
+        onPress={() => void handlePick("library")}
       />
       <PhotoCaptionModal
         imageUri={captioning?.uri ?? null}

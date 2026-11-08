@@ -2,21 +2,22 @@ import { File, UploadType } from "expo-file-system";
 
 import type { Id } from "@convex/_generated/dataModel";
 
-import type { PickedImage } from "./pickImages";
+import type { MediaFile } from "./types";
 
-const UPLOAD_FAILED = "Couldn't send it. Check your internet and try again.";
+export const UPLOAD_FAILED = "Couldn't send it. Check your internet and try again.";
 
 /**
  * Upload a picture (or PDF) on the phone to Convex storage, straight from the file (no base64 in
- * JavaScript), and return its storage id. `uploadUrl` comes from `api.files.generateUploadUrl`.
+ * JavaScript), and return its storage id. `uploadUrl` comes from `api.files.generateUploadUrl`;
+ * `useUploadFile` gets one for you.
  */
-export async function uploadImage(uploadUrl: string, image: PickedImage): Promise<Id<"_storage">> {
+export async function uploadFile(uploadUrl: string, file: MediaFile): Promise<Id<"_storage">> {
   let result;
   try {
-    result = await new File(image.uri).upload(uploadUrl, {
+    result = await new File(file.uri).upload(uploadUrl, {
       httpMethod: "POST",
       uploadType: UploadType.BINARY_CONTENT,
-      headers: { "Content-Type": image.mimeType },
+      headers: { "Content-Type": file.mimeType },
     });
   } catch (error) {
     console.error("Upload failed:", error);

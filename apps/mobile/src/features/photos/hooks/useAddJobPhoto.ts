@@ -4,8 +4,8 @@ import { useState } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { toast, toastError } from "@/components/ui/toast";
-import type { PickedImage } from "@/features/add-job/lib/pickImages";
-import { uploadImage } from "@/features/add-job/lib/uploadImage";
+import { useUploadFile } from "@/features/media/hooks/useUploadFile";
+import type { MediaFile } from "@/features/media/lib/types";
 
 /**
  * Adds photos to a job, like the web's useAddJobPhoto: each is uploaded, then attached to the
@@ -13,16 +13,16 @@ import { uploadImage } from "@/features/add-job/lib/uploadImage";
  */
 export function useAddJobPhoto(jobId: Id<"jobs">) {
   const [isUploading, setIsUploading] = useState(false);
-  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const uploadFile = useUploadFile();
   const createPhoto = useMutation(api.jobPhotos.create);
 
-  const addPhotos = async (images: PickedImage[]): Promise<Id<"jobPhotos">[]> => {
+  const addPhotos = async (images: MediaFile[]): Promise<Id<"jobPhotos">[]> => {
     if (images.length === 0) return [];
     setIsUploading(true);
     const added: Id<"jobPhotos">[] = [];
     try {
       for (const image of images) {
-        const imageId = await uploadImage(await generateUploadUrl(), image);
+        const imageId = await uploadFile(image);
         added.push(await createPhoto({ jobId, imageId }));
       }
       toast.success(added.length === 1 ? "Photo added" : `${added.length} photos added`);
