@@ -38,7 +38,9 @@ grep -E '^VITE_(CLERK_PUBLISHABLE_KEY|CONVEX_URL)=' ../../.env.local | sed 's/^V
 
 `EXPO_PUBLIC_*` values are compiled into the JS bundle; restart Metro after changing them. The app
 talks to the shared Convex **dev** deployment (the one the live website uses) and the Clerk dev
-instance. Sign in with a username and password.
+instance. Sign in with a username and password. If Clerk asks for more (a code by email or text
+for a new device, a second factor, a new password), `src/app/sign-in.tsx` shows that step; which
+step comes next is decided by `getSignInStep` in `shared/auth/signInSteps.ts`.
 
 ## Run in the Simulator
 
