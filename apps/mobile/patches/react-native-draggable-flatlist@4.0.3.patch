@@ -1,0 +1,367 @@
+diff --git a/src/components/CellDecorators.tsx b/src/components/CellDecorators.tsx
+index e441fdc4ba78faa34aa2fbdeda1da23177807338..b7cc0a0ee469b6707c838789fcd4bed7829d4f39 100644
+--- a/src/components/CellDecorators.tsx
++++ b/src/components/CellDecorators.tsx
+@@ -25,7 +25,7 @@ export const ScaleDecorator = ({ activeScale = 1.1, children }: ScaleProps) => {
+     return {
+       transform: [{ scaleX: scale }, { scaleY: scale }],
+     };
+-  }, [isActive]);
++  });
+ 
+   return (
+     <Animated.View style={[style, horizontal && styles.horizontal]}>
+@@ -60,7 +60,7 @@ export const ShadowDecorator = ({
+       shadowColor: isActive ? color : "transparent",
+       shadowOpacity: isActive ? shadowOpacity : 0,
+     };
+-  }, [isActive, onActiveAnim]);
++  });
+ 
+   return (
+     <Animated.View style={[style, horizontal && styles.horizontal]}>
+@@ -85,7 +85,7 @@ export const OpacityDecorator = ({
+     return {
+       opacity: isActive ? opacity : 1,
+     };
+-  }, [isActive]);
++  });
+ 
+   return (
+     <Animated.View style={[style, horizontal && styles.horizontal]}>
+diff --git a/src/components/CellRendererComponent.tsx b/src/components/CellRendererComponent.tsx
+index e4e861a6663ae59838af08c965ab6782fc41f8b0..172d25007c296ba6e760a8270e0aa8c7e1f4601f 100644
+--- a/src/components/CellRendererComponent.tsx
++++ b/src/components/CellRendererComponent.tsx
+@@ -67,7 +67,7 @@ function CellRendererComponent<T>(props: Props<T>) {
+     return {
+       transform: [horizontalAnim.value ? { translateX: t } : { translateY: t }],
+     };
+-  }, [translate, activeKey]);
++  });
+ 
+   const updateCellMeasurements = useStableCallback(() => {
+     const onSuccess: MeasureLayoutOnSuccessCallback = (x, y, w, h) => {
+diff --git a/src/components/DraggableFlatList.tsx b/src/components/DraggableFlatList.tsx
+index 7c88afc54e5d7db3dd8b15819d5833681757f039..06cdd991495c7f8815192fe54a301c0e9e58923f 100644
+--- a/src/components/DraggableFlatList.tsx
++++ b/src/components/DraggableFlatList.tsx
+@@ -10,7 +10,6 @@ import {
+   ListRenderItem,
+   FlatListProps,
+   LayoutChangeEvent,
+-  InteractionManager,
+ } from "react-native";
+ import {
+   FlatList,
+@@ -119,7 +118,8 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
+   if (dataHasChanged) {
+     // When data changes make sure `activeKey` is nulled out in the same render pass
+     activeKey = null;
+-    InteractionManager.runAfterInteractions(() => {
++    // InteractionManager was removed from React Native (0.88 throws on access)
++    requestIdleCallback(() => {
+       reset();
+     });
+   }
+@@ -254,9 +254,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
+           });
+         }
+       }
+-    },
+-    [isTouchActiveNative, onDragEnd, onRelease]
+-  );
++    });
+ 
+   useAnimatedReaction(
+     () => {
+@@ -266,9 +264,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
+       if (prev !== null && cur !== prev && cur >= 0 && prev >= 0) {
+         runOnJS(onPlaceholderIndexChange)(cur);
+       }
+-    },
+-    [spacerIndexAnim]
+-  );
++    });
+ 
+   const gestureDisabled = useSharedValue(false);
+ 
+@@ -345,9 +341,7 @@ function DraggableFlatListInner<T>(props: DraggableFlatListProps<T>) {
+           : evt.contentOffset.y;
+         runOnJS(onScroll)(scrollOffset.value);
+       },
+-    },
+-    [horizontalAnim]
+-  );
++    });
+ 
+   useAutoScroll();
+ 
+diff --git a/src/components/NestableDraggableFlatList.tsx b/src/components/NestableDraggableFlatList.tsx
+index 155935276d83e232adba7486c3803998c1b90c7b..e95ee1714b45fad8df37810999757a00a791c849 100644
+--- a/src/components/NestableDraggableFlatList.tsx
++++ b/src/components/NestableDraggableFlatList.tsx
+@@ -40,7 +40,7 @@ function NestableDraggableFlatListInner<T>(
+ 
+   const hoverOffset = useDerivedValue(() => {
+     return listHoverOffset.value + listVerticalOffset.value;
+-  }, [listHoverOffset]);
++  });
+ 
+   useNestedAutoScroll({
+     ...animVals,
+diff --git a/src/components/PlaceholderItem.tsx b/src/components/PlaceholderItem.tsx
+index 5e6319f40a57c6a96ba0e34b4e70dac89393ce23..ebcf5aec04336acb269579c0193139c5a0693acb 100644
+--- a/src/components/PlaceholderItem.tsx
++++ b/src/components/PlaceholderItem.tsx
+@@ -57,7 +57,7 @@ function PlaceholderItem<T>({ renderPlaceholder }: Props<T>) {
+         ],
+       };
+ 
+-  }, [spacerIndexAnim, placeholderOffset, horizontalAnim, scrollOffset, size]);
++  });
+ 
+   const extraStyle = useMemo(() => {
+     return horizontal ? { width: size } : { height: size };
+diff --git a/src/components/ScrollOffsetListener.tsx b/src/components/ScrollOffsetListener.tsx
+index 50c689b6cd78ff5d5e190ce207af32d707a49978..95c7989882467cf594eac95bbb0584321d6b99af 100644
+--- a/src/components/ScrollOffsetListener.tsx
++++ b/src/components/ScrollOffsetListener.tsx
+@@ -17,7 +17,7 @@ const ScrollOffsetListener = ({
+     if (cur !== prev) {
+       runOnJS(onScrollOffsetChange)(cur)
+     }
+-  }, [scrollOffset])
++  })
+ 
+   return null;
+ };
+diff --git a/src/context/animatedValueContext.tsx b/src/context/animatedValueContext.tsx
+index c62360dda39e09e75442d157793265e4a86886b9..a65b2125d2466bb3cf3ed9d983ee278241233c6a 100644
+--- a/src/context/animatedValueContext.tsx
++++ b/src/context/animatedValueContext.tsx
+@@ -79,15 +79,13 @@ function useSetupAnimatedValues<T>() {
+         scrollInit.value = scrollOffset.value;
+         outerScrollInit.value = outerScrollOffset.value;
+       }
+-    },
+-    [outerScrollOffset]
+-  );
++    });
+ 
+   const placeholderOffset = useSharedValue(0);
+ 
+   const isDraggingCell = useDerivedValue(() => {
+     return isTouchActiveNative.value && activeIndexAnim.value >= 0;
+-  }, []);
++  });
+ 
+   const autoScrollDistance = useDerivedValue(() => {
+     if (!isDraggingCell.value) return 0;
+@@ -96,14 +94,14 @@ function useSetupAnimatedValues<T>() {
+     const outerScrollDiff = outerScrollOffset.value - outerScrollInit.value;
+     const scrollDiff = innerScrollDiff + outerScrollDiff;
+     return scrollDiff;
+-  }, []);
++  });
+ 
+   const touchPositionDiff = useDerivedValue(() => {
+     const extraTranslate = isTouchActiveNative.value
+       ? autoScrollDistance.value
+       : 0;
+     return touchTranslate.value + extraTranslate;
+-  }, []);
++  });
+ 
+   const touchPositionDiffConstrained = useDerivedValue(() => {
+     const containerMinusActiveCell =
+@@ -131,7 +129,7 @@ function useSetupAnimatedValues<T>() {
+       Math.max(constrainedBase, maxTranslateNegative),
+       maxTranslatePositive
+     );
+-  }, []);
++  });
+ 
+   const dragItemOverflow = props.dragItemOverflow;
+   const hoverAnim = useDerivedValue(() => {
+@@ -139,11 +137,11 @@ function useSetupAnimatedValues<T>() {
+     return dragItemOverflow
+       ? touchPositionDiff.value
+       : touchPositionDiffConstrained.value;
+-  }, []);
++  });
+ 
+   const hoverOffset = useDerivedValue(() => {
+     return hoverAnim.value + activeCellOffset.value;
+-  }, [hoverAnim, activeCellOffset]);
++  });
+ 
+   useDerivedValue(() => {
+     // Reset spacer index when we stop hovering
+@@ -151,7 +149,7 @@ function useSetupAnimatedValues<T>() {
+     if (!isHovering && spacerIndexAnim.value >= 0) {
+       spacerIndexAnim.value = -1;
+     }
+-  }, []);
++  });
+ 
+   // Note: this could use a refactor as it combines touch state + cell animation
+   const resetTouchedCell = useCallback(() => {
+diff --git a/src/hooks/useAutoScroll.tsx b/src/hooks/useAutoScroll.tsx
+index d3add83ec4b2e5c3a8574a366c5a13f4de64815d..c55201842020e01fcc57bcda677b699d3afbec23 100644
+--- a/src/hooks/useAutoScroll.tsx
++++ b/src/hooks/useAutoScroll.tsx
+@@ -28,27 +28,27 @@ export function useAutoScroll() {
+ 
+   const hoverScreenOffset = useDerivedValue(() => {
+     return hoverOffset.value - scrollOffset.value;
+-  }, []);
++  });
+ 
+   const isScrolledUp = useDerivedValue(() => {
+     return scrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
+-  }, []);
++  });
+ 
+   const isScrolledDown = useDerivedValue(() => {
+     return (
+       scrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
+       scrollViewSize.value
+     );
+-  }, []);
++  });
+ 
+   const distToTopEdge = useDerivedValue(() => {
+     return Math.max(0, hoverScreenOffset.value);
+-  }, []);
++  });
+ 
+   const distToBottomEdge = useDerivedValue(() => {
+     const hoverPlusActiveCell = hoverScreenOffset.value + activeCellSize.value;
+     return Math.max(0, containerSize.value - hoverPlusActiveCell);
+-  }, []);
++  });
+ 
+   const isAtTopEdge = useDerivedValue(() => {
+     return distToTopEdge.value <= autoscrollThreshold;
+@@ -56,12 +56,12 @@ export function useAutoScroll() {
+ 
+   const isAtBottomEdge = useDerivedValue(() => {
+     return distToBottomEdge.value <= autoscrollThreshold;
+-  }, []);
++  });
+ 
+   const scrollTarget = useSharedValue(0);
+   const dragIsActive = useDerivedValue(() => {
+     return activeIndexAnim.value >= 0;
+-  }, []);
++  });
+ 
+   useAnimatedReaction(
+     () => {
+@@ -86,7 +86,7 @@ export function useAutoScroll() {
+     const cellIsActive = activeIndexAnim.value >= 0;
+ 
+     return hasScrolledToTarget && isAtEdge && !isEdgeDisabled && cellIsActive;
+-  }, []);
++  });
+ 
+   function scrollToInternal(offset: number) {
+     if (flatlistRef && "current" in flatlistRef) {
+@@ -113,7 +113,7 @@ export function useAutoScroll() {
+     // Reanimated scrollTo is crashing on android. use 'regular' scrollTo until figured out.
+     // scrollTo(scrollViewRef, targetX, targetY, true);
+     runOnJS(scrollToInternal)(targetOffset);
+-  }, []);
++  });
+ 
+   return null;
+ }
+diff --git a/src/hooks/useCellTranslate.tsx b/src/hooks/useCellTranslate.tsx
+index efea24038ffa1b340b601cea16588ed1a5823e5a..480613c63d527a123734c8473ef56a64f966b792 100644
+--- a/src/hooks/useCellTranslate.tsx
++++ b/src/hooks/useCellTranslate.tsx
+@@ -102,7 +102,7 @@ export function useCellTranslate({ cellIndex, cellSize, cellOffset }: Params) {
+       : 0;
+ 
+     return withSpring(translationAmt, animationConfigRef.value);
+-  }, [activeKey, cellIndex]);
++  });
+ 
+   return translate;
+ }
+diff --git a/src/hooks/useNestedAutoScroll.tsx b/src/hooks/useNestedAutoScroll.tsx
+index ee098ec3468c52eab7808907132156b59c926428..ad81137c5caf4f75bea6bd686ed02a59f9ea1b13 100644
+--- a/src/hooks/useNestedAutoScroll.tsx
++++ b/src/hooks/useNestedAutoScroll.tsx
+@@ -44,31 +44,31 @@ export function useNestedAutoScroll(params: {
+ 
+   const hoverScreenOffset = useDerivedValue(() => {
+     return hoverOffset.value - outerScrollOffset.value;
+-  }, []);
++  });
+ 
+   const isScrolledUp = useDerivedValue(() => {
+     return outerScrollOffset.value - SCROLL_POSITION_TOLERANCE <= 0;
+-  }, []);
++  });
+ 
+   const isScrolledDown = useDerivedValue(() => {
+     return (
+       outerScrollOffset.value + containerSize.value + SCROLL_POSITION_TOLERANCE >=
+       scrollViewSize.value
+     );
+-  }, []);
++  });
+ 
+   const distToTopEdge = useDerivedValue(() => {
+     return Math.max(0, hoverScreenOffset.value);
+-  }, [hoverScreenOffset]);
++  });
+ 
+   const distToBottomEdge = useDerivedValue(() => {
+     const dist = containerSize.value - (hoverScreenOffset.value + activeCellSize.value)
+     return Math.max(0, dist);
+-  }, [hoverScreenOffset, activeCellSize, containerSize]);
++  });
+ 
+   const isAtTopEdge = useDerivedValue(() => {
+     return distToTopEdge.value <= autoscrollThreshold;
+-  }, []);
++  });
+ 
+   const isAtBottomEdge = useDerivedValue(() => {
+     return distToBottomEdge.value <= autoscrollThreshold;
+@@ -84,9 +84,7 @@ export function useNestedAutoScroll(params: {
+       if (cur && !prev) {
+         scrollTarget.value = outerScrollOffset.value;
+       }
+-    },
+-    [activeCellSize]
+-  );
++    });
+ 
+   function scrollToInternal(y: number) {
+     scrollableRef.current?.scrollTo({ y, animated: true });
+@@ -122,7 +120,7 @@ export function useNestedAutoScroll(params: {
+       // scrollTo(scrollViewRef, 0, scrollTarget.value, true)
+       runOnJS(scrollToInternal)(targetOffset);
+     }
+-  }, [autoscrollSpeed, autoscrollThreshold, isDraggingCell]);
++  });
+ 
+   return null;
+ }
+diff --git a/src/hooks/useOnCellActiveAnimation.ts b/src/hooks/useOnCellActiveAnimation.ts
+index e4cb30433d9898908984fe575db827678a998c36..fc175a4e6d6c223e32018a5adab73989e0332cfd 100644
+--- a/src/hooks/useOnCellActiveAnimation.ts
++++ b/src/hooks/useOnCellActiveAnimation.ts
+@@ -32,7 +32,7 @@ export function useOnCellActiveAnimation(
+       ...DEFAULT_ANIMATION_CONFIG,
+       ...animationConfigRef.value,
+     } as WithSpringConfig);
+-  }, [isActive]);
++  });
+ 
+   return {
+     isActive,
