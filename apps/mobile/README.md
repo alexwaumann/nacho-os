@@ -139,6 +139,8 @@ apps/mobile/
   signed-in `Stack.Protected` in `src/app/_layout.tsx`.
 - **Open a job** with `router.push({ pathname: "/job/[id]", params: { id } })` or
   `<Link href={{ pathname: "/job/[id]", params: { id } }} asChild>`.
+  There is only ever one job sheet: opening a job while one is up shows it in that sheet and
+  closes a viewer above it (`singleJobSheetRouter` on the root Stack), and `tab` switches tabs.
 - **Voice** (`src/features/voice/`): the global mic is `<NativeTabs.BottomAccessory>` in
   `src/app/(tabs)/_layout.tsx` (its state lives in the layout: iOS draws the accessory twice), the
   job mic sits in the job sheet's header. See "Testing voice in the Simulator" below.

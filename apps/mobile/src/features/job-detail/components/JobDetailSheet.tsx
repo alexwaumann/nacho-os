@@ -28,8 +28,11 @@ function isJobSheetTab(value: string | undefined): value is JobSheetTab {
 
 interface JobDetailSheetProps {
   jobId: Id<"jobs">;
-  /** Open on this tab instead of the default for the job (see getDefaultJobSheetTab) */
-  initialTab?: string;
+  /**
+   * Show this tab instead of the default for the job (see getDefaultJobSheetTab): on open, and
+   * again whenever a new one is requested while the sheet is up
+   */
+  requestedTab?: string;
 }
 
 /**
@@ -37,7 +40,7 @@ interface JobDetailSheetProps {
  * switch, More menu) and the Tasks / Info / Money / Photos tabs. The tab bar sticks to the top
  * while the tab scrolls.
  */
-export function JobDetailSheet({ jobId, initialTab }: JobDetailSheetProps) {
+export function JobDetailSheet({ jobId, requestedTab }: JobDetailSheetProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { isAuthenticated } = useConvexAuth();
@@ -50,8 +53,17 @@ export function JobDetailSheet({ jobId, initialTab }: JobDetailSheetProps) {
   const receiptQueue = useQuery(api.receipts.listQueueByJob, args);
   const photos = useQuery(api.jobPhotos.listByJob, args);
   const mutations = useJobMutations(jobId);
-  const [tab, setTab] = useState<JobSheetTab | null>(isJobSheetTab(initialTab) ? initialTab : null);
+  const [tab, setTab] = useState<JobSheetTab | null>(
+    isJobSheetTab(requestedTab) ? requestedTab : null,
+  );
+  const [lastRequestedTab, setLastRequestedTab] = useState(requestedTab);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // The same job opened again with a tab (e.g. "show the photos" by voice) switches to it
+  if (requestedTab !== lastRequestedTab) {
+    setLastRequestedTab(requestedTab);
+    if (isJobSheetTab(requestedTab)) setTab(requestedTab);
+  }
 
   // Pick the default tab once, when the job first loads, so it doesn't jump when he changes
   // the status (a completed job defaults to Money)

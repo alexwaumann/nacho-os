@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 
 import { Toaster } from "@/components/ui/toast";
+import { singleJobSheetRouter } from "@/features/job-detail/lib/singleJobSheet";
 import { useTheme } from "@/hooks/useTheme";
 import { AppProviders } from "@/integrations/providers";
 
@@ -44,7 +45,9 @@ function RootNavigator() {
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
+      {/* One job sheet at a time: opening a job (a tap, voice, a nachoos://job/<id> link) while
+          a sheet is up shows it in that sheet instead of stacking a second one */}
+      <Stack screenOptions={{ headerShown: false }} UNSTABLE_router={singleJobSheetRouter}>
         {/* Signed in: the tabs, and screens presented over them */}
         <Stack.Protected guard={!!isSignedIn}>
           <Stack.Screen name="(tabs)" />
