@@ -8,6 +8,7 @@ import { getStatusActions, splitAccessCode, STATUS_LABELS } from "@shared/jobs/j
 import { Text } from "@/components/ui/text";
 import { toastError } from "@/components/ui/toast";
 import { JobVoiceButton } from "@/features/voice/components/JobVoiceButton";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo } from "@/lib/directions";
@@ -32,6 +33,8 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
   const hasHeaderCodes = job.selectedForRoute && accessCodes.length > 0;
   const keySize = useScaledSize(15);
   const mapSize = useScaledSize(22);
+  // At the accessibility sizes the address gets the full width, under the buttons
+  const isStacked = useIsLargeText();
 
   const handleDirections = async () => {
     try {
@@ -62,15 +65,29 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
     );
   };
 
+  const buttons = (
+    <>
+      <JobVoiceButton job={job} />
+      <IconButton icon="ellipsis" accessibilityLabel="More actions" onPress={handleMore} />
+    </>
+  );
+
   return (
     <View style={styles.header}>
-      <View style={styles.titleRow}>
-        <Text variant="title2" style={styles.address} selectable>
-          {job.address}
-        </Text>
-        <JobVoiceButton job={job} />
-        <IconButton icon="ellipsis" accessibilityLabel="More actions" onPress={handleMore} />
-      </View>
+      {isStacked ?
+        <>
+          <View style={[styles.titleRow, styles.buttonsOnly]}>{buttons}</View>
+          <Text variant="title2" selectable>
+            {job.address}
+          </Text>
+        </>
+      : <View style={styles.titleRow}>
+          <Text variant="title2" style={styles.address} selectable>
+            {job.address}
+          </Text>
+          {buttons}
+        </View>
+      }
 
       <View style={styles.pills}>
         <Pill label={STATUS_LABELS[job.status]} tone={STATUS_TONES[job.status]} />
@@ -157,6 +174,7 @@ export function JobHeader({ job, mutations, onDelete }: JobHeaderProps) {
 const styles = StyleSheet.create({
   header: { gap: space.md },
   titleRow: { flexDirection: "row", alignItems: "flex-start", gap: space.sm },
+  buttonsOnly: { justifyContent: "flex-end" },
   address: { flex: 1, paddingTop: space.sm },
   pills: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   codes: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },

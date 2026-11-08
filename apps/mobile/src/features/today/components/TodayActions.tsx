@@ -3,10 +3,10 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
 import { useScaledSize } from "@/hooks/useScaledSize";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
-import { useIsLargeText } from "../hooks/useIsLargeText";
 import type { SFSymbol } from "../lib/symbols";
 import { getTodayColors } from "../lib/todayColors";
 

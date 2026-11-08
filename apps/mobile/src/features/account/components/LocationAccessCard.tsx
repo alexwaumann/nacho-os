@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
@@ -54,6 +55,8 @@ export function LocationAccessCard() {
   const { colors } = useTheme();
   const { status, isRequesting, request } = useLocationStatus();
   const iconSize = useScaledSize(24);
+  // At the accessibility sizes the icon sits above the text, which then gets the full width
+  const isStacked = useIsLargeText();
 
   const handleOpenSettings = () => {
     Linking.openSettings().catch((error: unknown) => {
@@ -69,7 +72,11 @@ export function LocationAccessCard() {
   return (
     <Section title="Location">
       <Card>
-        <View style={styles.row} accessible accessibilityLabel={`${copy.title}. ${copy.detail}`}>
+        <View
+          style={[styles.row, isStacked && styles.stacked]}
+          accessible
+          accessibilityLabel={`${copy.title}. ${copy.detail}`}
+        >
           <SymbolView name={copy.icon} size={iconSize} tintColor={colors[copy.color]} />
           <View style={styles.text}>
             <Text variant="label">{copy.title}</Text>
@@ -93,5 +100,6 @@ export function LocationAccessCard() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: space.md, paddingBottom: space.xs },
-  text: { flex: 1, gap: 2 },
+  stacked: { flexDirection: "column", alignItems: "flex-start", gap: space.sm },
+  text: { flexGrow: 1, flexShrink: 1, gap: 2 },
 });

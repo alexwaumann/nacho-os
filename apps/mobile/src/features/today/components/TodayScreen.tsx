@@ -18,11 +18,11 @@ import { useTodayRoute } from "@/features/route/hooks/useTodayRoute";
 import { openAddJob } from "@/features/add-job/openAddJob";
 import { useScanCheck } from "@/features/checks/hooks/useScanCheck";
 import { useScanReceipt } from "@/features/receipts/hooks/useScanReceipt";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo, openRouteDirections } from "@/lib/directions";
 import { space } from "@/lib/theme";
 
-import { useIsLargeText } from "../hooks/useIsLargeText";
 import { ActionButton } from "./ActionButton";
 import { AllStopsDoneCard } from "./AllStopsDoneCard";
 import { EmptyRouteCard } from "./EmptyRouteCard";

@@ -4,6 +4,7 @@ import type { SFSymbol } from "expo-symbols";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
@@ -48,6 +49,8 @@ export function SegmentedControl<T extends string>({
 }: SegmentedControlProps<T>) {
   const { colors } = useTheme();
   const iconSize = useScaledSize(17);
+  // At the accessibility sizes the words need all the room
+  const isIconShown = !useIsLargeText();
 
   const handlePress = (next: T) => {
     if (next === value) return;
@@ -77,7 +80,7 @@ export function SegmentedControl<T extends string>({
             ]}
           >
             <View style={styles.labelRow}>
-              {option.icon ?
+              {option.icon && isIconShown ?
                 <SymbolView
                   name={option.icon}
                   size={iconSize}

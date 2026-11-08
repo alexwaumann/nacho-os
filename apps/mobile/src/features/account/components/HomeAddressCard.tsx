@@ -7,6 +7,7 @@ import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
@@ -18,6 +19,8 @@ export function HomeAddressCard() {
   const { colors } = useTheme();
   const router = useRouter();
   const iconSize = useScaledSize(24);
+  // At the accessibility sizes the icon sits above the text, which then gets the full width
+  const isStacked = useIsLargeText();
   const { isAuthenticated } = useConvexAuth();
   const user = useQuery(api.users.getCurrentUser, isAuthenticated ? {} : "skip");
 
@@ -32,7 +35,7 @@ export function HomeAddressCard() {
         {user === undefined ?
           <ActivityIndicator color={colors.mutedForeground} style={styles.loading} />
         : <View
-            style={styles.row}
+            style={[styles.row, isStacked && styles.stacked]}
             accessible
             accessibilityLabel={homeAddress ? `Home: ${homeAddress}` : "No home address yet"}
           >
@@ -60,5 +63,6 @@ export function HomeAddressCard() {
 const styles = StyleSheet.create({
   loading: { paddingVertical: space.lg },
   row: { flexDirection: "row", alignItems: "center", gap: space.md, paddingBottom: space.xs },
-  address: { flex: 1 },
+  stacked: { flexDirection: "column", alignItems: "flex-start", gap: space.sm },
+  address: { flexGrow: 1, flexShrink: 1 },
 });
