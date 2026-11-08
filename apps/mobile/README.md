@@ -124,7 +124,8 @@ apps/mobile/
         account/        # "/account"
       job/[id].tsx      # job detail, a native formSheet over the tabs ("/job/<id>")
     components/
-      ui/               # primitives: text, button, card, screen, text-field (kebab-case files)
+      ui/               # primitives (kebab-case files): text, button, card, screen, text-field,
+                        # toast, segmented-control, section, sheet
       *.tsx             # shared app components (PascalCase), e.g. TabStack
     features/<feature>/ # per-feature code: components/, hooks/, lib/ (e.g. features/today/)
     hooks/              # app-wide hooks (useTheme, useSyncUser)
@@ -162,6 +163,14 @@ The user is in his 60s on an iPhone 15 Pro Max (430×932 pt). Use the primitives
   Don't use React Native's `Text` directly.
 - `Button` is at least 56 pt tall (`minTapSize`); keep every tappable thing at least that.
 - `Screen` is the scrolling page body; put it first in a tab screen so the large title collapses.
+- `SegmentedControl` (`options`, `value`, `onChange`; an option can have an `icon`, a `count`
+  shown after its label like "Photos 2", or a `detail` line) is the one segmented control:
+  Jobs filter and view, the job sheet's tabs, Appearance. It is the single place to swap in
+  iOS's native one later (e.g. Expo UI's SwiftUI `Picker`).
+- Sheets and modals (`sheet.tsx`): `SheetBar` (Cancel · title · Save, for page sheets with a
+  keyboard), `SheetTitle` (big title with a Done or Cancel button), `HeaderButton`, and
+  `SheetFooter` (buttons pinned above the home indicator). `Section` / `SectionLabel`
+  (`section.tsx`) are the small upper-case group headings ("STATUS", "ON TODAY'S ROUTE").
 - Colors come from `useTheme()` (follows the system light/dark setting); the palette in
   `src/lib/theme.ts` is the web brand (`src/styles.css`) in hex. Use `StyleSheet.create` + theme
   values; no styling library.
@@ -335,3 +344,11 @@ bun run format      # prettier with the repo root config
 - Typed routes (`experiments.typedRoutes`) are generated into `.expo/types` by `expo start`;
   before the first start, `href`s are untyped.
 - ESLint is pinned to 9: `eslint-plugin-react` (used by `eslint-config-expo`) crashes on ESLint 10.
+- `GestureHandlerRootView` wraps the whole app once, in `src/app/_layout.tsx`; don't add another
+  around a screen.
+- `react-native-draggable-flatlist` 4.0.3 (Today's drag to reorder) is patched
+  (`patches/`, `patchedDependencies` in `package.json`, applied by `bun install`): it used
+  `InteractionManager`, which React Native 0.88 removed (it threw on every data change: "There was
+  an error during concurrent rendering…"), and it passed dependency arrays to Reanimated hooks,
+  which Reanimated 4 ignores on native and warned about ("[Reanimated] Dependencies should only be
+  used on the web…"). Re-check both when upgrading it; drop the patch if a release fixes them.
