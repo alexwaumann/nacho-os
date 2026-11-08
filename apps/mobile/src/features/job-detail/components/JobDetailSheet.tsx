@@ -8,6 +8,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { getDefaultJobSheetTab, JOB_SHEET_TABS } from "@shared/jobs/jobSheetTab";
 import type { JobSheetTab } from "@shared/jobs/jobSheetTab";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,8 +20,14 @@ import { JobHeader } from "./JobHeader";
 import { MoneyTab } from "./MoneyTab";
 import { PhotosTab } from "./PhotosTab";
 import { ActionButton } from "./SheetParts";
-import { SheetTabs } from "./SheetTabs";
 import { TasksTab } from "./TasksTab";
+
+const TAB_LABELS: Record<JobSheetTab, string> = {
+  tasks: "Tasks",
+  info: "Info",
+  money: "Money",
+  photos: "Photos",
+};
 
 function isJobSheetTab(value: string | undefined): value is JobSheetTab {
   return JOB_SHEET_TABS.includes(value as JobSheetTab);
@@ -125,10 +132,14 @@ export function JobDetailSheet({ jobId, requestedTab }: JobDetailSheetProps) {
       </View>
 
       <View style={[styles.tabs, { backgroundColor: colors.background }]}>
-        <SheetTabs
+        <SegmentedControl
+          options={JOB_SHEET_TABS.map((value) => ({
+            value,
+            label: TAB_LABELS[value],
+            count: value === "photos" ? photos?.length : undefined,
+          }))}
           value={activeTab}
           onChange={setTab}
-          counts={{ photos: photos?.length || undefined }}
         />
       </View>
 
