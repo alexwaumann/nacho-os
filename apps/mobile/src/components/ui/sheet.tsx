@@ -18,7 +18,7 @@ interface HeaderButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/** A text button for a sheet's header, like Cancel, Done or Save; at least 56 pt */
+/** A text button for a sheet's header, like Cancel, Done or Save; at least 44 pt */
 export function HeaderButton({ label, onPress, isBold, disabled, style }: HeaderButtonProps) {
   return (
     <Pressable
@@ -38,7 +38,7 @@ export function HeaderButton({ label, onPress, isBold, disabled, style }: Header
         style,
       ]}
     >
-      <Text variant="label" tone="primary" style={isBold && styles.bold}>
+      <Text variant={isBold ? "label" : "body"} tone="primary">
         {label}
       </Text>
     </Pressable>
@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  bold: { fontWeight: "800" },
   bar: {
     flexDirection: "row",
     alignItems: "center",
@@ -153,8 +152,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   barTitle: { flex: 1, textAlign: "center" },
-  barButton: { minWidth: 88, paddingHorizontal: space.md },
-  barSpacer: { minWidth: 88 },
+  barButton: { minWidth: 72, paddingHorizontal: space.sm },
+  barSpacer: { minWidth: 72 },
   titleRow: { flexDirection: "row", gap: space.md },
   alignTop: { alignItems: "flex-start" },
   alignCenter: { alignItems: "center" },

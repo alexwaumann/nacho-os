@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     padding: space.lg,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: 6,
+    borderLeftWidth: 4,
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   action: {
     minHeight: minTapSize,
     minWidth: minTapSize,
-    paddingHorizontal: space.lg,
+    paddingHorizontal: space.md,
     borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",

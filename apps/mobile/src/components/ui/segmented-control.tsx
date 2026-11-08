@@ -4,6 +4,7 @@ import type { SFSymbol } from "expo-symbols";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ui/text";
+import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
 import { minTapSize, radius, space } from "@/lib/theme";
 
@@ -33,8 +34,8 @@ function describe<T extends string>({ label, count, detail }: SegmentOption<T>) 
 }
 
 /**
- * A row of big segments, like iOS's segmented control but at least 56 pt tall with large text
- * (the native one stays small at large text sizes). VoiceOver reads it as tabs, one selected.
+ * A row of segments, like iOS's segmented control but 44 pt tall with Subheadline text that
+ * follows Dynamic Type (the native one stays small at large text sizes). VoiceOver reads it as tabs, one selected.
  *
  * Every segmented control in the app goes through here, so swapping the insides for the native
  * control later (e.g. Expo UI's SwiftUI `Picker`) is a change to this file only.
@@ -46,6 +47,7 @@ export function SegmentedControl<T extends string>({
   accessibilityLabel,
 }: SegmentedControlProps<T>) {
   const { colors } = useTheme();
+  const iconSize = useScaledSize(17);
 
   const handlePress = (next: T) => {
     if (next === value) return;
@@ -78,15 +80,17 @@ export function SegmentedControl<T extends string>({
               {option.icon ?
                 <SymbolView
                   name={option.icon}
-                  size={22}
+                  size={iconSize}
                   weight="semibold"
                   tintColor={isSelected ? colors.primary : colors.mutedForeground}
                 />
               : null}
               <Text
-                variant="label"
+                variant="caption"
                 tone={isSelected ? "primary" : "muted"}
-                maxFontSizeMultiplier={1.5}
+                style={styles.label}
+                // One line per segment: past this it shrinks to fit instead
+                maxFontSizeMultiplier={2}
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
@@ -97,9 +101,9 @@ export function SegmentedControl<T extends string>({
             </View>
             {option.detail ?
               <Text
-                variant="caption"
+                variant="footnote"
                 tone={isSelected ? "primary" : "muted"}
-                maxFontSizeMultiplier={1.5}
+                maxFontSizeMultiplier={2}
                 numberOfLines={1}
               >
                 {option.detail}
@@ -136,5 +140,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
-  labelRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  labelRow: { flexDirection: "row", alignItems: "center", gap: space.xs },
+  label: { fontWeight: "600" },
 });
