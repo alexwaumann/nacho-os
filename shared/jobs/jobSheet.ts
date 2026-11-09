@@ -1,3 +1,4 @@
+import { getStatusDates } from "../../convex/lib/jobStatus";
 import type { Doc } from "../../convex/_generated/dataModel";
 
 // Logic behind the job sheet (tasks, access codes, money, status), shared by the web and iOS apps
@@ -108,20 +109,15 @@ function roundToCents(amount: number) {
 }
 
 /**
- * The job after a status change, as the server will save it (convex/jobs.ts updateStatus):
- * the first time it's completed or paid, that day is recorded. For optimistic updates.
+ * The job after a status change, as the server will save it (convex/jobs.ts updateStatus, dates
+ * from getStatusDates in convex/lib/jobStatus.ts). For optimistic updates.
  */
 export function applyStatusChange<T extends Pick<Doc<"jobs">, "status" | "completedOn" | "paidOn">>(
   job: T,
   status: JobStatus,
   todayIso: string,
 ): T {
-  return {
-    ...job,
-    status,
-    ...(status === "completed" && !job.completedOn ? { completedOn: todayIso } : {}),
-    ...(status === "paid" && !job.paidOn ? { paidOn: todayIso } : {}),
-  };
+  return { ...job, status, ...getStatusDates(job, status, todayIso) };
 }
 
 /** Which status changes the job sheet offers, in the order to show them */
