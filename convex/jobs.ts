@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getKeptSourceFileId } from "./lib/jobSource";
+import { getStatusDates } from "./lib/jobStatus";
 
 // Reusable validators
 const taskValidator = v.object({
@@ -487,15 +488,11 @@ export const updateStatus = mutation({
       throw new Error("Job not found or unauthorized");
     }
 
-    const updates: Record<string, unknown> = { status: args.status };
-
-    if (args.status === "completed" && !job.completedOn) {
-      updates.completedOn = new Date().toISOString().split("T")[0];
-    } else if (args.status === "paid" && !job.paidOn) {
-      updates.paidOn = new Date().toISOString().split("T")[0];
-    }
-
-    await ctx.db.patch(args.jobId, updates);
+    const today = new Date().toISOString().split("T")[0];
+    await ctx.db.patch(args.jobId, {
+      status: args.status,
+      ...getStatusDates(job, args.status, today),
+    });
     return args.jobId;
   },
 });

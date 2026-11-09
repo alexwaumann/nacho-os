@@ -131,12 +131,21 @@ describe("applyStatusChange", () => {
     expect(applyStatusChange(job, "paid", "2026-11-03")).toMatchObject({ paidOn: "2026-11-03" });
   });
 
-  it("keeps earlier dates", () => {
+  it("keeps the finish date but clears the paid date when moved back to done", () => {
     const job = { status: "paid" as const, completedOn: "2026-10-01", paidOn: "2026-10-05" };
     expect(applyStatusChange(job, "completed", "2026-11-03")).toEqual({
       status: "completed",
       completedOn: "2026-10-01",
-      paidOn: "2026-10-05",
+      paidOn: undefined,
+    });
+  });
+
+  it("clears both dates when moved back to not done", () => {
+    const job = { status: "completed" as const, completedOn: "2026-11-03", paidOn: undefined };
+    expect(applyStatusChange(job, "pending", "2026-11-03")).toEqual({
+      status: "pending",
+      completedOn: undefined,
+      paidOn: undefined,
     });
   });
 });
