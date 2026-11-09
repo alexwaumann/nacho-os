@@ -1,7 +1,9 @@
-import * as Haptics from "expo-haptics";
+import { useConvex } from "convex/react";
 import { router } from "expo-router";
+import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import DraggableFlatList, { ScaleDecorator } from "react-native-draggable-flatlist";
+import { RefreshControl } from "react-native-gesture-handler";
 import type { RenderItemParams } from "react-native-draggable-flatlist";
 
 import type { Doc, Id } from "@convex/_generated/dataModel";
@@ -10,17 +12,20 @@ import { isRouteDone, isStopDone } from "@shared/jobs/today";
 import { StatusBarScrim } from "@/components/StatusBarScrim";
 import { Text } from "@/components/ui/text";
 import { toast, toastError } from "@/components/ui/toast";
+import { useCurrentHour } from "@/features/route/hooks/useCurrentHour";
 import { useRemoveRouteStop } from "@/features/route/hooks/useRemoveRouteStop";
 import { useRouteBrief } from "@/features/route/hooks/useRouteBrief";
 import { useRouteOptimization } from "@/features/route/hooks/useRouteOptimization";
 import { useRouteOrder } from "@/features/route/hooks/useRouteOrder";
 import { useTodayRoute } from "@/features/route/hooks/useTodayRoute";
+import { refreshForecasts } from "@/features/route/lib/forecastCache";
 import { openAddJob } from "@/features/add-job/openAddJob";
 import { useScanCheck } from "@/features/checks/hooks/useScanCheck";
 import { useScanReceipt } from "@/features/receipts/hooks/useScanReceipt";
 import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useTheme } from "@/hooks/useTheme";
 import { openDirectionsTo, openRouteDirections } from "@/lib/directions";
+import { haptics } from "@/lib/haptics";
 import { space } from "@/lib/theme";
 
 import { ActionButton } from "./ActionButton";
@@ -38,10 +43,14 @@ type JobId = Id<"jobs">;
 
 /**
  * Today: the action buttons, the weather brief, and today's route in order (drag to reorder,
- * swipe to remove, tap to open), ending with the drive home. A port of the web Today page.
+ * swipe to remove, tap to open), ending with the drive home. Pull down to check the weather
+ * again. A port of the web Today page.
  */
 export function TodayScreen() {
   const { colors } = useTheme();
+  const convex = useConvex();
+  const hourStart = useCurrentHour();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isLargeText = useIsLargeText();
   const receiptScan = useScanReceipt();
   const checkScan = useScanCheck();
@@ -108,7 +117,25 @@ export function TodayScreen() {
   };
 
   const handleDragBegin = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptics.medium();
+  };
+
+  // Pull to refresh: the weather brief and every hourly forecast on screen. Only the weather:
+  // the route's order and drive times stay as they are.
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    const sites = [
+      ...orderedJobs.flatMap((job) => (job.coordinates ? [job.coordinates] : [])),
+      ...(homeCoordinates ? [homeCoordinates] : []),
+    ];
+    try {
+      await Promise.all([
+        refreshForecasts(convex, sites, hourStart),
+        routeBrief.canRefresh ? routeBrief.refresh() : undefined,
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const renderStop = ({ item, drag, isActive, getIndex }: RenderItemParams<Job>) => {
@@ -231,6 +258,9 @@ export function TodayScreen() {
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />
+        }
         containerStyle={[styles.flex, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"

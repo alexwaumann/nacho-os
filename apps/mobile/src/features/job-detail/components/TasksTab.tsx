@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -15,6 +14,7 @@ import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
+import { haptics } from "@/lib/haptics";
 import { radius, space } from "@/lib/theme";
 
 import type { useJobMutations } from "../hooks/useJobMutations";
@@ -37,16 +37,16 @@ export function TasksTab({ job, mutations }: TasksTabProps) {
   const handleToggle = async (task: JobTask) => {
     const completed = !task.completed;
     const isFinishing = completed && isLastOpenTask(job.tasks, task.id);
-    void Haptics.impactAsync(
-      completed ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light,
-    );
+    // Checking one off feels like success; the last one, heavier
+    if (isFinishing) haptics.finished();
+    else if (completed) haptics.success();
+    else haptics.light();
     if (!completed) toast.dismiss(allDoneToastId);
 
     const isSaved = await mutations.setTaskDone(task.id, completed);
     if (!isSaved || !isFinishing || job.status !== "pending") return;
 
     // Checking off the last open task offers a one-tap finish
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     toast.info("All tasks done. Mark the job complete?", {
       id: allDoneToastId,
       duration: ALL_DONE_TOAST_MS,
@@ -54,7 +54,9 @@ export function TasksTab({ job, mutations }: TasksTabProps) {
         label: "Yes",
         onPress: () =>
           void mutations.setStatus("completed").then((isDone) => {
-            if (isDone) toast.success("Job marked complete");
+            if (!isDone) return;
+            haptics.success();
+            toast.success("Job marked complete");
           }),
       },
     });

@@ -8,6 +8,7 @@ import type { JobStatus } from "@shared/jobs/jobSheet";
 import { Section } from "@/components/ui/section";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
+import { haptics } from "@/lib/haptics";
 import { space } from "@/lib/theme";
 
 import type { useJobMutations } from "../hooks/useJobMutations";
@@ -52,7 +53,9 @@ export function confirmStatusChange(
       isPreferred: true,
       onPress: () =>
         void setStatus(status).then((isSaved) => {
-          if (isSaved) toast.success(action.done);
+          if (!isSaved) return;
+          if (status !== "pending") haptics.success();
+          toast.success(action.done);
         }),
     },
   ]);

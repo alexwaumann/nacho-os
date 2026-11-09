@@ -1,7 +1,5 @@
-import { Directory, File, Paths } from "expo-file-system";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import * as Sharing from "expo-sharing";
 import { useRef, useState } from "react";
 import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent, ScrollViewInstance } from "react-native";
@@ -12,6 +10,7 @@ import { toastError } from "@/components/ui/toast";
 import { space } from "@/lib/theme";
 
 import { getViewerImages } from "../lib/imageViewer";
+import { shareImage } from "../lib/shareImage";
 import type { ViewerImage } from "../lib/imageViewer";
 import { IconButton } from "./SheetParts";
 
@@ -39,14 +38,7 @@ export function ImageViewer() {
     if (!image) return;
     setIsSharing(true);
     try {
-      // The share sheet needs a file on the phone, so download it first
-      const name = (image.caption ?? "Picture").replace(/[^\w ,.-]+/g, "").trim() || "Picture";
-      // A fresh folder each time, so the same picture can be shared twice under its own name
-      const folder = new Directory(Paths.cache, `share-${Date.now()}`);
-      folder.create();
-      const file = new File(folder, `${name}.jpg`);
-      await File.downloadFileAsync(image.uri, file);
-      await Sharing.shareAsync(file.uri, { UTI: "public.jpeg" });
+      await shareImage(image.uri, image.caption);
     } catch (error) {
       toastError("Couldn't share the picture", error);
     } finally {

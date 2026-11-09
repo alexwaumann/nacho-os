@@ -4,14 +4,11 @@ import { useRef } from "react";
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { getStreet, restoreStop } from "@shared/jobs/today";
-import { toast, toastError } from "@/components/ui/toast";
+import { toast, toastError, UNDO_TOAST_MS } from "@/components/ui/toast";
 
 import type { RecalculateOptions } from "./useRouteOptimization";
 
 type JobId = Id<"jobs">;
-
-// Long enough to read the toast and reach for Undo
-const REMOVED_TOAST_MS = 8_000;
 
 interface UseRemoveRouteStopOptions {
   /** The route order on screen right now */
@@ -70,7 +67,7 @@ export function useRemoveRouteStop({
 
     setOrder(remaining);
     const toastId = toast.success(`Removed ${street} from today's route`, {
-      duration: REMOVED_TOAST_MS,
+      duration: UNDO_TOAST_MS,
       action: { label: "Undo", onPress: () => void handleUndo(job._id, index, street) },
     });
 

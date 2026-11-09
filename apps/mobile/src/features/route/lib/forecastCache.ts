@@ -49,3 +49,35 @@ export function fetchHourlyForecast(
   }
   return request;
 }
+
+// Bumped after a pull to refresh, so every forecast on screen picks up the new one
+let refreshCount = 0;
+const listeners = new Set<() => void>();
+
+/** For useSyncExternalStore: changes after each `refreshForecasts` */
+export function subscribeToForecastRefresh(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function getForecastRefreshCount() {
+  return refreshCount;
+}
+
+/**
+ * Fetches the forecasts for these sites again (pull to refresh), then tells the cards to show
+ * them. The old forecasts stay on screen until the new ones are in; a site whose fetch fails
+ * keeps nothing cached, so its card tries again.
+ */
+export async function refreshForecasts(
+  convex: ConvexReactClient,
+  sites: Coordinates[],
+  hourStart: number,
+) {
+  for (const site of sites) cache.delete(cacheKey(site, hourStart));
+  await Promise.allSettled(sites.map((site) => fetchHourlyForecast(convex, site, hourStart)));
+  refreshCount += 1;
+  for (const listener of listeners) listener();
+}

@@ -1,5 +1,4 @@
 import * as Clipboard from "expo-clipboard";
-import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import type { FunctionReturnType } from "convex/server";
@@ -16,6 +15,7 @@ import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
+import { haptics } from "@/lib/haptics";
 import { minTapSize, radius, space } from "@/lib/theme";
 
 import type { useJobMutations } from "../hooks/useJobMutations";
@@ -141,7 +141,7 @@ export function AccessCodesSection({
 
   const handleCopy = async (code: string) => {
     await Clipboard.setStringAsync(splitAccessCode(code).value);
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptics.success();
     toast.success("Code copied", { description: splitAccessCode(code).value });
   };
 

@@ -1,7 +1,7 @@
 import { Link, useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { Pressable, StyleSheet, View } from "react-native";
-import type { SFSymbol } from "expo-symbols";
+import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import type { AccessibilityActionEvent } from "react-native";
 
 import type { Doc } from "@convex/_generated/dataModel";
 import { getDueBadge } from "@shared/jobs/dueDate";
@@ -13,19 +13,23 @@ import {
   jobProgressStatusLabel,
 } from "@shared/jobs/jobsList";
 import { Card } from "@/components/ui/card";
+import { SwipeableRow, useSwipeColors } from "@/components/ui/swipeable-row";
+import type { SwipeAction } from "@/components/ui/swipeable-row";
 import { Text } from "@/components/ui/text";
-import { toastError } from "@/components/ui/toast";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
-import { openDirectionsTo } from "@/lib/directions";
 import { minTapSize, radius, space } from "@/lib/theme";
 
+import { getNextStatusAction } from "../hooks/useJobActions";
+import type { JobActions } from "../hooks/useJobActions";
 import { getDueTodayColor, getStatusChipColors, statusSymbol, withAlpha } from "../lib/jobColors";
+import { JobChip as Chip } from "./JobChip";
+import { getJobPreviewHeight, JobPreview } from "./JobPreview";
 
 interface JobCardProps {
   job: Doc<"jobs">;
-  /** Adds the job to today's route or takes it off */
-  onToggleRoute: (job: Doc<"jobs">) => void;
+  /** From useJobActions: route toggle, status change, directions, delete */
+  actions: JobActions;
 }
 
 const createdDateFormat: Intl.DateTimeFormatOptions = {
@@ -36,11 +40,15 @@ const createdDateFormat: Intl.DateTimeFormatOptions = {
 
 /**
  * One job in the Jobs list: address, due and status badges, summary, task progress and weather,
- * like the web card. Tap opens the job; long-press shows Open, Directions and the route toggle.
+ * like the web card. Tap opens the job. Swipe right to add it to today (or take it off), swipe
+ * left to mark it done (or paid). Touch and hold for a preview and a menu with the same actions,
+ * Directions and Delete.
  */
-export function JobCard({ job, onToggleRoute }: JobCardProps) {
+export function JobCard({ job, actions }: JobCardProps) {
   const { scheme, colors } = useTheme();
   const router = useRouter();
+  const swipeColors = useSwipeColors();
+  const { fontScale } = useWindowDimensions();
 
   const { done, total } = getTaskProgress(job);
   const status = getJobProgressStatus(job);
@@ -53,15 +61,63 @@ export function JobCard({ job, onToggleRoute }: JobCardProps) {
   const isPending = job.status === "pending";
   // Done jobs can still be taken off the route, but not added
   const canToggleRoute = isPending || job.selectedForRoute;
+  const routeTitle = job.selectedForRoute ? "Remove from today" : "Add to today";
+  const nextStatus = getNextStatusAction(job.status);
 
   const handleOpen = () => {
     router.push({ pathname: "/job/[id]", params: { id: job._id } });
   };
 
-  const handleDirections = () => {
-    openDirectionsTo(job.address).catch((error: unknown) =>
-      toastError("Couldn't open Google Maps", error),
-    );
+  const handleToggleRoute = () => void actions.toggleRoute(job);
+  const handleNextStatus = () => {
+    if (nextStatus) void actions.setStatus(job, nextStatus.status);
+  };
+  const handleDirections = () => actions.openDirections(job);
+  const handleDelete = () => actions.deleteJob(job);
+
+  const routeAction: SwipeAction | null =
+    canToggleRoute ?
+      {
+        label: routeTitle,
+        icon: job.selectedForRoute ? "minus.circle.fill" : "plus.circle.fill",
+        color: job.selectedForRoute ? swipeColors.neutral : swipeColors.primary,
+        accessibilityLabel: `${routeTitle}: ${job.address}`,
+        onPress: handleToggleRoute,
+      }
+    : null;
+  const statusAction: SwipeAction | null =
+    nextStatus ?
+      {
+        label: nextStatus.label,
+        icon: nextStatus.icon,
+        color: swipeColors.success,
+        accessibilityLabel: `${nextStatus.title}: ${job.address}`,
+        onPress: handleNextStatus,
+      }
+    : null;
+
+  // VoiceOver can't swipe or long-press, so the same actions are in its actions rotor
+  const accessibilityActions = [
+    { name: "activate", label: "Open job" },
+    ...(canToggleRoute ? [{ name: "route", label: routeTitle }] : []),
+    ...(nextStatus ? [{ name: "status", label: nextStatus.title }] : []),
+    { name: "directions", label: "Directions" },
+    { name: "delete", label: "Delete job" },
+  ];
+
+  const handleAccessibilityAction = (event: AccessibilityActionEvent) => {
+    switch (event.nativeEvent.actionName) {
+      case "activate":
+        return handleOpen();
+      case "route":
+        return handleToggleRoute();
+      case "status":
+        return handleNextStatus();
+      case "directions":
+        return handleDirections();
+      case "delete":
+        return handleDelete();
+    }
   };
 
   const accessibilityLabel = [
@@ -78,151 +134,143 @@ export function JobCard({ job, onToggleRoute }: JobCardProps) {
     .join(". ");
 
   return (
-    <Link href={{ pathname: "/job/[id]", params: { id: job._id } }} asChild>
-      <Link.Trigger>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={accessibilityLabel}
-          accessibilityHint="Opens the job. Touch and hold for more."
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-        >
-          <Card style={styles.card}>
-            <Text variant="heading">{job.address}</Text>
+    <SwipeableRow leftAction={routeAction} rightAction={statusAction}>
+      <Link href={{ pathname: "/job/[id]", params: { id: job._id } }} asChild>
+        <Link.Trigger>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            accessibilityHint="Opens the job. Touch and hold for more."
+            accessibilityActions={accessibilityActions}
+            onAccessibilityAction={handleAccessibilityAction}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          >
+            <Card style={styles.card}>
+              <Text variant="heading">{job.address}</Text>
 
-            <View style={styles.chips}>
-              {dueBadge === "overdue" ?
-                <Chip
-                  label="Overdue"
-                  background={colors.destructive}
-                  text={colors.destructiveForeground}
-                  isStrong
-                />
-              : null}
-              {dueBadge === "today" ?
-                <Chip
-                  label="Due today"
-                  background={getDueTodayColor(scheme)}
-                  text={scheme === "dark" ? "#030712" : "#ffffff"}
-                  isStrong
-                />
-              : null}
-              {isNew ?
-                <Chip
-                  label="New"
-                  background={colors.primary}
-                  text={colors.primaryForeground}
-                  isStrong
-                />
-              : null}
-              <Chip
-                label={jobProgressStatusLabel[status]}
-                icon={statusSymbol[status]}
-                background={statusColors.background}
-                text={statusColors.text}
-              />
-              {job.dueDate ?
-                <Chip
-                  label={`Due ${formatDueDate(job.dueDate)}`}
-                  icon="clock"
-                  background={
-                    dueBadge === "overdue" ? withAlpha(colors.destructive, 0.14) : colors.muted
-                  }
-                  text={dueBadge === "overdue" ? colors.destructive : colors.foreground}
-                />
-              : null}
-              <Chip
-                label={`Added ${createdDate}`}
-                icon="calendar"
-                background={colors.muted}
-                text={colors.mutedForeground}
-              />
-            </View>
-
-            {job.summary ?
-              <Text tone="muted" numberOfLines={2}>
-                {job.summary}
-              </Text>
-            : null}
-
-            {total > 0 ?
-              <View style={styles.progress}>
-                <Text variant="caption" tone="muted">
-                  {done} of {total} tasks done
-                </Text>
-                <View style={[styles.track, { backgroundColor: colors.muted }]}>
-                  <View
-                    style={[
-                      styles.fill,
-                      {
-                        width: `${Math.round((done / total) * 100)}%`,
-                        backgroundColor: done === total ? colors.success : colors.primary,
-                      },
-                    ]}
+              <View style={styles.chips}>
+                {dueBadge === "overdue" ?
+                  <Chip
+                    label="Overdue"
+                    background={colors.destructive}
+                    text={colors.destructiveForeground}
+                    isStrong
                   />
-                </View>
-              </View>
-            : null}
-
-            {job.weather ?
-              <Text variant="caption" tone="muted">
-                {job.weather.condition}, {job.weather.tempMax}°F
-                {job.weather.precipProb > 20 ?
-                  <Text variant="caption" tone="primary">
-                    {`, ${job.weather.precipProb}% rain`}
-                  </Text>
                 : null}
-              </Text>
-            : null}
+                {dueBadge === "today" ?
+                  <Chip
+                    label="Due today"
+                    background={getDueTodayColor(scheme)}
+                    text={scheme === "dark" ? "#030712" : "#ffffff"}
+                    isStrong
+                  />
+                : null}
+                {isNew ?
+                  <Chip
+                    label="New"
+                    background={colors.primary}
+                    text={colors.primaryForeground}
+                    isStrong
+                  />
+                : null}
+                <Chip
+                  label={jobProgressStatusLabel[status]}
+                  icon={statusSymbol[status]}
+                  background={statusColors.background}
+                  text={statusColors.text}
+                />
+                {job.dueDate ?
+                  <Chip
+                    label={`Due ${formatDueDate(job.dueDate)}`}
+                    icon="clock"
+                    background={
+                      dueBadge === "overdue" ? withAlpha(colors.destructive, 0.14) : colors.muted
+                    }
+                    text={dueBadge === "overdue" ? colors.destructive : colors.foreground}
+                  />
+                : null}
+                <Chip
+                  label={`Added ${createdDate}`}
+                  icon="calendar"
+                  background={colors.muted}
+                  text={colors.mutedForeground}
+                />
+              </View>
 
-            {isPending ?
-              <RouteButton isOnRoute={job.selectedForRoute} onPress={() => onToggleRoute(job)} />
-            : null}
-          </Card>
-        </Pressable>
-      </Link.Trigger>
+              {job.summary ?
+                <Text tone="muted" numberOfLines={2}>
+                  {job.summary}
+                </Text>
+              : null}
 
-      <Link.Menu title={job.address}>
-        <Link.MenuAction icon="doc.text" onPress={handleOpen}>
-          Open job
-        </Link.MenuAction>
-        <Link.MenuAction icon="car.fill" onPress={handleDirections}>
-          Directions
-        </Link.MenuAction>
-        <Link.MenuAction
-          icon={job.selectedForRoute ? "minus.circle" : "plus.circle"}
-          onPress={() => onToggleRoute(job)}
-          hidden={!canToggleRoute}
-        >
-          {job.selectedForRoute ? "Take off today's route" : "Add to today's route"}
-        </Link.MenuAction>
-      </Link.Menu>
-    </Link>
-  );
-}
+              {total > 0 ?
+                <View style={styles.progress}>
+                  <Text variant="caption" tone="muted">
+                    {done} of {total} tasks done
+                  </Text>
+                  <View style={[styles.track, { backgroundColor: colors.muted }]}>
+                    <View
+                      style={[
+                        styles.fill,
+                        {
+                          width: `${Math.round((done / total) * 100)}%`,
+                          backgroundColor: done === total ? colors.success : colors.primary,
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+              : null}
 
-interface ChipProps {
-  label: string;
-  icon?: SFSymbol;
-  background: string;
-  text: string;
-  /** Bold text, for the attention badges (Overdue, Due today, New) */
-  isStrong?: boolean;
-}
+              {job.weather ?
+                <Text variant="caption" tone="muted">
+                  {job.weather.condition}, {job.weather.tempMax}°F
+                  {job.weather.precipProb > 20 ?
+                    <Text variant="caption" tone="primary">
+                      {`, ${job.weather.precipProb}% rain`}
+                    </Text>
+                  : null}
+                </Text>
+              : null}
 
-function Chip({ label, icon, background, text, isStrong }: ChipProps) {
-  const iconSize = useScaledSize(13);
-  return (
-    <View style={[styles.chip, { backgroundColor: background }]}>
-      {icon ?
-        <SymbolView name={icon} size={iconSize} weight="semibold" tintColor={text} />
-      : null}
-      <Text
-        variant="footnote"
-        style={[styles.chipText, { color: text }, isStrong && styles.strong]}
-      >
-        {label}
-      </Text>
-    </View>
+              {isPending ?
+                <RouteButton isOnRoute={job.selectedForRoute} onPress={handleToggleRoute} />
+              : null}
+            </Card>
+          </Pressable>
+        </Link.Trigger>
+
+        {/* Tapping the preview opens the job */}
+        <Link.Preview style={{ height: getJobPreviewHeight(job, fontScale) }}>
+          <JobPreview job={job} />
+        </Link.Preview>
+
+        <Link.Menu>
+          <Link.MenuAction icon="arrow.triangle.turn.up.right.diamond" onPress={handleDirections}>
+            Directions
+          </Link.MenuAction>
+          <Link.MenuAction
+            icon={job.selectedForRoute ? "minus.circle" : "plus.circle"}
+            onPress={handleToggleRoute}
+            hidden={!canToggleRoute}
+          >
+            {routeTitle}
+          </Link.MenuAction>
+          <Link.MenuAction
+            icon={nextStatus?.icon ?? "checkmark.circle"}
+            onPress={handleNextStatus}
+            hidden={!nextStatus}
+          >
+            {nextStatus?.title ?? "Mark done"}
+          </Link.MenuAction>
+          <Link.Menu inline>
+            <Link.MenuAction icon="trash" destructive onPress={handleDelete}>
+              Delete job
+            </Link.MenuAction>
+          </Link.Menu>
+        </Link.Menu>
+      </Link>
+    </SwipeableRow>
   );
 }
 
@@ -265,17 +313,6 @@ function RouteButton({ isOnRoute, onPress }: RouteButtonProps) {
 const styles = StyleSheet.create({
   card: { gap: space.md },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.xs,
-    paddingHorizontal: space.sm,
-    paddingVertical: 3,
-    borderRadius: radius.sm,
-    borderCurve: "continuous",
-  },
-  chipText: { fontWeight: "600" },
-  strong: { fontWeight: "700" },
   progress: { gap: space.xs },
   track: { height: 6, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },

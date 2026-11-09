@@ -1,7 +1,7 @@
 import { useConvexAuth, useQuery } from "convex/react";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@convex/_generated/api";
@@ -11,6 +11,7 @@ import type { JobSheetTab } from "@shared/jobs/jobSheetTab";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
+import { confirmDeleteJob } from "@/features/jobs/lib/confirmDeleteJob";
 import { useTheme } from "@/hooks/useTheme";
 import { space } from "@/lib/theme";
 
@@ -77,27 +78,16 @@ export function JobDetailSheet({ jobId, requestedTab }: JobDetailSheetProps) {
   if (job && tab === null) setTab(getDefaultJobSheetTab(job));
 
   const handleDelete = () => {
-    Alert.alert(
-      "Delete this job?",
-      "Its tasks, receipts, check and photos are deleted too. You can't undo this.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete job",
-          style: "destructive",
-          onPress: async () => {
-            setIsDeleting(true);
-            const isDeleted = await mutations.removeJob();
-            if (!isDeleted) {
-              setIsDeleting(false);
-              return;
-            }
-            toast.success("Job deleted");
-            router.back();
-          },
-        },
-      ],
-    );
+    confirmDeleteJob(async () => {
+      setIsDeleting(true);
+      const isDeleted = await mutations.removeJob();
+      if (!isDeleted) {
+        setIsDeleting(false);
+        return;
+      }
+      toast.success("Job deleted");
+      router.back();
+    });
   };
 
   if (job === undefined || isDeleting) {

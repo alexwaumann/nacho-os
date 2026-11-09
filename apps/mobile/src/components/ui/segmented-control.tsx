@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import { SymbolView } from "expo-symbols";
 import type { SFSymbol } from "expo-symbols";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -7,6 +6,7 @@ import { Text } from "@/components/ui/text";
 import { useIsLargeText } from "@/hooks/useIsLargeText";
 import { useScaledSize } from "@/hooks/useScaledSize";
 import { useTheme } from "@/hooks/useTheme";
+import { haptics } from "@/lib/haptics";
 import { minTapSize, radius, space } from "@/lib/theme";
 
 export interface SegmentOption<T extends string> {
@@ -54,7 +54,7 @@ export function SegmentedControl<T extends string>({
 
   const handlePress = (next: T) => {
     if (next === value) return;
-    void Haptics.selectionAsync();
+    haptics.selection();
     onChange(next);
   };
 
